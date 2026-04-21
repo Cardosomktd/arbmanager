@@ -87,7 +87,7 @@ export function TelaDashboard({ data }) {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: G.accent }}>Dashboard</div>
+        <div className="dash-title" style={{ color: G.accent }}>Dashboard</div>
         <select value={mesSel} onChange={e => setMesSel(e.target.value)}
           style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "6px 12px", color: G.text, fontSize: 13 }}>
           {mesesDisp.map(m => {
@@ -99,19 +99,20 @@ export function TelaDashboard({ data }) {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
+      <div className="dash-kpi-grid">
         {[
           { label: "Lucro do Mês",   value: fmt(lucroMes),   cor: lucroMes  >= 0 ? G.green : G.red, sub: mediaUltimosMeses !== null ? `média ${fmt(mediaUltimosMeses)}/mês` : null, subCor: mediaUltimosMeses !== null ? (mediaUltimosMeses >= 0 ? G.green : G.red) : G.textMuted, clicavel: true },
           { label: "Operações",      value: totalOps,        cor: G.accent, sub: `média ${mediaOpsDia.toFixed(1)}/dia`, subCor: G.textMuted },
           { label: "Lucro do Dia",   value: fmt(lucroHoje),  cor: lucroHoje >= 0 ? G.green : G.red, sub: `média ${fmt(mediaDiaria)}/dia no mês`, subCor: mediaDiaria >= 0 ? G.green : G.red },
         ].map(k => (
           <Card key={k.label}
+            className="dash-kpi-card"
             onClick={k.clicavel ? () => setModalDetalhes(true) : undefined}
             style={{ textAlign: "center", padding: "16px 12px", cursor: k.clicavel ? "pointer" : "default", transition: "border-color 0.15s", ...(k.clicavel ? { borderColor: "#2a3d5e" } : {}) }}>
             <div style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>
               {k.label}{k.clicavel && <span style={{ color: G.textMuted, marginLeft: 4, fontSize: 10 }}>↗</span>}
             </div>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, color: k.cor }}>{k.value}</div>
+            <div className="dash-kpi-value" style={{ color: k.cor }}>{k.value}</div>
             {k.sub && <div style={{ fontSize: 11, color: k.subCor, opacity: 0.6, marginTop: 4 }}>{k.sub}</div>}
           </Card>
         ))}
@@ -120,13 +121,13 @@ export function TelaDashboard({ data }) {
       {/* Gráfico diário */}
       <Card style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Resultado Diário</div>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 80, paddingBottom: 4 }}>
+        <div className="dash-chart-bars">
           {lucrosPorDia.map(({ dia, lucro }) => {
             const h   = Math.max(4, (Math.abs(lucro) / maxLucro) * 70);
             const cor = lucro > 0 ? G.green : lucro < 0 ? G.red : G.border;
             return (
               <div key={dia} title={`Dia ${dia}: ${fmt(lucro)}`}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "0 0 auto", width: `calc((100% - ${(diasNoMes - 1) * 3}px) / ${diasNoMes})`, minWidth: 14 }}>
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "1 1 0%", minWidth: 0 }}>
                 <div style={{ width: "100%", height: h, background: cor, borderRadius: "3px 3px 0 0", opacity: lucro === 0 ? 0.15 : 1 }} />
                 {diasNoMes <= 15 && <div style={{ fontSize: 9, color: G.textMuted, marginTop: 2 }}>{dia}</div>}
               </div>

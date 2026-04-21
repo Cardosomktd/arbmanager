@@ -273,7 +273,7 @@ export function TelaEventos({ data, setData }) {
         })}
       </div>
 
-      <ModalEvento       open={modalEvento}   onClose={() => setModalEvento(false)}   onSalvar={salvarEvento}  editEvento={editEvento} />
+      <ModalEvento       open={modalEvento}   onClose={() => setModalEvento(false)}   onSalvar={salvarEvento}  editEvento={editEvento} eventosList={data.eventos || []} />
       <ModalOperacao     open={modalOp}       onClose={() => setModalOp(false)}       onSalvar={salvarOp}      casas={data.casas || []} editOp={editOp} evento={(data.eventos || []).find(e => e.id === eventoAlvoId)} />
       <ModalApostaAvulsa open={modalAvulsa}   onClose={() => setModalAvulsa(false)}   onSalvar={salvarAposta}  casas={data.casas || []} />
       <ModalProtecao     open={modalProtecao} onClose={() => setModalProtecao(false)} onSalvar={salvarProtecao} casas={data.casas || []} evento={(data.eventos || []).find(e => e.id === eventoProtecaoId)} />

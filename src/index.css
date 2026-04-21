@@ -108,3 +108,76 @@ button                  { cursor: pointer; font-family: 'DM Sans', sans-serif; }
     max-width: 110px;
   }
 }
+
+/* ── Dashboard responsivo ───────────────────────────────────────────────────── */
+
+/* Desktop — valores de referência (saem do inline style) */
+.dash-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.dash-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Valor principal de cada KPI (ex: "R$ 1.234,56") */
+.dash-kpi-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Container das barras do gráfico */
+.dash-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 80px;
+  padding-bottom: 4px;
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  /* Título compacto */
+  .dash-title {
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* Grid: 2 colunas no mobile */
+  .dash-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  /* Primeiro KPI (Lucro do Mês) ocupa linha inteira */
+  .dash-kpi-grid > *:first-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Padding reduzido nos cards — !important necessário pois o Card
+     injeta padding via style attribute (especificidade inline) */
+  .dash-kpi-card {
+    padding: 10px 10px !important;
+  }
+
+  /* Valor principal menor */
+  .dash-kpi-value {
+    font-size: 22px;
+  }
+
+  /* Gráfico mais compacto */
+  .dash-chart-bars {
+    height: 56px;
+    gap: 2px;
+  }
+}

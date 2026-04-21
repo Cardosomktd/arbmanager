@@ -5,12 +5,13 @@ import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
 
-export function ModalEvento({ open, onClose, onSalvar, editEvento }) {
-  const [mandante, setMandante] = useState("");
-  const [visitante, setVisitante] = useState("");
-  const [dataStr,   setDataStr]   = useState(""); // obrigatório
-  const [hora,      setHora]      = useState(""); // opcional
-  const [erro,      setErro]      = useState("");
+export function ModalEvento({ open, onClose, onSalvar, editEvento, eventosList = [] }) {
+  const [mandante,    setMandante]    = useState("");
+  const [visitante,   setVisitante]   = useState("");
+  const [dataStr,     setDataStr]     = useState(""); // obrigatório
+  const [hora,        setHora]        = useState(""); // opcional
+  const [erro,        setErro]        = useState("");
+  const [avisoExiste, setAvisoExiste] = useState(false);
 
   useEffect(() => {
     if (editEvento) {
@@ -28,12 +29,29 @@ export function ModalEvento({ open, onClose, onSalvar, editEvento }) {
       setMandante(""); setVisitante(""); setDataStr(""); setHora("");
     }
     setErro("");
+    setAvisoExiste(false);
   }, [open, editEvento]);
 
-  function salvar() {
+  function salvar(forcar = false) {
     if (!mandante.trim())  { setErro("Informe o time mandante."); return; }
     if (!visitante.trim()) { setErro("Informe o time visitante."); return; }
     if (!dataStr)          { setErro("Informe a data do evento."); return; }
+
+    // Verifica duplicata apenas em criação (não em edição) e apenas na primeira tentativa
+    if (!forcar && !editEvento) {
+      const mand = mandante.trim().toLowerCase();
+      const vis  = visitante.trim().toLowerCase();
+      const duplicado = eventosList.some(ev =>
+        (ev.data || "").startsWith(dataStr) &&
+        (ev.mandante  || "").toLowerCase() === mand &&
+        (ev.visitante || "").toLowerCase() === vis
+      );
+      if (duplicado) {
+        setAvisoExiste(true);
+        return;
+      }
+    }
+
     const dataFinal = hora ? `${dataStr}T${hora}` : dataStr;
     const nome = `${mandante.trim()} x ${visitante.trim()}`;
     onSalvar({
@@ -56,6 +74,11 @@ export function ModalEvento({ open, onClose, onSalvar, editEvento }) {
       {erro && (
         <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
+        </div>
+      )}
+      {avisoExiste && (
+        <div style={{ background: "#fbbf2411", border: "1px solid #fbbf2444", borderRadius: 6, padding: "10px 12px", marginBottom: 12, fontSize: 13, color: "#fbbf24" }}>
+          ⚠️ Já existe um evento com esse confronto nessa data. Confira antes de criar.
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -87,7 +110,10 @@ export function ModalEvento({ open, onClose, onSalvar, editEvento }) {
 
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20 }}>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-        <Btn onClick={salvar}>{editEvento ? "Salvar" : "Criar evento"}</Btn>
+        {avisoExiste
+          ? <Btn onClick={() => salvar(true)}>Criar mesmo assim</Btn>
+          : <Btn onClick={() => salvar()}>{editEvento ? "Salvar" : "Criar evento"}</Btn>
+        }
       </div>
     </Modal>
   );

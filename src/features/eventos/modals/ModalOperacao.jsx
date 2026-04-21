@@ -322,7 +322,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                     )}
                   </div>
 
-                  <Input label="Odd" value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required />
+                  <Input label="Odd" value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required inputMode="decimal" />
                   <Input label="Valor (R$)" value={e.valor} onChange={v => upd(i, "valor", v)} type="number" placeholder="0,00" required />
                   {/* Situação removida da criação — entradas nascem como pendente */}
                   {/* Tipo visível somente em Ext. Freebet */}

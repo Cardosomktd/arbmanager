@@ -6,7 +6,7 @@ const fieldStyle = {
   fontSize: 13, width: "100%", outline: "none",
 };
 
-export function Input({ label, value, onChange, type = "text", placeholder, style: sx = {}, options, required }) {
+export function Input({ label, value, onChange, type = "text", placeholder, style: sx = {}, options, required, inputMode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, ...sx }}>
       {label && (
@@ -26,6 +26,7 @@ export function Input({ label, value, onChange, type = "text", placeholder, styl
           type={type} value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
+          inputMode={inputMode}
           style={fieldStyle}
         />
       )}

@@ -75,7 +75,7 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
         />
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Input label="Odd" value={odd} onChange={setOdd} placeholder="Ex: 2,50" required />
+          <Input label="Odd" value={odd} onChange={setOdd} placeholder="Ex: 2,50" required inputMode="decimal" />
           <Input label="Valor (R$)" value={valor} onChange={setValor} type="number" placeholder="0,00" required />
         </div>
       </div>
