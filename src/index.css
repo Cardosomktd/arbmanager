@@ -22,3 +22,89 @@ button                  { cursor: pointer; font-family: 'DM Sans', sans-serif; }
 
 .evento-card            { transition: all 0.2s; }
 .evento-card:hover      { border-color: #2a3d5e !important; }
+
+/* ── Header responsivo ──────────────────────────────────────────────────────── */
+
+/* Desktop: tudo em uma linha, altura fixa */
+.app-header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 54px;
+}
+
+/* Seção do usuário (email + botão sair) */
+.app-header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Email: trunca quando não cabe */
+.app-header-email {
+  font-size: 11px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botões de navegação: propriedades estáticas */
+.app-header-nav-btn {
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mobile: duas linhas — logo+usuário em cima, nav embaixo */
+@media (max-width: 600px) {
+  .app-header-inner {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 0;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  /* Linha 1 — logo à esquerda */
+  .app-header-logo { order: 1; }
+
+  /* Linha 1 — usuário à direita (margin-left: auto empurra para a extremidade) */
+  .app-header-user {
+    order: 2;
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  /* Linha 2 — nav ocupa 100% da largura */
+  .app-header-nav {
+    order: 3;
+    width: 100%;
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  /* Botões dividem a largura da nav igualmente */
+  .app-header-nav-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 6px 6px;
+    font-size: 12px;
+    justify-content: center;
+  }
+
+  /* Email mais curto no mobile */
+  .app-header-email {
+    max-width: 110px;
+  }
+}

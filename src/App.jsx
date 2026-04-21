@@ -55,34 +55,33 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
 
       {/* ── Header ── */}
       <header style={{ background: G.surface, borderBottom: `1px solid ${G.border}`, padding: "0 20px", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 54 }}>
+        <div className="app-header-inner">
 
-          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
+          <div className="app-header-logo" style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase" }}>
             <span style={{ color: G.accent }}>ARB</span><span style={{ color: G.text }}>MANAGER</span>
           </div>
 
-          <nav style={{ display: "flex", gap: 2 }}>
+          <nav className="app-header-nav" style={{ display: "flex", gap: 2 }}>
             {ABAS.map(a => (
-              <button key={a.id} onClick={() => setAba(a.id)} style={{
-                background: aba === a.id ? G.surface2 : "transparent",
-                border: `1px solid ${aba === a.id ? G.border : "transparent"}`,
-                color: aba === a.id ? G.text : G.textDim,
-                borderRadius: 6, padding: "6px 14px", fontSize: 13, fontWeight: 500,
-                cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-              }}>
+              <button key={a.id} onClick={() => setAba(a.id)}
+                className="app-header-nav-btn"
+                style={{
+                  background: aba === a.id ? G.surface2 : "transparent",
+                  border: `1px solid ${aba === a.id ? G.border : "transparent"}`,
+                  color: aba === a.id ? G.text : G.textDim,
+                }}>
                 <span>{a.icon}</span><span>{a.label}</span>
               </button>
             ))}
           </nav>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Indicador de save em andamento */}
+          <div className="app-header-user">
             {error && (
               <span title={error} style={{ fontSize: 11, color: G.red, cursor: "default" }}>
                 ⚠️ Erro ao salvar
               </span>
             )}
-            <span style={{ fontSize: 11, color: G.textMuted, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span className="app-header-email" style={{ color: G.textMuted }}>
               {session.user.email}
             </span>
             <button onClick={onLogout} style={{
@@ -90,6 +89,7 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
               borderRadius: 6, padding: "5px 10px", fontSize: 12,
               color: G.textDim, cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif",
+              flexShrink: 0,
             }}>
               Sair
             </button>
