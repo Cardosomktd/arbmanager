@@ -18,7 +18,7 @@ function lucroProtecao(p) {
 }
 
 export function CardEvento({ evento, casas, onEditarEvento, onExcluirEvento, onAddOp, onEditarOp, onExcluirOp, onConcluirOp, onAddProtecao, onConcluirProtecao, onExcluirProtecao }) {
-  const [expandido, setExpandido] = useState(true);
+  const [expandido, setExpandido] = useState(false);
   const [concluindoOp, setConcluindoOp] = useState(null);
 
   const lucroOps  = (evento.operacoes || []).reduce((s, op) => s + lucroEfetivoOp(op), 0);

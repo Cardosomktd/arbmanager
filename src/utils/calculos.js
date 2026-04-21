@@ -6,10 +6,12 @@ export function calcRetorno(e) {
 }
 
 // Retorna true se a entrada pode ser agrupada com outras do mesmo resultado.
-// Critérios: tipo normal, sem múltipla, sem descrição de múltipla.
+// Critérios: sem múltipla, sem descrição de múltipla.
+// Tipo (normal/freebet/bonus) não impede o agrupamento — entradas do mesmo
+// resultado sempre representam o mesmo cenário vencedor, independente do tipo.
+// O cálculo de retorno por tipo já é tratado individualmente em calcRetorno.
 function isAgrupavel(e) {
   return (
-    e.tipo === "normal" &&
     !e.multipla &&
     !(e.multiplaDesc && e.multiplaDesc.trim())
   );

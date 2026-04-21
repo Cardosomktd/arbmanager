@@ -121,7 +121,7 @@ export function TelaCasas({ data, setData }) {
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 700, color: saldo >= 0 ? G.green : G.red }}>{fmt(saldo)}</div>
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setEditId(c.id); setNomeCasa(c.nome); setSaldoInicial(String(c.saldoInicial || "")); }}>✏️</Btn>
+                    <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setEditId(c.id); setNomeCasa(c.nome); setSaldoInicial(String(c.saldoInicial || "")); setCasaDetalhe(c.id); }}>✏️</Btn>
                     <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setData(d => ({ ...d, casas: d.casas.map(x => x.id === c.id ? { ...x, ativa: false } : x) })); }}>📦</Btn>
                   </div>
                 </div>
@@ -129,30 +129,42 @@ export function TelaCasas({ data, setData }) {
 
               {aberta && (
                 <div style={{ borderTop: `1px solid ${G.border}`, padding: "10px 14px" }}>
-                  {movs.length === 0
-                    ? <div style={{ color: G.textMuted, fontSize: 12, textAlign: "center", padding: "8px 0" }}>Nenhuma movimentação registrada.</div>
-                    : (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        {[...movs].reverse().map(m => (
-                          <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: G.surface2, borderRadius: 6, padding: "7px 10px" }}>
-                            <div>
-                              <div style={{ fontSize: 12, color: m.tipo === "deposito" ? G.green : G.red, fontWeight: 600 }}>
-                                {m.tipo === "deposito" ? "⬆️ Depósito" : "⬇️ Saque"}
-                              </div>
-                              {m.obs && <div style={{ fontSize: 11, color: G.textDim, marginTop: 1 }}>{m.obs}</div>}
-                              <div style={{ fontSize: 10, color: G.textMuted, marginTop: 1 }}>{new Date(m.data).toLocaleDateString("pt-BR")}</div>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 16, fontWeight: 700, color: m.tipo === "deposito" ? G.green : G.red }}>
-                                {m.tipo === "deposito" ? "+" : "-"}{fmt(m.valor)}
-                              </span>
-                              <Btn size="sm" variant="danger" onClick={() => excluirMovimento(m.id)}>🗑️</Btn>
-                            </div>
-                          </div>
-                        ))}
+                  {editId === c.id ? (
+                    /* ── Edição inline ── */
+                    <div>
+                      <div style={{ fontSize: 12, color: G.textDim, fontWeight: 600, marginBottom: 10 }}>✏️ Editar casa</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 10, marginBottom: 10 }}>
+                        <Input label="Nome" value={nomeCasa} onChange={setNomeCasa} required />
+                        <Input label="Saldo inicial (R$)" value={saldoInicial} onChange={setSaldoInicial} type="number" />
                       </div>
-                    )
-                  }
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <Btn onClick={salvarCasa}>Salvar</Btn>
+                        <Btn variant="ghost" onClick={() => { setEditId(null); setNomeCasa(""); setSaldoInicial(""); }}>Cancelar</Btn>
+                      </div>
+                    </div>
+                  ) : movs.length === 0 ? (
+                    <div style={{ color: G.textMuted, fontSize: 12, textAlign: "center", padding: "8px 0" }}>Nenhuma movimentação registrada.</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {[...movs].reverse().map(m => (
+                        <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: G.surface2, borderRadius: 6, padding: "7px 10px" }}>
+                          <div>
+                            <div style={{ fontSize: 12, color: m.tipo === "deposito" ? G.green : G.red, fontWeight: 600 }}>
+                              {m.tipo === "deposito" ? "⬆️ Depósito" : "⬇️ Saque"}
+                            </div>
+                            {m.obs && <div style={{ fontSize: 11, color: G.textDim, marginTop: 1 }}>{m.obs}</div>}
+                            <div style={{ fontSize: 10, color: G.textMuted, marginTop: 1 }}>{new Date(m.data).toLocaleDateString("pt-BR")}</div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 16, fontWeight: 700, color: m.tipo === "deposito" ? G.green : G.red }}>
+                              {m.tipo === "deposito" ? "+" : "-"}{fmt(m.valor)}
+                            </span>
+                            <Btn size="sm" variant="danger" onClick={() => excluirMovimento(m.id)}>🗑️</Btn>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </Card>
@@ -160,20 +172,8 @@ export function TelaCasas({ data, setData }) {
         })}
       </div>
 
-      {/* Editar / Nova casa */}
-      {editId ? (
-        <Card style={{ marginTop: 16 }}>
-          <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 13 }}>✏️ Editar casa</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12 }}>
-            <Input label="Nome" value={nomeCasa} onChange={setNomeCasa} required />
-            <Input label="Saldo inicial" value={saldoInicial} onChange={setSaldoInicial} type="number" />
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <Btn onClick={salvarCasa}>Salvar</Btn>
-            <Btn variant="ghost" onClick={() => { setEditId(null); setNomeCasa(""); setSaldoInicial(""); }}>Cancelar</Btn>
-          </div>
-        </Card>
-      ) : (
+      {/* Nova casa */}
+      {!editId && (
         <Card style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 13 }}>➕ Nova casa</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12 }}>
