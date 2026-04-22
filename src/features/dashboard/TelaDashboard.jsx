@@ -206,6 +206,17 @@ export function TelaDashboard({ data }) {
       </Card>
 
       <ModalDetalhesMes open={modalDetalhes} onClose={() => setModalDetalhes(false)} data={data} mesSel={mesSel} />
+
+      <div style={{ textAlign: "center", marginTop: 32, paddingBottom: 8 }}>
+        <a
+          href="https://i.pinimg.com/736x/2f/c5/42/2fc5429cc937124e13e1b4ff059bc1c5.jpg"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: 11, color: G.textMuted, textDecoration: "underline" }}
+        >
+          reclame aqui
+        </a>
+      </div>
     </div>
   );
 }
