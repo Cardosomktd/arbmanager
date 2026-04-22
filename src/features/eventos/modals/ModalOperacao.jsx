@@ -46,6 +46,12 @@ const BANNERS = {
   },
 };
 
+// Formata odd com até 4 casas decimais, removendo zeros finais desnecessários.
+// Exemplos: 2 → "2", 1.5 → "1.5", 1.8571428… → "1.8571", 2.1234 → "2.1234"
+function fmtOdd(n) {
+  return parseFloat(n.toFixed(4)).toString();
+}
+
 function entradaVazia() {
   return { id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "", odd: "", valor: "", tipo: "normal", situacao: "pendente", pa: false };
 }
@@ -178,7 +184,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
         const oddCalc = val > 0
           ? e.tipo === "freebet" ? ret / val + 1 : ret / val
           : 0;
-        updated.odd = oddCalc > 0 ? String(oddCalc.toFixed(2)) : "";
+        updated.odd = oddCalc > 0 ? fmtOdd(oddCalc) : "";
       }
       return updated;
     }));
@@ -193,7 +199,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
       const oddCalc = val > 0
         ? e.tipo === "freebet" ? ret / val + 1 : ret / val
         : 0;
-      return { ...e, retornoStr: retStr, odd: oddCalc > 0 ? String(oddCalc.toFixed(2)) : "" };
+      return { ...e, retornoStr: retStr, odd: oddCalc > 0 ? fmtOdd(oddCalc) : "" };
     }));
   }
 
@@ -335,8 +341,9 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                 border: `1px solid ${corEntrada.borda}`,
                 borderRadius: 8, padding: 12,
               }}>
-                {/* Cabeçalho da entrada + toggle por entrada */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+
+                {/* ── Cabeçalho: label da entrada + toggle modo odd/retorno ── */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ fontSize: 11, color: corEntrada.label, fontWeight: 700, letterSpacing: 1 }}>
                     ENTRADA {i + 1}
                   </div>
@@ -351,18 +358,20 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                     {e.modoRetorno ? "↩ por Retorno" : "↪ por Odd"}
                   </button>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+
+                {/* ── Linha 1: Casa | Resultado | Múltipla ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 8 }}>
                   <CasaSelect casas={casasAtivas} value={e.casa} onChange={v => upd(i, "casa", v)} required />
 
-                  {/* Resultado apostado */}
+                  {/* Resultado apostado / principal */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
-                      Resultado apostado <span style={{ color: G.red }}>*</span>
+                      {e.multipla ? "Resultado principal" : "Resultado apostado"} <span style={{ color: G.red }}>*</span>
                     </label>
                     {evento?.mandante && evento?.visitante ? (
                       <select value={e.entrada}
                         onChange={ev => { upd(i, "entrada", ev.target.value); if (ev.target.value !== "outro") upd(i, "entradaCustom", ""); }}
-                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 10px", color: G.text, fontSize: 13, flex: 1, outline: "none", appearance: "none" }}>
+                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 10px", color: G.text, fontSize: 13, outline: "none", appearance: "none" }}>
                         <option value="">— selecionar —</option>
                         <option value={evento.mandante}>{evento.mandante}</option>
                         <option value="Empate">Empate</option>
@@ -371,7 +380,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                       </select>
                     ) : (
                       <input value={e.entrada} onChange={ev => upd(i, "entrada", ev.target.value)} placeholder="Ex: Flamengo"
-                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, flex: 1, outline: "none" }} />
+                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, outline: "none" }} />
                     )}
                     {e.entrada === "outro" && (
                       <input value={e.entradaCustom || ""} onChange={ev => upd(i, "entradaCustom", ev.target.value)}
@@ -380,7 +389,54 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                     )}
                   </div>
 
-                  {/* Odd (editável) ou Retorno (editável) dependendo do modo desta entrada */}
+                  {/* Múltipla — toggle no topo da entrada */}
+                  <label style={{
+                    display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
+                    fontSize: 12, color: e.multipla ? G.yellow : G.textDim,
+                    paddingBottom: 2, whiteSpace: "nowrap",
+                  }}>
+                    <input type="checkbox" checked={e.multipla || false}
+                      onChange={ev => upd(i, "multipla", ev.target.checked)}
+                      style={{ accentColor: G.yellow, width: 14, height: 14 }} />
+                    <span style={{ fontWeight: 600 }}>Múltipla</span>
+                  </label>
+                </div>
+
+                {/* ── Linha 2: Descrição da múltipla (condicional) ── */}
+                {e.multipla && (
+                  <div style={{ marginBottom: 8 }}>
+                    <input value={e.multiplaDesc || ""} onChange={ev => upd(i, "multiplaDesc", ev.target.value)}
+                      placeholder="O que foi adicionado na múltipla? Ex: + Mais de 1.5 gols"
+                      style={{
+                        background: "#ffd60011", border: `1px solid ${G.yellow}44`,
+                        borderRadius: 6, padding: "7px 12px", color: G.text,
+                        fontSize: 12, width: "100%", boxSizing: "border-box", outline: "none",
+                      }} />
+                  </div>
+                )}
+
+                {/* ── Linha 3: Odd | Valor | Retorno ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+
+                  {/* Odd: editável no modo Odd, read-only no modo Retorno */}
+                  {e.modoRetorno ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>Odd</label>
+                      <div style={{
+                        background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6,
+                        padding: "8px 12px", color: e.odd ? G.textDim : G.textMuted,
+                        fontSize: 13, minHeight: 37, display: "flex", alignItems: "center",
+                      }}>
+                        {e.odd || "—"}
+                      </div>
+                    </div>
+                  ) : (
+                    <Input label="Odd" value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required inputMode="decimal" />
+                  )}
+
+                  <Input label="Valor (R$)" value={e.valor} onChange={v => upd(i, "valor", v)} type="number" placeholder="0,00" required />
+
+                  {/* Retorno: editável no modo Retorno, calculado no modo Odd */}
                   {e.modoRetorno ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
@@ -393,19 +449,24 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                         inputMode="decimal"
                         style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, outline: "none" }}
                       />
-                      <div style={{ fontSize: 10, color: G.textMuted, marginTop: 1 }}>Odd: {e.odd || "—"}</div>
                     </div>
                   ) : (
-                    <Input label="Odd" value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required inputMode="decimal" />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>Retorno (R$)</label>
+                      <div style={{
+                        background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6,
+                        padding: "8px 12px", color: (e.odd && e.valor) ? G.textDim : G.textMuted,
+                        fontSize: 13, minHeight: 37, display: "flex", alignItems: "center",
+                      }}>
+                        {(e.odd && e.valor) ? fmt(calcRetorno(e)) : "—"}
+                      </div>
+                    </div>
                   )}
-                  <Input label="Valor (R$)" value={e.valor} onChange={v => upd(i, "valor", v)} type="number" placeholder="0,00" required />
-                  {/* Situação removida da criação — entradas nascem como pendente */}
-                  {/* Tipo visível somente em Ext. Freebet */}
                 </div>
 
-                {/* Tipo de entrada — só para Extração de Freebet */}
+                {/* ── Tipo de entrada — só para Extração de Freebet ── */}
                 {tipoOp === "extracao_freebet" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: e.tipo !== "normal" ? G.green : G.textDim }}>
                       <input
                         type="checkbox"
@@ -425,31 +486,14 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                   </div>
                 )}
 
-                {/* Flags: PA e Múltipla */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 8 }}>
+                {/* ── Flag PA ── */}
+                <div style={{ marginTop: 10 }}>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: e.pa ? G.accent : G.textDim }}>
                     <input type="checkbox" checked={e.pa} onChange={ev => upd(i, "pa", ev.target.checked)} style={{ accentColor: G.accent }} />
                     <span style={{ fontWeight: 600 }}>PA (Pagamento Antecipado)</span>
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: e.multipla ? G.yellow : G.textDim }}>
-                    <input type="checkbox" checked={e.multipla || false} onChange={ev => upd(i, "multipla", ev.target.checked)} style={{ accentColor: G.yellow }} />
-                    <span style={{ fontWeight: 600 }}>Múltipla</span>
-                  </label>
                 </div>
-                {e.multipla && (
-                  <div style={{ marginTop: 6 }}>
-                    <input value={e.multiplaDesc || ""} onChange={ev => upd(i, "multiplaDesc", ev.target.value)}
-                      placeholder="Descreva o que foi adicionado na múltipla (ex: + Mais de 1.5 gols)"
-                      style={{ background: "#ffd60011", border: `1px solid ${G.yellow}44`, borderRadius: 6, padding: "7px 12px", color: G.text, fontSize: 12, width: "100%", outline: "none" }} />
-                  </div>
-                )}
 
-                {/* Retorno estimado — só quando esta entrada está no modo Odd */}
-                {(!e.modoRetorno && e.odd && e.valor) && (
-                  <div style={{ textAlign: "right", marginTop: 6 }}>
-                    <span style={{ fontSize: 11, color: G.textDim }}>Retorno: {fmt(calcRetorno(e))}</span>
-                  </div>
-                )}
               </div>
             ))}
           </div>
