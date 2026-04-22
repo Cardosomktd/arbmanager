@@ -393,9 +393,13 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                 <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
                   Benefício Gerado
                 </div>
-                {/* Tipo do benefício: Freebet ou Cashback */}
+                {/* Tipo do benefício: Free Bet / Bônus / Cashback */}
                 <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 6, padding: 2 }}>
-                  {[{ value: "freebet", label: "🎁 Freebet" }, { value: "cashback", label: "💰 Cashback" }].map(t => (
+                  {[
+                    { value: "freebet",  label: "🎁 Free Bet" },
+                    { value: "bonus",    label: "🎰 Bônus"    },
+                    { value: "cashback", label: "💰 Cashback" },
+                  ].map(t => (
                     <button key={t.value} onClick={() => setFbTipo(t.value)} style={{
                       padding: "4px 12px", borderRadius: 5, border: "none", cursor: "pointer",
                       background: fbTipo === t.value ? "#fbbf2422" : "transparent",
@@ -440,7 +444,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                         const ent = entradasElegiveis.find(e => e.id === fbGatilhoId);
                         return ent ? (
                           <div style={{ fontSize: 11, color: G.textDim, marginTop: 4 }}>
-                            A freebet será creditada em <strong style={{ color: G.text }}>{getCasaNome(casasAtivas, ent.casa)}</strong>.
+                            {{ freebet: "A free bet", bonus: "O bônus", cashback: "O cashback" }[fbTipo] ?? "O benefício"} será creditado em <strong style={{ color: G.text }}>{getCasaNome(casasAtivas, ent.casa)}</strong>.
                           </div>
                         ) : null;
                       })()}
@@ -450,7 +454,10 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
 
                 {/* Valor e condição */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <Input label="Valor da freebet" value={fbValor} onChange={setFbValor} type="number" placeholder="0,00" />
+                  <Input
+                    label={{ freebet: "Valor da Free Bet", bonus: "Valor do Bônus", cashback: "Valor do Cashback" }[fbTipo] ?? "Valor"}
+                    value={fbValor} onChange={setFbValor} type="number" placeholder="0,00"
+                  />
                   <Input label="Condição" value={fbCondicao} onChange={setFbCondicao} options={CONDICAO_OPTS} />
                 </div>
 
