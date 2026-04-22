@@ -168,7 +168,20 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
   }
 
   function upd(i, f, v) {
-    setEntradas(prev => prev.map((e, idx) => idx === i ? { ...e, [f]: v } : e));
+    setEntradas(prev => prev.map((e, idx) => {
+      if (idx !== i) return e;
+      const updated = { ...e, [f]: v };
+      // Em modo retorno: quando valor muda, recalcula odd a partir do retornoStr já salvo
+      if (f === "valor" && e.modoRetorno && e.retornoStr) {
+        const ret = parseFloat(e.retornoStr.replace(",", ".")) || 0;
+        const val = parseFloat(v) || 0;
+        const oddCalc = val > 0
+          ? e.tipo === "freebet" ? ret / val + 1 : ret / val
+          : 0;
+        updated.odd = oddCalc > 0 ? String(oddCalc.toFixed(2)) : "";
+      }
+      return updated;
+    }));
   }
 
   // Atualiza odd a partir do retorno digitado (modo retorno)
