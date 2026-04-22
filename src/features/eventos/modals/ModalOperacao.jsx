@@ -134,7 +134,6 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
   const [fbCondicao,  setFbCondicao]  = useState("qualquer");
   const [fbGatilhoId, setFbGatilhoId] = useState("");
   const [fbTipo,      setFbTipo]      = useState("freebet");
-  const [modoRetorno, setModoRetorno] = useState(false);
   const [erro,        setErro]        = useState("");
 
   useEffect(() => {
@@ -157,7 +156,6 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
       setNumEntradas(2); setEntradas([entradaVazia(), entradaVazia()]);
       setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
     }
-    setModoRetorno(false);
     setErro("");
   }, [open, editOp]);
 
@@ -186,18 +184,18 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
     }));
   }
 
-  // Alterna modo e inicializa retornoStr com valor atual
-  function toggleModoRetorno() {
-    setModoRetorno(prev => {
-      const next = !prev;
-      if (next) {
-        setEntradas(ents => ents.map(e => ({
-          ...e,
-          retornoStr: (e.odd && e.valor) ? String(calcRetorno(e).toFixed(2)) : "",
-        })));
-      }
-      return next;
-    });
+  // Alterna modo retorno individualmente para a entrada de índice i
+  function toggleEntradaModoRetorno(i) {
+    setEntradas(prev => prev.map((e, idx) => {
+      if (idx !== i) return e;
+      const next = !e.modoRetorno;
+      return {
+        ...e,
+        modoRetorno: next,
+        // Ao ativar: inicializa retornoStr com o retorno atual calculado
+        retornoStr: next && e.odd && e.valor ? String(calcRetorno(e).toFixed(2)) : e.retornoStr,
+      };
+    }));
   }
 
   function salvar() {
@@ -211,7 +209,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
     }
     setErro("");
 
-    const entradasFinal = entradas.map(e => ({
+    // Desestrutura campos UI-only (modoRetorno, retornoStr) — não devem ser persistidos
+    const entradasFinal = entradas.map(({ modoRetorno: _m, retornoStr: _r, ...e }) => ({
       ...e,
       // Tipo de entrada: só freebet/bonus em extração; demais sempre normal
       tipo: tipoOp !== "extracao_freebet" ? "normal" : e.tipo,
@@ -297,8 +296,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
         </div>
       ) : (
         <>
-          {/* Número de entradas + toggle odd/retorno */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+          {/* Número de entradas */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
             <div style={{ fontSize: 12, color: G.textDim }}>Entradas:</div>
             <div style={{ display: "flex", gap: 4 }}>
               {[1, 2, 3, 4, 5, 6, 7].map(n => (
@@ -313,15 +312,6 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                 </button>
               ))}
             </div>
-            <button onClick={toggleModoRetorno} style={{
-              marginLeft: "auto", padding: "4px 10px", borderRadius: 6,
-              border: `1px solid ${modoRetorno ? G.accent : G.border}`,
-              background: modoRetorno ? "#00d4ff11" : "transparent",
-              color: modoRetorno ? G.accent : G.textDim,
-              fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
-            }}>
-              {modoRetorno ? "↩ Modo: Retorno" : "↪ Modo: Odd"}
-            </button>
           </div>
 
           {/* Lista de entradas */}
@@ -332,8 +322,21 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                 border: `1px solid ${corEntrada.borda}`,
                 borderRadius: 8, padding: 12,
               }}>
-                <div style={{ fontSize: 11, color: corEntrada.label, fontWeight: 700, marginBottom: 8, letterSpacing: 1 }}>
-                  ENTRADA {i + 1}
+                {/* Cabeçalho da entrada + toggle por entrada */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: corEntrada.label, fontWeight: 700, letterSpacing: 1 }}>
+                    ENTRADA {i + 1}
+                  </div>
+                  <button onClick={() => toggleEntradaModoRetorno(i)} style={{
+                    padding: "2px 8px", borderRadius: 4,
+                    border: `1px solid ${e.modoRetorno ? G.accent : G.border}`,
+                    background: e.modoRetorno ? "#00d4ff11" : "transparent",
+                    color: e.modoRetorno ? G.accent : G.textMuted,
+                    fontSize: 10, fontWeight: 600, cursor: "pointer",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    {e.modoRetorno ? "↩ por Retorno" : "↪ por Odd"}
+                  </button>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <CasaSelect casas={casasAtivas} value={e.casa} onChange={v => upd(i, "casa", v)} required />
@@ -364,8 +367,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                     )}
                   </div>
 
-                  {/* Odd (editável) ou Retorno (editável) dependendo do modo */}
-                  {modoRetorno ? (
+                  {/* Odd (editável) ou Retorno (editável) dependendo do modo desta entrada */}
+                  {e.modoRetorno ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
                         Retorno (R$) <span style={{ color: G.red }}>*</span>
@@ -428,8 +431,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                   </div>
                 )}
 
-                {/* Retorno estimado — só no modo Odd (no modo Retorno o campo já é editável) */}
-                {(!modoRetorno && e.odd && e.valor) && (
+                {/* Retorno estimado — só quando esta entrada está no modo Odd */}
+                {(!e.modoRetorno && e.odd && e.valor) && (
                   <div style={{ textAlign: "right", marginTop: 6 }}>
                     <span style={{ fontSize: 11, color: G.textDim }}>Retorno: {fmt(calcRetorno(e))}</span>
                   </div>
