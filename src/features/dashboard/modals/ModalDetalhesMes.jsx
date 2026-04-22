@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { G } from "../../../constants/colors";
-import { fmt, fmtDate, getCasaNome } from "../../../utils/format";
+import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../../utils/format";
 import { lucroEfetivoOp } from "../../../utils/calculos";
 import { lucroAvulsa } from "../../../utils/lucroAvulsa";
 import { lucroCassino } from "../../../utils/lucroCassino";
@@ -99,7 +99,7 @@ function ItemOp({ op, ev, casas, hideMinPend = false }) {
   const muted  = isPend && !hideMinPend;
 
   const entSummary = (op.entradas || [])
-    .map(e => `${getCasaNome(casas, e.casa)} · ${e.entradaDisplay || e.entrada} @${e.odd}`)
+    .map(e => `${getCasaNome(casas, e.casa)} · ${e.entradaDisplay || e.entrada} @${fmtOdd(e.odd)}`)
     .join("  ·  ");
 
   return (
@@ -132,7 +132,7 @@ function ItemProtecao({ p, ev, casas }) {
           <span style={{ fontSize: 13, fontWeight: 600 }}>{ev.nome}</span>
         </div>
         <div style={{ fontSize: 11, color: G.textDim }}>
-          {getCasaNome(casas, p.casa)} · {p.entrada} @{p.odd} · {fmt(parseFloat(p.valor) || 0)}
+          {getCasaNome(casas, p.casa)} · {p.entrada} @{fmtOdd(p.odd)} · {fmt(parseFloat(p.valor) || 0)}
         </div>
       </div>
       <ValorLinha v={isPend ? null : lucro} />
@@ -151,7 +151,7 @@ function ItemAvulsa({ a, casas }) {
           <span style={{ fontSize: 13, fontWeight: 600 }}>{a.nome}</span>
         </div>
         <div style={{ fontSize: 11, color: G.textDim }}>
-          {getCasaNome(casas, a.casa)}{a.entrada ? ` · ${a.entrada}` : ""} @{a.odd} · {fmt(parseFloat(a.valor) || 0)}
+          {getCasaNome(casas, a.casa)}{a.entrada ? ` · ${a.entrada}` : ""} @{fmtOdd(a.odd)} · {fmt(parseFloat(a.valor) || 0)}
         </div>
       </div>
       <ValorLinha v={isPend ? null : lucro} />

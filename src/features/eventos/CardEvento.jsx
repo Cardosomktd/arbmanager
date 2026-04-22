@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
-import { fmt, fmtDate, getCasaNome } from "../../utils/format";
+import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
 import { lucroEfetivoOp, calcRetorno } from "../../utils/calculos";
 import { statusEvento, statusOp } from "../../utils/status";
 import { Badge } from "../../components/ui/Badge";
@@ -108,7 +108,7 @@ export function CardEvento({ evento, casas, onEditarEvento, onExcluirEvento, onA
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                         <span style={{ fontSize: 12, color: G.textDim }}>{getCasaNome(casas, p.casa)}</span>
                         <span style={{ fontSize: 12, color: G.text }}>· {p.entrada}</span>
-                        <span style={{ fontSize: 12, color: G.textMuted }}>@{p.odd}</span>
+                        <span style={{ fontSize: 12, color: G.textMuted }}>@{fmtOdd(p.odd)}</span>
                         <span style={{ fontSize: 12, color: G.textDim }}>{fmt(p.valor)}</span>
                         <span style={{ fontSize: 11, color: cor, fontWeight: 700 }}>{p.situacao.toUpperCase()}</span>
                       </div>

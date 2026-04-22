@@ -2,6 +2,14 @@ export function fmt(v) {
   return "R$ " + (Number(v) || 0).toFixed(2).replace(".", ",");
 }
 
+// Formata odd apenas para exibição — até 2 casas decimais, sem zeros desnecessários.
+// Exemplos: 2 → "2", 1.5 → "1.5", 1.8519 → "1.85", 3.0000 → "3"
+// NÃO usar para persistência/cálculo — apenas em JSX display.
+export function fmtOdd(v) {
+  const n = parseFloat(v) || 0;
+  return parseFloat(n.toFixed(2)).toString();
+}
+
 export function fmtDate(dt) {
   if (!dt) return "";
   // Strings sem horário ("2024-01-15") são tratadas como data local

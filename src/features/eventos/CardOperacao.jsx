@@ -1,5 +1,5 @@
 import { G } from "../../constants/colors";
-import { fmt, getCasaNome } from "../../utils/format";
+import { fmt, fmtOdd, getCasaNome } from "../../utils/format";
 import { lucroEfetivoOp } from "../../utils/calculos";
 import { statusOp } from "../../utils/status";
 import { resolveCategoria, CATEGORIAS } from "../../utils/categoriaOp";
@@ -128,7 +128,7 @@ export function CardOperacao({ op, casas, onEditar, onExcluir, onConcluir }) {
               <span style={{ color: G.textDim }}>{getCasaNome(casas, e.casa)}</span>
               <span style={{ color: G.textMuted, margin: "0 3px" }}>·</span>
               <span style={{ color: G.text }}>{e.entradaDisplay || e.entrada}</span>
-              <span style={{ color: G.textMuted, margin: "0 3px" }}>@{e.odd}</span>
+              <span style={{ color: G.textMuted, margin: "0 3px" }}>@{fmtOdd(e.odd)}</span>
               <span style={{ color: cor, fontWeight: 600 }}>{e.situacao.toUpperCase()}</span>
               {e.pa && <span style={{ color: G.accent, marginLeft: 4, fontSize: 10 }}>PA</span>}
               {e.tipo !== "normal" && <span style={{ color: G.yellow, marginLeft: 4, fontSize: 10 }}>{e.tipo === "freebet" ? "FB" : "BNS"}</span>}

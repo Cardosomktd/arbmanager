@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
-import { fmt, fmtDate, getCasaNome } from "../../utils/format";
+import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { statusEvento } from "../../utils/status";
 import { Badge } from "../../components/ui/Badge";
@@ -299,7 +299,7 @@ export function TelaEventos({ data, setData }) {
                   <div style={{ fontSize: 12 }}>
                     <span style={{ color: G.textDim }}>{getCasaNome(data.casas || [], a.casa)}</span>
                     {a.entrada && <><span style={{ color: G.textMuted, margin: "0 4px" }}>·</span><span style={{ color: G.text }}>{a.entrada}</span></>}
-                    <span style={{ color: G.textMuted, margin: "0 4px" }}>@{a.odd}</span>
+                    <span style={{ color: G.textMuted, margin: "0 4px" }}>@{fmtOdd(a.odd)}</span>
                     <span style={{ color: G.textDim }}>{fmt(a.valor)}</span>
                     <span style={{ color: cor, fontWeight: 700, marginLeft: 6 }}>{a.situacao.toUpperCase()}</span>
                     <span style={{ color: G.textMuted, margin: "0 4px" }}>·</span>

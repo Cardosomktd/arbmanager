@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { G } from "../../../constants/colors";
 import { uid } from "../../../storage";
-import { fmt, getCasaNome } from "../../../utils/format";
+import { fmt, fmtOdd, getCasaNome } from "../../../utils/format";
 import { calcRetorno } from "../../../utils/calculos";
 import { resolveCategoria, CATEGORIAS } from "../../../utils/categoriaOp";
 import { Modal } from "../../../components/ui/Modal";
@@ -45,12 +45,6 @@ const BANNERS = {
     texto: "🎲 Chance de Duplo — cobertura de dois resultados. Sem lucro mínimo garantido.",
   },
 };
-
-// Formata odd com até 4 casas decimais, removendo zeros finais desnecessários.
-// Exemplos: 2 → "2", 1.5 → "1.5", 1.8571428… → "1.8571", 2.1234 → "2.1234"
-function fmtOdd(n) {
-  return parseFloat(n.toFixed(4)).toString();
-}
 
 function entradaVazia() {
   return { id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "", odd: "", valor: "", tipo: "normal", situacao: "pendente", pa: false };
@@ -184,7 +178,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
         const oddCalc = val > 0
           ? e.tipo === "freebet" ? ret / val + 1 : ret / val
           : 0;
-        updated.odd = oddCalc > 0 ? fmtOdd(oddCalc) : "";
+        updated.odd = oddCalc > 0 ? String(oddCalc) : "";
       }
       return updated;
     }));
@@ -199,7 +193,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
       const oddCalc = val > 0
         ? e.tipo === "freebet" ? ret / val + 1 : ret / val
         : 0;
-      return { ...e, retornoStr: retStr, odd: oddCalc > 0 ? fmtOdd(oddCalc) : "" };
+      return { ...e, retornoStr: retStr, odd: oddCalc > 0 ? String(oddCalc) : "" };
     }));
   }
 
@@ -427,7 +421,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                         padding: "8px 12px", color: e.odd ? G.textDim : G.textMuted,
                         fontSize: 13, minHeight: 37, display: "flex", alignItems: "center",
                       }}>
-                        {e.odd || "—"}
+                        {e.odd ? fmtOdd(e.odd) : "—"}
                       </div>
                     </div>
                   ) : (

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { G } from "../../../constants/colors";
 import { calcRetorno } from "../../../utils/calculos";
-import { getCasaNome } from "../../../utils/format";
-import { fmt } from "../../../utils/format";
+import { fmt, fmtOdd, getCasaNome } from "../../../utils/format";
 import { Modal } from "../../../components/ui/Modal";
 import { Btn } from "../../../components/ui/Btn";
 
@@ -53,7 +52,7 @@ export function ModalConcluirOp({ open, onClose, op, casas, onConcluir }) {
                     {getCasaNome(casas, e.casa)} · {e.entradaDisplay || e.entrada}
                   </div>
                   <div style={{ fontSize: 11, color: G.textDim }}>
-                    @{e.odd} · {fmt(e.valor)}{e.tipo !== "normal" ? ` · ${e.tipo === "freebet" ? "FB" : "BNS"}` : ""}
+                    @{fmtOdd(e.odd)} · {fmt(e.valor)}{e.tipo !== "normal" ? ` · ${e.tipo === "freebet" ? "FB" : "BNS"}` : ""}
                   </div>
                   {e.multipla && e.multiplaDesc && (
                     <div style={{ fontSize: 11, color: G.yellow, marginTop: 3 }}>
