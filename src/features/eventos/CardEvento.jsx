@@ -29,7 +29,7 @@ export function CardEvento({ evento, casas, onEditarEvento, onExcluirEvento, onA
   const lucro = lucroOps + lucroProts;
 
   const st = statusEvento(evento);
-  const statusCor   = { vazio: "gray", pendente: "yellow", andamento: "blue", finalizado: lucro >= 0 ? "green" : "red" }[st];
+  const statusCor   = { vazio: "gray", pendente: "yellow", andamento: "blue", finalizado: "green" }[st];
   const statusLabel = { vazio: "Sem operações", pendente: "Pendente", andamento: "Em andamento", finalizado: "Finalizado" }[st];
 
   const todasEntradas = (evento.operacoes || []).flatMap(op => op.entradas || []);

@@ -12,6 +12,7 @@ import { ModalMovimento } from "./modals/ModalMovimento";
 export function TelaCasas({ data, setData }) {
   const [nomeCasa,     setNomeCasa]     = useState("");
   const [saldoInicial, setSaldoInicial] = useState("");
+  const [titular,      setTitular]      = useState("");
   const [editId,       setEditId]       = useState(null);
   const [modalMov,     setModalMov]     = useState(false);
   const [casaDetalhe,  setCasaDetalhe]  = useState(null);
@@ -20,12 +21,12 @@ export function TelaCasas({ data, setData }) {
   function salvarCasa() {
     if (!nomeCasa.trim()) return;
     if (editId) {
-      setData(d => ({ ...d, casas: d.casas.map(c => c.id === editId ? { ...c, nome: nomeCasa.trim(), saldoInicial: parseFloat(saldoInicial) || 0 } : c) }));
+      setData(d => ({ ...d, casas: d.casas.map(c => c.id === editId ? { ...c, nome: nomeCasa.trim(), saldoInicial: parseFloat(saldoInicial) || 0, titular: titular.trim() } : c) }));
       setEditId(null);
     } else {
-      setData(d => ({ ...d, casas: [...d.casas, { id: uid(), nome: nomeCasa.trim(), saldoInicial: parseFloat(saldoInicial) || 0, ativa: true }] }));
+      setData(d => ({ ...d, casas: [...d.casas, { id: uid(), nome: nomeCasa.trim(), saldoInicial: parseFloat(saldoInicial) || 0, titular: titular.trim(), ativa: true }] }));
     }
-    setNomeCasa(""); setSaldoInicial("");
+    setNomeCasa(""); setSaldoInicial(""); setTitular("");
   }
 
   function salvarMovimento(mov) {
@@ -111,6 +112,7 @@ export function TelaCasas({ data, setData }) {
                       {temAlerta && <span style={{ fontSize: 10, color: G.red, background: "#ff444422", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>DEP. PENDENTE</span>}
                     </div>
                     <div style={{ fontSize: 11, color: G.textDim, marginTop: 1 }}>
+                      {c.titular && <span style={{ marginRight: 6 }}>👤 {c.titular} ·</span>}
                       Inicial: {fmt(c.saldoInicial)} · {movs.length} movimentação{movs.length !== 1 ? "ões" : ""}
                     </div>
                   </div>
@@ -121,7 +123,7 @@ export function TelaCasas({ data, setData }) {
                     <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 700, color: saldo >= 0 ? G.green : G.red }}>{fmt(saldo)}</div>
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setEditId(c.id); setNomeCasa(c.nome); setSaldoInicial(String(c.saldoInicial || "")); setCasaDetalhe(c.id); }}>✏️</Btn>
+                    <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setEditId(c.id); setNomeCasa(c.nome); setSaldoInicial(String(c.saldoInicial || "")); setTitular(c.titular || ""); setCasaDetalhe(c.id); }}>✏️</Btn>
                     <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); if (!window.confirm("Tem certeza que deseja arquivar esta casa?")) return; setData(d => ({ ...d, casas: d.casas.map(x => x.id === c.id ? { ...x, ativa: false } : x) })); }}>📦</Btn>
                   </div>
                 </div>
@@ -133,8 +135,9 @@ export function TelaCasas({ data, setData }) {
                     /* ── Edição inline ── */
                     <div>
                       <div style={{ fontSize: 12, color: G.textDim, fontWeight: 600, marginBottom: 10 }}>✏️ Editar casa</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 10, marginBottom: 10 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 140px", gap: 10, marginBottom: 10 }}>
                         <Input label="Nome" value={nomeCasa} onChange={setNomeCasa} required />
+                        <Input label="Titular da conta" value={titular} onChange={setTitular} placeholder="Ex: João Silva" />
                         <Input label="Saldo inicial (R$)" value={saldoInicial} onChange={setSaldoInicial} type="number" />
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
@@ -176,8 +179,9 @@ export function TelaCasas({ data, setData }) {
       {!editId && (
         <Card style={{ marginTop: 16 }}>
           <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 13 }}>➕ Nova casa</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 140px", gap: 12 }}>
             <Input label="Nome" value={nomeCasa} onChange={setNomeCasa} placeholder="Ex: Betano" required />
+            <Input label="Titular da conta" value={titular} onChange={setTitular} placeholder="Ex: João Silva" />
             <Input label="Saldo inicial" value={saldoInicial} onChange={setSaldoInicial} type="number" placeholder="0,00" />
           </div>
           <div style={{ marginTop: 12 }}>

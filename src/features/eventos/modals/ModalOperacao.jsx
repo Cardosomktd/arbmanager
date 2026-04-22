@@ -134,6 +134,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
   const [fbCondicao,  setFbCondicao]  = useState("qualquer");
   const [fbGatilhoId, setFbGatilhoId] = useState("");
   const [fbTipo,      setFbTipo]      = useState("freebet");
+  const [modoRetorno, setModoRetorno] = useState(false);
   const [erro,        setErro]        = useState("");
 
   useEffect(() => {
@@ -156,6 +157,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
       setNumEntradas(2); setEntradas([entradaVazia(), entradaVazia()]);
       setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
     }
+    setModoRetorno(false);
     setErro("");
   }, [open, editOp]);
 
@@ -169,6 +171,33 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
 
   function upd(i, f, v) {
     setEntradas(prev => prev.map((e, idx) => idx === i ? { ...e, [f]: v } : e));
+  }
+
+  // Atualiza odd a partir do retorno digitado (modo retorno)
+  function updRetorno(i, retStr) {
+    setEntradas(prev => prev.map((e, idx) => {
+      if (idx !== i) return e;
+      const ret = parseFloat(retStr.replace(",", ".")) || 0;
+      const val = parseFloat(e.valor) || 0;
+      const oddCalc = val > 0
+        ? e.tipo === "freebet" ? ret / val + 1 : ret / val
+        : 0;
+      return { ...e, retornoStr: retStr, odd: oddCalc > 0 ? String(oddCalc.toFixed(2)) : "" };
+    }));
+  }
+
+  // Alterna modo e inicializa retornoStr com valor atual
+  function toggleModoRetorno() {
+    setModoRetorno(prev => {
+      const next = !prev;
+      if (next) {
+        setEntradas(ents => ents.map(e => ({
+          ...e,
+          retornoStr: (e.odd && e.valor) ? String(calcRetorno(e).toFixed(2)) : "",
+        })));
+      }
+      return next;
+    });
   }
 
   function salvar() {
@@ -268,8 +297,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
         </div>
       ) : (
         <>
-          {/* Número de entradas */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          {/* Número de entradas + toggle odd/retorno */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
             <div style={{ fontSize: 12, color: G.textDim }}>Entradas:</div>
             <div style={{ display: "flex", gap: 4 }}>
               {[1, 2, 3, 4, 5, 6, 7].map(n => (
@@ -284,6 +313,15 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                 </button>
               ))}
             </div>
+            <button onClick={toggleModoRetorno} style={{
+              marginLeft: "auto", padding: "4px 10px", borderRadius: 6,
+              border: `1px solid ${modoRetorno ? G.accent : G.border}`,
+              background: modoRetorno ? "#00d4ff11" : "transparent",
+              color: modoRetorno ? G.accent : G.textDim,
+              fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+            }}>
+              {modoRetorno ? "↩ Modo: Retorno" : "↪ Modo: Odd"}
+            </button>
           </div>
 
           {/* Lista de entradas */}
@@ -326,7 +364,24 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                     )}
                   </div>
 
-                  <Input label="Odd" value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required inputMode="decimal" />
+                  {/* Odd (editável) ou Retorno (editável) dependendo do modo */}
+                  {modoRetorno ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                        Retorno (R$) <span style={{ color: G.red }}>*</span>
+                      </label>
+                      <input
+                        value={e.retornoStr ?? ""}
+                        onChange={ev => updRetorno(i, ev.target.value)}
+                        placeholder="Ex: 250,00"
+                        inputMode="decimal"
+                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, outline: "none" }}
+                      />
+                      <div style={{ fontSize: 10, color: G.textMuted, marginTop: 1 }}>Odd: {e.odd || "—"}</div>
+                    </div>
+                  ) : (
+                    <Input label="Odd" value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required inputMode="decimal" />
+                  )}
                   <Input label="Valor (R$)" value={e.valor} onChange={v => upd(i, "valor", v)} type="number" placeholder="0,00" required />
                   {/* Situação removida da criação — entradas nascem como pendente */}
                   {/* Tipo visível somente em Ext. Freebet */}
@@ -373,13 +428,10 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                   </div>
                 )}
 
-                {/* Retorno estimado */}
-                {(e.odd && e.valor) && (
+                {/* Retorno estimado — só no modo Odd (no modo Retorno o campo já é editável) */}
+                {(!modoRetorno && e.odd && e.valor) && (
                   <div style={{ textAlign: "right", marginTop: 6 }}>
-                    <span style={{ fontSize: 11, color: G.textDim }}>Retorno: </span>
-                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, fontWeight: 700, color: G.green }}>
-                      {fmt(calcRetorno(e))}
-                    </span>
+                    <span style={{ fontSize: 11, color: G.textDim }}>Retorno: {fmt(calcRetorno(e))}</span>
                   </div>
                 )}
               </div>

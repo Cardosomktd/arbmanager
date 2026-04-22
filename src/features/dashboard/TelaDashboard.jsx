@@ -4,6 +4,7 @@ import { fmt, fmtDate, getCasaNome } from "../../utils/format";
 import { lucroEfetivoOp } from "../../utils/calculos";
 import { statusOp } from "../../utils/status";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
+import { lucroCassino } from "../../utils/lucroCassino";
 import { Card } from "../../components/ui/Card";
 import { ModalDetalhesMes } from "./modals/ModalDetalhesMes";
 
@@ -32,14 +33,17 @@ export function TelaDashboard({ data }) {
   const totalOps        = todasOpsDoMes.length;
 
   const avulsasDoMes    = (data.apostasAvulsas || []).filter(a => { const d = new Date(a.data); return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes; });
+  const cassinosDoMes   = (data.cassinos || []).filter(c => { const d = new Date(c.data); return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes; });
   const protecoesMes    = todosEventos.filter(ev => opDoMes(ev)).flatMap(ev => ev.protecoes || []);
   const lucroMes        = todasOpsDoMes.reduce((s, { op }) => s + lucroEfetivoOp(op), 0)
     + avulsasDoMes.reduce((s, a) => s + lucroAvulsa(a), 0)
+    + cassinosDoMes.reduce((s, c) => s + lucroCassino(c), 0)
     + protecoesMes.reduce((s, p) => s + lucroProtecaoDash(p), 0);
 
   const hojeStr  = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
   const lucroHoje = todosEventos.flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev }))).filter(({ ev }) => (ev.data || "").slice(0, 10) === hojeStr).reduce((s, { op }) => s + lucroEfetivoOp(op), 0)
     + (data.apostasAvulsas || []).filter(a => (a.data || "").slice(0, 10) === hojeStr).reduce((s, a) => s + lucroAvulsa(a), 0)
+    + (data.cassinos || []).filter(c => (c.data || "").slice(0, 10) === hojeStr).reduce((s, c) => s + lucroCassino(c), 0)
     + todosEventos.filter(ev => (ev.data || "").slice(0, 10) === hojeStr).flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecaoDash(p), 0);
 
   const diasComOps   = new Set([
@@ -52,6 +56,7 @@ export function TelaDashboard({ data }) {
   const mesesDisp = [...new Set([
     ...todosEventos.map(ev => { const d = new Date(ev.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
     ...(data.apostasAvulsas || []).map(a => { const d = new Date(a.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
+    ...(data.cassinos || []).map(c => { const d = new Date(c.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
   ])].sort().reverse();
   const mesMesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
   if (!mesesDisp.includes(mesMesAtual)) mesesDisp.unshift(mesMesAtual);
@@ -60,10 +65,11 @@ export function TelaDashboard({ data }) {
   const lucrosPorMes = mesesAnteriores.map(m => {
     const [y, mo] = m.split("-").map(Number);
     const evDoMesM  = todosEventos.filter(ev => { const d = new Date(ev.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; });
-    const lucroOpsM = evDoMesM.flatMap(ev => ev.operacoes || []).reduce((s, op) => s + lucroEfetivoOp(op), 0);
-    const lucroAvM  = (data.apostasAvulsas || []).filter(a => { const d = new Date(a.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, a) => s + lucroAvulsa(a), 0);
+    const lucroOpsM  = evDoMesM.flatMap(ev => ev.operacoes || []).reduce((s, op) => s + lucroEfetivoOp(op), 0);
+    const lucroAvM   = (data.apostasAvulsas || []).filter(a => { const d = new Date(a.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, a) => s + lucroAvulsa(a), 0);
+    const lucroCasM  = (data.cassinos || []).filter(c => { const d = new Date(c.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, c) => s + lucroCassino(c), 0);
     const lucroProtM = evDoMesM.flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecaoDash(p), 0);
-    return lucroOpsM + lucroAvM + lucroProtM;
+    return lucroOpsM + lucroAvM + lucroCasM + lucroProtM;
   });
   const mediaUltimosMeses = lucrosPorMes.length > 0 ? lucrosPorMes.reduce((a, b) => a + b, 0) / lucrosPorMes.length : null;
 
@@ -72,12 +78,13 @@ export function TelaDashboard({ data }) {
     const dia  = i + 1;
     const lOps = todasOpsDoMes.filter(({ ev }) => new Date(ev.data).getDate() === dia).reduce((s, { op }) => s + lucroEfetivoOp(op), 0);
     const lAv  = avulsasDoMes.filter(a => new Date(a.data).getDate() === dia).reduce((s, a) => s + lucroAvulsa(a), 0);
+    const lCas = cassinosDoMes.filter(c => new Date(c.data).getDate() === dia).reduce((s, c) => s + lucroCassino(c), 0);
     const lProt = protecoesMes.filter(p => {
       // Proteções são indexadas pelo evento — busca o evento-pai para pegar a data
       const ev = todosEventos.find(ev => (ev.protecoes || []).some(pp => pp.id === p.id));
       return ev && new Date(ev.data).getDate() === dia;
     }).reduce((s, p) => s + lucroProtecaoDash(p), 0);
-    return { dia, lucro: lOps + lAv + lProt };
+    return { dia, lucro: lOps + lAv + lCas + lProt };
   });
   const maxLucro = Math.max(...lucrosPorDia.map(d => Math.abs(d.lucro)), 1);
 
@@ -175,7 +182,7 @@ export function TelaDashboard({ data }) {
               {ultimasOps.slice(0, 8).map(({ op, ev }) => {
                 const st    = statusOp(op);
                 const lucro = lucroEfetivoOp(op);
-                const stCor = { pendente: G.yellow, parcial: G.accent, finalizada: lucro >= 0 ? G.green : G.red }[st] ?? G.textMuted;
+                const stCor = { pendente: G.yellow, parcial: G.accent, finalizada: G.green }[st] ?? G.textMuted;
                 const stLabel = { pendente: "Pendente", parcial: "Em andamento", finalizada: "Finalizado" }[st] ?? st;
                 return (
                   <div key={op.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: G.surface2, borderRadius: 8, padding: "10px 14px", border: `1px solid ${G.border}` }}>

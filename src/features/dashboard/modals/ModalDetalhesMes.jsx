@@ -3,6 +3,7 @@ import { G } from "../../../constants/colors";
 import { fmt, fmtDate, getCasaNome } from "../../../utils/format";
 import { lucroEfetivoOp } from "../../../utils/calculos";
 import { lucroAvulsa } from "../../../utils/lucroAvulsa";
+import { lucroCassino } from "../../../utils/lucroCassino";
 import { statusOp } from "../../../utils/status";
 import { resolveCategoria, CATEGORIAS } from "../../../utils/categoriaOp";
 import { Modal } from "../../../components/ui/Modal";
@@ -195,11 +196,11 @@ function Secao({ titulo, cor, count, subtotal, aberto, onToggle, children }) {
 export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   const [anoSel, mesMes] = (mesSel || "2026-01").split("-").map(Number);
   const [abertas, setAbertas] = useState(
-    { simples: true, paraFB: true, extFB: true, duplo: true, protecoes: true, avulsas: true }
+    { simples: true, paraFB: true, extFB: true, duplo: true, protecoes: true, avulsas: true, cassinos: true }
   );
 
   useEffect(() => {
-    if (open) setAbertas({ simples: true, paraFB: true, extFB: true, duplo: true, protecoes: true, avulsas: true });
+    if (open) setAbertas({ simples: true, paraFB: true, extFB: true, duplo: true, protecoes: true, avulsas: true, cassinos: true });
   }, [open]);
 
   const toggle = k => setAbertas(p => ({ ...p, [k]: !p[k] }));
@@ -212,6 +213,7 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
 
   const todosEventos = (data.eventos || []).filter(ev => doMes(ev.data));
   const avulsasDoMes = (data.apostasAvulsas || []).filter(a => doMes(a.data));
+  const cassinosDoMes = (data.cassinos || []).filter(c => doMes(c.data));
 
   // ── Categorização via resolveCategoria ────────────────────────────────────
   const opsSimples = [], opsParaFB = [], opsExtFB = [], opsDuplo = [];
@@ -264,6 +266,9 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   // Apostas avulsas/Bingo (pendente → 0, via lucroAvulsa)
   const lucroAvulsas = sum(avulsasDoMes, a => lucroAvulsa(a));
 
+  // Cassinos — lucro direto
+  const lucroCassinos = sum(cassinosDoMes, c => lucroCassino(c));
+
   // ── KPIs do topo ─────────────────────────────────────────────────────────
   //
   // Lucro atual:
@@ -271,7 +276,7 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   //   + proteções finalizadas + avulsas/Bingo finalizados
   //   SEM somar o valor das freebets
   const todosOps   = [...opsSimples, ...opsParaFB, ...opsExtFB, ...opsDuplo];
-  const lucroAtual = r2(sum(todosOps, ({ op }) => lucroEfetivoOp(op)) + lucroProtecoes + lucroAvulsas);
+  const lucroAtual = r2(sum(todosOps, ({ op }) => lucroEfetivoOp(op)) + lucroProtecoes + lucroAvulsas + lucroCassinos);
 
   // Freebets disponíveis: valor nominal das freebets cujas condições foram atingidas
   const fbDisponivel    = fbNominalReal;
@@ -411,6 +416,33 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
         {avulsasDoMes.map(a => (
           <ItemAvulsa key={a.id} a={a} casas={casas} />
         ))}
+      </Secao>
+
+      {/* ── Cassino ───────────────────────────────────────────────────────── */}
+      <Secao
+        titulo="🎲 CASSINO" cor={G.green}
+        count={cassinosDoMes.length} subtotal={lucroCassinos}
+        aberto={abertas.cassinos} onToggle={() => toggle("cassinos")}
+      >
+        {cassinosDoMes.map(c => {
+          const lucro = lucroCassino(c);
+          const tipoLabel = { giros: "🎡 Giros", bonus: "🎰 Bônus", cashback: "💰 Cashback" }[c.tipoBeneficio] ?? "🎲";
+          return (
+            <LinhaItem key={c.id}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{c.nome}</span>
+                  <span style={{ fontSize: 10, color: G.textMuted }}>{fmtDate(c.data)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: G.textDim }}>
+                  {getCasaNome(casas, c.casa)} · {tipoLabel}
+                  {c.valorApostado > 0 && ` · apostado: ${fmt(c.valorApostado)}`}
+                </div>
+              </div>
+              <ValorLinha v={lucro} />
+            </LinhaItem>
+          );
+        })}
       </Secao>
 
     </Modal>

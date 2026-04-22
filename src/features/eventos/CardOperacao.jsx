@@ -44,7 +44,7 @@ function getFreebetInfo(op) {
     }
   }
 
-  return { valor: fb.valor, status };
+  return { valor: fb.valor, status, tipoBeneficio: fb.tipoBeneficio || "freebet" };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ export function CardOperacao({ op, casas, onEditar, onExcluir, onConcluir }) {
   const duploGreen = resultadosGreen.size >= 2;
 
   const statusLabel = { pendente: "Pendente", parcial: "Em andamento", finalizada: "Finalizada" }[st] ?? st;
-  const statusCor   = { pendente: "yellow", parcial: "blue", finalizada: lucro >= 0 ? "green" : "red" }[st];
+  const statusCor   = { pendente: "yellow", parcial: "blue", finalizada: "green" }[st];
 
   // Cores e ícone da info de freebet
   const FB_STYLE = {
@@ -97,7 +97,7 @@ export function CardOperacao({ op, casas, onEditar, onExcluir, onConcluir }) {
           {/* Info da freebet gerada */}
           {fbInfo && fbStyle && (
             <span style={{ fontSize: 11, color: fbStyle.cor }}>
-              {fbStyle.icon} Freebet {fmt(fbInfo.valor)} — {fbStyle.label}
+              {fbStyle.icon} {{ freebet: "Free Bet", bonus: "Bônus", cashback: "Cashback" }[fbInfo.tipoBeneficio] ?? "Free Bet"} {fmt(fbInfo.valor)} — {fbStyle.label}
             </span>
           )}
         </div>

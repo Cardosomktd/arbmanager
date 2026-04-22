@@ -10,7 +10,9 @@ import { CardEvento } from "./CardEvento";
 import { ModalEvento } from "./modals/ModalEvento";
 import { ModalOperacao } from "./modals/ModalOperacao";
 import { ModalApostaAvulsa } from "./modals/ModalApostaAvulsa";
+import { ModalCassino } from "./modals/ModalCassino";
 import { ModalProtecao } from "./modals/ModalProtecao";
+import { lucroCassino } from "../../utils/lucroCassino";
 
 export function TelaEventos({ data, setData }) {
   const [modalEvento,      setModalEvento]      = useState(false);
@@ -19,6 +21,7 @@ export function TelaEventos({ data, setData }) {
   const [editOp,           setEditOp]           = useState(null);
   const [eventoAlvoId,     setEventoAlvoId]     = useState(null);
   const [modalAvulsa,      setModalAvulsa]      = useState(false);
+  const [modalCassino,     setModalCassino]     = useState(false);
   const [modalProtecao,    setModalProtecao]    = useState(false);
   const [eventoProtecaoId, setEventoProtecaoId] = useState(null);
   const [filtroStatus,     setFiltroStatus]     = useState("pendentes"); // "pendentes" | "concluidos"
@@ -112,6 +115,15 @@ export function TelaEventos({ data, setData }) {
     setData(d => ({ ...d, apostasAvulsas: (d.apostasAvulsas || []).map(a => a.id !== id ? a : { ...a, situacao }) }));
   }
 
+  // ── Cassinos ─────────────────────────────────────────────────────────────────
+  function salvarCassino(cassino) {
+    setData(d => ({ ...d, cassinos: [...(d.cassinos || []), cassino] }));
+  }
+  function excluirCassino(id) {
+    if (confirm("Excluir este registro de cassino?"))
+      setData(d => ({ ...d, cassinos: (d.cassinos || []).filter(c => c.id !== id) }));
+  }
+
   // ── Alertas: eventos atrasados (2h+ com ops pendentes) ───────────────────────
   const agora = new Date();
   const alertasAtraso = (data.eventos || []).filter(ev => {
@@ -142,9 +154,15 @@ export function TelaEventos({ data, setData }) {
       return passaStatus && passaBusca;
     });
 
+  // Cassinos: sempre aparecem nos concluídos (não têm estado pendente)
+  const cassinosFiltrados = filtroStatus === "concluidos"
+    ? [...(data.cassinos || [])].filter(c => !busca || c.nome.toLowerCase().includes(buscaLC))
+    : [];
+
   const lancamentos = [
-    ...eventosFiltrados.map(e => ({ tipo: "evento", item: e })),
-    ...avulsasFiltradas.map(a => ({ tipo: "avulsa", item: a })),
+    ...eventosFiltrados.map(e => ({ tipo: "evento",  item: e })),
+    ...avulsasFiltradas.map(a => ({ tipo: "avulsa",  item: a })),
+    ...cassinosFiltrados.map(c => ({ tipo: "cassino", item: c })),
   ].sort((a, b) => filtroStatus === "concluidos"
     ? new Date(b.item.data) - new Date(a.item.data)   // mais recente primeiro
     : new Date(a.item.data) - new Date(b.item.data));  // mais próximo primeiro
@@ -159,6 +177,7 @@ export function TelaEventos({ data, setData }) {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <Btn variant="ghost" onClick={() => setModalAvulsa(true)}>🎰 Bingo</Btn>
+          <Btn variant="ghost" onClick={() => setModalCassino(true)}>🎲 Cassino</Btn>
           <Btn onClick={() => { setEditEvento(null); setModalEvento(true); }}>+ Novo evento</Btn>
         </div>
       </div>
@@ -231,12 +250,42 @@ export function TelaEventos({ data, setData }) {
             />
           );
 
+          // Cassino
+          if (tipo === "cassino") {
+            const c = item;
+            const lucro = lucroCassino(c);
+            const tipoLabel = { giros: "🎡 Giros", bonus: "🎰 Bônus", cashback: "💰 Cashback" }[c.tipoBeneficio] ?? "🎲";
+            return (
+              <Card key={c.id} style={{ border: "1px solid #00e67622" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Badge cor="green">🎲 Cassino</Badge>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>{c.nome}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: G.textDim, marginBottom: 4 }}>{fmtDate(c.data)}</div>
+                    <div style={{ fontSize: 12 }}>
+                      <span style={{ color: G.textDim }}>{getCasaNome(data.casas || [], c.casa)}</span>
+                      <span style={{ color: G.textMuted, margin: "0 4px" }}>·</span>
+                      <span style={{ color: G.text }}>{tipoLabel}</span>
+                      {c.valorApostado > 0 && <><span style={{ color: G.textMuted, margin: "0 4px" }}>·</span><span style={{ color: G.textDim }}>apostado: {fmt(c.valorApostado)}</span></>}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, fontWeight: 700, color: lucro >= 0 ? G.green : G.red }}>{fmt(lucro)}</div>
+                    <Btn size="sm" variant="danger" onClick={() => excluirCassino(c.id)}>🗑️</Btn>
+                  </div>
+                </div>
+              </Card>
+            );
+          }
+
           // Aposta avulsa
           const a = item;
-          const cor     = a.situacao === "green" ? G.green : a.situacao === "red" ? G.red : G.yellow;
-          const retorno = a.situacao === "green"
-            ? (parseFloat(String(a.odd).replace(",", ".")) || 0) * (parseFloat(a.valor) || 0)
-            : a.situacao === "red" ? -(parseFloat(a.valor) || 0) : 0;
+          const cor              = a.situacao === "green" ? G.green : a.situacao === "red" ? G.red : G.yellow;
+          const retornoPotencial = (parseFloat(String(a.odd).replace(",", ".")) || 0) * (parseFloat(a.valor) || 0);
+          const retorno          = a.situacao === "green" ? retornoPotencial
+                                 : a.situacao === "red"   ? -(parseFloat(a.valor) || 0) : 0;
 
           return (
             <Card key={a.id} style={{ border: "1px solid #aa66ff33" }}>
@@ -253,6 +302,8 @@ export function TelaEventos({ data, setData }) {
                     <span style={{ color: G.textMuted, margin: "0 4px" }}>@{a.odd}</span>
                     <span style={{ color: G.textDim }}>{fmt(a.valor)}</span>
                     <span style={{ color: cor, fontWeight: 700, marginLeft: 6 }}>{a.situacao.toUpperCase()}</span>
+                    <span style={{ color: G.textMuted, margin: "0 4px" }}>·</span>
+                    <span style={{ color: G.textDim }}>Retorno: {fmt(retornoPotencial)}</span>
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -276,6 +327,7 @@ export function TelaEventos({ data, setData }) {
       <ModalEvento       open={modalEvento}   onClose={() => setModalEvento(false)}   onSalvar={salvarEvento}  editEvento={editEvento} eventosList={data.eventos || []} />
       <ModalOperacao     open={modalOp}       onClose={() => setModalOp(false)}       onSalvar={salvarOp}      casas={data.casas || []} editOp={editOp} evento={(data.eventos || []).find(e => e.id === eventoAlvoId)} />
       <ModalApostaAvulsa open={modalAvulsa}   onClose={() => setModalAvulsa(false)}   onSalvar={salvarAposta}  casas={data.casas || []} />
+      <ModalCassino      open={modalCassino}  onClose={() => setModalCassino(false)}  onSalvar={salvarCassino} casas={data.casas || []} />
       <ModalProtecao     open={modalProtecao} onClose={() => setModalProtecao(false)} onSalvar={salvarProtecao} casas={data.casas || []} evento={(data.eventos || []).find(e => e.id === eventoProtecaoId)} />
     </div>
   );

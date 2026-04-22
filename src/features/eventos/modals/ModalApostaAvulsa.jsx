@@ -53,11 +53,11 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
       )}
 
       <div style={{ background: "#aa66ff0d", border: "1px solid #aa66ff33", borderRadius: 8, padding: "8px 12px", marginBottom: 16, fontSize: 12, color: "#cc88ff" }}>
-        🎲 Registre uma aposta pontual em um único resultado, sem vínculo com evento específico.
+        🎲 Cadastre aqui a sua múltipla.
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <Input label="Data" value={data} onChange={setData} type="date" required />
+        <Input label="Data" value={data} onChange={setData} type="date" required placeholder="Informe a data do último evento da múltipla" />
 
         <Input
           label="Casa"
