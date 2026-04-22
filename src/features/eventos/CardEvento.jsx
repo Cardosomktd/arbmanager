@@ -2,7 +2,7 @@ import { useState } from "react";
 import { G } from "../../constants/colors";
 import { fmt, fmtDate, getCasaNome } from "../../utils/format";
 import { lucroEfetivoOp, calcRetorno } from "../../utils/calculos";
-import { statusEvento } from "../../utils/status";
+import { statusEvento, statusOp } from "../../utils/status";
 import { Badge } from "../../components/ui/Badge";
 import { Btn } from "../../components/ui/Btn";
 import { Card } from "../../components/ui/Card";
@@ -133,7 +133,10 @@ export function CardEvento({ evento, casas, onEditarEvento, onExcluirEvento, onA
             {(evento.operacoes || []).length === 0 && (
               <div style={{ textAlign: "center", padding: "12px", color: G.textMuted, fontSize: 13 }}>Nenhuma operação neste evento ainda.</div>
             )}
-            {(evento.operacoes || []).map((op, i) => (
+            {[...(evento.operacoes || [])].sort((a, b) => {
+              const ord = { pendente: 0, parcial: 1, finalizada: 2, vazia: 3 };
+              return (ord[statusOp(a)] ?? 9) - (ord[statusOp(b)] ?? 9);
+            }).map((op, i) => (
               <div key={op.id}>
                 <div style={{ fontSize: 11, color: G.textMuted, marginBottom: 4, fontWeight: 600 }}>OPERAÇÃO {i + 1}</div>
                 <CardOperacao

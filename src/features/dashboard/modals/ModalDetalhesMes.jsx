@@ -239,11 +239,11 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   // Procedimento Freebet — freebets geradas (65% de extração)
   // Realizadas: condição já atingida | Estimadas: não atingida E op não finalizada
   const fbNominalReal = sum(
-    opsParaFB.filter(({ op }) => fbAtingida(op)),
+    opsParaFB.filter(({ op }) => fbAtingida(op) && op.geraFreebet?.tipoBeneficio !== "cashback"),
     ({ op }) => op.geraFreebet?.valor || 0
   );
   const fbNominalEst = sum(
-    opsParaFB.filter(({ op }) => !fbAtingida(op) && !isFinal(op)),
+    opsParaFB.filter(({ op }) => !fbAtingida(op) && !isFinal(op) && op.geraFreebet?.tipoBeneficio !== "cashback"),
     ({ op }) => op.geraFreebet?.valor || 0
   );
   const fbExtReal = r2(fbNominalReal * 0.65);

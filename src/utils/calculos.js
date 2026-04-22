@@ -23,6 +23,26 @@ function chaveResultado(e) {
   return (e.entradaDisplay || e.entrada || "").trim().toLowerCase();
 }
 
+// Retorna true se a condição de geração de benefício (freebet ou cashback) foi atingida.
+function condicaoAtingida(op) {
+  if (!op.geraFreebet) return false;
+  const { condicao, entradaGatilhoId } = op.geraFreebet;
+  const ents = op.entradas || [];
+  if (entradaGatilhoId) {
+    const g = ents.find(e => e.id === entradaGatilhoId);
+    if (!g || g.situacao === "pendente") return false;
+    if (condicao === "qualquer") return true;
+    return condicao === g.situacao;
+  }
+  if (!ents.every(e => e.situacao !== "pendente")) return false;
+  const temGreen = ents.some(e => e.situacao === "green");
+  const temRed   = ents.some(e => e.situacao === "red");
+  if (condicao === "qualquer") return true;
+  if (condicao === "green")   return temGreen;
+  if (condicao === "red")     return temRed && !temGreen;
+  return false;
+}
+
 export function calcLucroMinOp(op) {
   const ents = op.entradas || [];
 
@@ -50,7 +70,12 @@ export function calcLucroMinOp(op) {
   ];
 
   const minRet = retornos.length ? Math.min(...retornos) : 0;
-  return minRet - totalNormal;
+
+  // Cashback garantido: soma o valor se a condição é "qualquer" (cenário mínimo sempre acontece)
+  const cashback = (op.geraFreebet?.tipoBeneficio === "cashback" && op.geraFreebet?.condicao === "qualquer")
+    ? (parseFloat(op.geraFreebet.valor) || 0) : 0;
+
+  return minRet - totalNormal + cashback;
 }
 
 export function calcLucroRealOp(op) {
@@ -61,7 +86,12 @@ export function calcLucroRealOp(op) {
   const totalNormal = ents
     .filter(e => e.tipo === "normal")
     .reduce((s, e) => s + (parseFloat(e.valor) || 0), 0);
-  return totalGreen - totalNormal;
+
+  // Cashback: dinheiro real creditado quando a condição é atingida
+  const cashback = (op.geraFreebet?.tipoBeneficio === "cashback" && condicaoAtingida(op))
+    ? (parseFloat(op.geraFreebet.valor) || 0) : 0;
+
+  return totalGreen - totalNormal + cashback;
 }
 
 export function lucroEfetivoOp(op) {

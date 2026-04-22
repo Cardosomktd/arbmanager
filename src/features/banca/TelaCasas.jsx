@@ -122,7 +122,7 @@ export function TelaCasas({ data, setData }) {
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
                     <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setEditId(c.id); setNomeCasa(c.nome); setSaldoInicial(String(c.saldoInicial || "")); setCasaDetalhe(c.id); }}>✏️</Btn>
-                    <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setData(d => ({ ...d, casas: d.casas.map(x => x.id === c.id ? { ...x, ativa: false } : x) })); }}>📦</Btn>
+                    <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); if (!window.confirm("Tem certeza que deseja arquivar esta casa?")) return; setData(d => ({ ...d, casas: d.casas.map(x => x.id === c.id ? { ...x, ativa: false } : x) })); }}>📦</Btn>
                   </div>
                 </div>
               </div>

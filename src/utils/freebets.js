@@ -5,6 +5,7 @@ export function getFreebets(data) {
   (data.eventos || []).forEach(ev => {
     (ev.operacoes || []).forEach(op => {
       if (!op.geraFreebet) return;
+      if (op.geraFreebet.tipoBeneficio === "cashback") return; // cashback não gera freebet na lista
       const { casa, valor, condicao, prazo, entradaGatilhoId } = op.geraFreebet;
       const ents = op.entradas || [];
       const concluida = ents.length > 0 && ents.every(e => e.situacao !== "pendente");

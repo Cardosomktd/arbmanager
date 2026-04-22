@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
 import { fmt, fmtDate, getCasaNome } from "../../utils/format";
-import { lucroEfetivoOp, calcLucroMinOp } from "../../utils/calculos";
+import { lucroEfetivoOp } from "../../utils/calculos";
+import { statusOp } from "../../utils/status";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { Card } from "../../components/ui/Card";
 import { ModalDetalhesMes } from "./modals/ModalDetalhesMes";
@@ -36,10 +37,10 @@ export function TelaDashboard({ data }) {
     + avulsasDoMes.reduce((s, a) => s + lucroAvulsa(a), 0)
     + protecoesMes.reduce((s, p) => s + lucroProtecaoDash(p), 0);
 
-  const hojeStr  = hoje.toDateString();
-  const lucroHoje = todosEventos.flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev }))).filter(({ ev }) => new Date(ev.data).toDateString() === hojeStr).reduce((s, { op }) => s + lucroEfetivoOp(op), 0)
-    + (data.apostasAvulsas || []).filter(a => new Date(a.data).toDateString() === hojeStr).reduce((s, a) => s + lucroAvulsa(a), 0)
-    + todosEventos.filter(ev => new Date(ev.data).toDateString() === hojeStr).flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecaoDash(p), 0);
+  const hojeStr  = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+  const lucroHoje = todosEventos.flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev }))).filter(({ ev }) => (ev.data || "").slice(0, 10) === hojeStr).reduce((s, { op }) => s + lucroEfetivoOp(op), 0)
+    + (data.apostasAvulsas || []).filter(a => (a.data || "").slice(0, 10) === hojeStr).reduce((s, a) => s + lucroAvulsa(a), 0)
+    + todosEventos.filter(ev => (ev.data || "").slice(0, 10) === hojeStr).flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecaoDash(p), 0);
 
   const diasComOps   = new Set([
     ...todasOpsDoMes.map(({ ev }) => new Date(ev.data).getDate()),
@@ -80,9 +81,9 @@ export function TelaDashboard({ data }) {
   });
   const maxLucro = Math.max(...lucrosPorDia.map(d => Math.abs(d.lucro)), 1);
 
-  const opsPendentes = todosEventos
-    .flatMap(ev => (ev.operacoes || []).filter(op => (op.entradas || []).every(e => e.situacao === "pendente")).map(op => ({ op, ev })))
-    .sort((a, b) => new Date(a.ev.data) - new Date(b.ev.data));
+  const ultimasOps = todosEventos
+    .flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev })))
+    .sort((a, b) => new Date(b.op.criadoEm || 0) - new Date(a.op.criadoEm || 0));
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -162,21 +163,27 @@ export function TelaDashboard({ data }) {
         );
       })()}
 
-      {/* Operações pendentes */}
+      {/* Últimas operações */}
       <Card>
         <div style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
-          Próximas Operações Pendentes{opsPendentes.length > 0 && <span style={{ color: G.accent }}> ({opsPendentes.length})</span>}
+          Últimas Operações{ultimasOps.length > 0 && <span style={{ color: G.accent }}> ({ultimasOps.length})</span>}
         </div>
-        {opsPendentes.length === 0
-          ? <div style={{ color: G.textMuted, fontSize: 13, textAlign: "center", padding: 20 }}>Nenhuma operação pendente 🎉</div>
+        {ultimasOps.length === 0
+          ? <div style={{ color: G.textMuted, fontSize: 13, textAlign: "center", padding: 20 }}>Nenhuma operação registrada ainda.</div>
           : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {opsPendentes.slice(0, 8).map(({ op, ev }) => {
-                const lucroMin = calcLucroMinOp(op);
+              {ultimasOps.slice(0, 8).map(({ op, ev }) => {
+                const st    = statusOp(op);
+                const lucro = lucroEfetivoOp(op);
+                const stCor = { pendente: G.yellow, parcial: G.accent, finalizada: lucro >= 0 ? G.green : G.red }[st] ?? G.textMuted;
+                const stLabel = { pendente: "Pendente", parcial: "Em andamento", finalizada: "Finalizado" }[st] ?? st;
                 return (
                   <div key={op.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: G.surface2, borderRadius: 8, padding: "10px 14px", border: `1px solid ${G.border}` }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{ev.nome}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontWeight: 600, fontSize: 13 }}>{ev.nome}</span>
+                        <span style={{ fontSize: 10, color: stCor, background: `${stCor}22`, borderRadius: 3, padding: "1px 6px", fontWeight: 700 }}>{stLabel}</span>
+                      </div>
                       <div style={{ fontSize: 11, color: G.textDim, marginTop: 2 }}>{fmtDate(ev.data)}</div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
                         {(op.entradas || []).map(e => (
@@ -187,8 +194,8 @@ export function TelaDashboard({ data }) {
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      <div style={{ fontSize: 10, color: G.textDim }}>mín. garantido</div>
-                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, fontWeight: 700, color: lucroMin >= 0 ? G.green : G.red }}>{fmt(lucroMin)}</div>
+                      <div style={{ fontSize: 10, color: G.textDim }}>{st === "pendente" ? "mín. garantido" : "lucro"}</div>
+                      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 18, fontWeight: 700, color: lucro >= 0 ? G.green : G.red }}>{fmt(lucro)}</div>
                     </div>
                   </div>
                 );

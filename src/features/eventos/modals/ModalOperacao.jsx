@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { G } from "../../../constants/colors";
 import { uid } from "../../../storage";
-import { getCasaNome } from "../../../utils/format";
+import { fmt, getCasaNome } from "../../../utils/format";
+import { calcRetorno } from "../../../utils/calculos";
 import { resolveCategoria, CATEGORIAS } from "../../../utils/categoriaOp";
 import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
@@ -132,6 +133,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
   const [fbValor,     setFbValor]     = useState("");
   const [fbCondicao,  setFbCondicao]  = useState("qualquer");
   const [fbGatilhoId, setFbGatilhoId] = useState("");
+  const [fbTipo,      setFbTipo]      = useState("freebet");
   const [erro,        setErro]        = useState("");
 
   useEffect(() => {
@@ -144,14 +146,15 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
         setFbValor(String(editOp.geraFreebet.valor || ""));
         setFbCondicao(editOp.geraFreebet.condicao || "qualquer");
         setFbGatilhoId(editOp.geraFreebet.entradaGatilhoId || "");
+        setFbTipo(editOp.geraFreebet.tipoBeneficio || "freebet");
       } else {
-        setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId("");
+        setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
       }
     } else {
       // Novo: nenhum tipo pré-selecionado — aguarda escolha do usuário
       setTipoOp(null);
       setNumEntradas(2); setEntradas([entradaVazia(), entradaVazia()]);
-      setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId("");
+      setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
     }
     setErro("");
   }, [open, editOp]);
@@ -201,6 +204,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
               : "",
             valor: parseFloat(fbValor) || 0,
             condicao: fbCondicao,
+            tipoBeneficio: fbTipo,
             prazo: editOp?.geraFreebet?.prazo ?? "",   // preserva prazo existente; "" em ops novas
           }
         : null,
@@ -368,6 +372,16 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
                       style={{ background: "#ffd60011", border: `1px solid ${G.yellow}44`, borderRadius: 6, padding: "7px 12px", color: G.text, fontSize: 12, width: "100%", outline: "none" }} />
                   </div>
                 )}
+
+                {/* Retorno estimado */}
+                {(e.odd && e.valor) && (
+                  <div style={{ textAlign: "right", marginTop: 6 }}>
+                    <span style={{ fontSize: 11, color: G.textDim }}>Retorno: </span>
+                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 14, fontWeight: 700, color: G.green }}>
+                      {fmt(calcRetorno(e))}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -375,8 +389,24 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
           {/* ── Configuração da Freebet (apenas para Proc. Freebet) ─────────── */}
           {tipoOp === "procedimento_freebet" && (
             <div style={{ borderTop: `1px solid ${G.border}`, paddingTop: 16, marginBottom: 20 }}>
-              <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
-                Freebet Gerada
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
+                  Benefício Gerado
+                </div>
+                {/* Tipo do benefício: Freebet ou Cashback */}
+                <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 6, padding: 2 }}>
+                  {[{ value: "freebet", label: "🎁 Freebet" }, { value: "cashback", label: "💰 Cashback" }].map(t => (
+                    <button key={t.value} onClick={() => setFbTipo(t.value)} style={{
+                      padding: "4px 12px", borderRadius: 5, border: "none", cursor: "pointer",
+                      background: fbTipo === t.value ? "#fbbf2422" : "transparent",
+                      color: fbTipo === t.value ? "#fbbf24" : G.textDim,
+                      fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                      transition: "all 0.15s",
+                    }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 

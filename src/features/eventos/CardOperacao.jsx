@@ -105,12 +105,17 @@ export function CardOperacao({ op, casas, onEditar, onExcluir, onConcluir }) {
         {/* Direita: status + botões de ação */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0, marginLeft: 8 }}>
           <Badge cor={statusCor}>{statusLabel}</Badge>
-          {st !== "finalizada" && (
-            <div style={{ display: "flex", gap: 4 }}>
-              <Btn size="sm" variant="ghost" onClick={onEditar}>✏️</Btn>
-              <Btn size="sm" variant="danger" onClick={onExcluir}>🗑️</Btn>
-            </div>
-          )}
+          <div style={{ display: "flex", gap: 4 }}>
+            {st !== "finalizada" && (
+              <>
+                <Btn size="sm" variant="ghost" onClick={onEditar}>✏️</Btn>
+                <Btn size="sm" variant="danger" onClick={onExcluir}>🗑️</Btn>
+              </>
+            )}
+            {st === "finalizada" && onConcluir && (
+              <Btn size="sm" variant="ghost" onClick={onConcluir}>✏️ Resultado</Btn>
+            )}
+          </div>
         </div>
       </div>
 
@@ -140,7 +145,7 @@ export function CardOperacao({ op, casas, onEditar, onExcluir, onConcluir }) {
           <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 17, fontWeight: 700, color: lucro >= 0 ? G.green : G.red }}>{fmt(lucro)}</span>
           {st === "pendente" && <span style={{ fontSize: 10, color: G.textMuted }}>(pior cenário)</span>}
         </div>
-        {st === "pendente" && onConcluir && (
+        {(st === "pendente" || st === "parcial") && onConcluir && (
           <Btn size="sm" variant="success" onClick={onConcluir}>✓ Concluir</Btn>
         )}
       </div>

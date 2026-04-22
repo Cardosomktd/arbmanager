@@ -9,7 +9,11 @@ import { Btn } from "../../../components/ui/Btn";
 export function ModalConcluirOp({ open, onClose, op, casas, onConcluir }) {
   const [greens, setGreens] = useState([]);
 
-  useEffect(() => { if (open) setGreens([]); }, [open]);
+  const isEditando = (op?.entradas || []).some(e => e.situacao !== "pendente");
+
+  useEffect(() => {
+    if (open) setGreens((op?.entradas || []).filter(e => e.situacao === "green").map(e => e.id));
+  }, [open]);
 
   function toggleGreen(id) {
     setGreens(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -27,7 +31,7 @@ export function ModalConcluirOp({ open, onClose, op, casas, onConcluir }) {
   if (!op) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title="Concluir Operação" width={480}>
+    <Modal open={open} onClose={onClose} title={isEditando ? "Editar Resultado" : "Concluir Operação"} width={480}>
       <div style={{ fontSize: 13, color: G.textDim, marginBottom: 16 }}>
         Selecione qual(is) entrada(s) deram{" "}
         <span style={{ color: G.green, fontWeight: 700 }}>GREEN</span>. As demais serão marcadas como{" "}
@@ -68,7 +72,7 @@ export function ModalConcluirOp({ open, onClose, op, casas, onConcluir }) {
       </div>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-        <Btn variant="success" onClick={finalizar}>✓ Finalizar operação</Btn>
+        <Btn variant="success" onClick={finalizar}>{isEditando ? "✓ Salvar resultado" : "✓ Finalizar operação"}</Btn>
       </div>
     </Modal>
   );
