@@ -126,7 +126,7 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
 
           {!loading && data && (
             <>
-              {aba === "dashboard" && <TelaDashboard data={data} />}
+              {aba === "dashboard" && <TelaDashboard data={data} setData={setData} />}
               {aba === "eventos"   && <TelaEventos   data={data} setData={setData} />}
               {aba === "freebets"  && <TelaFreebets  data={data} setData={setData} />}
               {aba === "banca"     && <TelaCasas     data={data} setData={setData} />}

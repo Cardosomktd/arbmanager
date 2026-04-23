@@ -125,7 +125,7 @@ function CasaSelect({ casas, value, onChange, required }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }) {
+export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, rascunhoCalc }) {
   // null = nenhum tipo selecionado (novo modal); string = tipo selecionado
   const [tipoOp,      setTipoOp]      = useState(null);
   const [numEntradas, setNumEntradas] = useState(2);
@@ -150,6 +150,20 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
       } else {
         setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
       }
+    } else if (rascunhoCalc) {
+      // Vindo da calculadora: pré-preenche odd e stake; os demais campos ficam em branco
+      const n = rascunhoCalc.entradas.length;
+      setTipoOp(null);
+      setNumEntradas(n);
+      setEntradas(rascunhoCalc.entradas.map(r => ({
+        ...entradaVazia(),
+        odd:      r.odd,
+        valor:    r.valor,
+        // Exchange: pré-preenche tipo (exchange_back | exchange_lay) e comissão
+        ...(r.tipo     && { tipo:     r.tipo     }),
+        ...(r.comissao && { comissao: r.comissao }),
+      })));
+      setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
     } else {
       // Novo: nenhum tipo pré-selecionado — aguarda escolha do usuário
       setTipoOp(null);
@@ -157,7 +171,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
       setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
     }
     setErro("");
-  }, [open, editOp]);
+  }, [open, editOp, rascunhoCalc]);
 
   function ajustarEntradas(n) {
     const num = Math.min(7, Math.max(1, parseInt(n) || 1));

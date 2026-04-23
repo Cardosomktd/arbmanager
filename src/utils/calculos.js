@@ -40,8 +40,14 @@ function isAgrupavel(e) {
 
 // Chave de agrupamento: resultado normalizado (trim + lowercase).
 // Usa entradaDisplay quando disponível (pós-save); cai para entrada como fallback.
+// Exchange Lay: remove o sufixo " lay" do final para que "Empate Lay" e "Empate"
+// gerem a mesma chave — garantindo que back e lay sejam agrupados no mesmo cenário.
 function chaveResultado(e) {
-  return (e.entradaDisplay || e.entrada || "").trim().toLowerCase();
+  let chave = (e.entradaDisplay || e.entrada || "").trim().toLowerCase();
+  if (e.tipo === "exchange_lay") {
+    chave = chave.replace(/\s+lay$/, "").trim();
+  }
+  return chave;
 }
 
 // Retorna true se a condição de geração de benefício (freebet ou cashback) foi atingida.

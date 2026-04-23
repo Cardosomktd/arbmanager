@@ -6,14 +6,76 @@ import { statusOp } from "../../utils/status";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { lucroCassino } from "../../utils/lucroCassino";
 import { Card } from "../../components/ui/Card";
-import { ModalDetalhesMes }  from "./modals/ModalDetalhesMes";
-import { ModalCalculadora }  from "./modals/ModalCalculadora";
+import { ModalDetalhesMes }       from "./modals/ModalDetalhesMes";
+import { ModalCalculadora }       from "./modals/ModalCalculadora";
+import { ModalSelecionarEvento }  from "./modals/ModalSelecionarEvento";
+import { ModalEvento }            from "../eventos/modals/ModalEvento";
+import { ModalOperacao }          from "../eventos/modals/ModalOperacao";
+import { uid }                    from "../../storage";
 
-export function TelaDashboard({ data }) {
+export function TelaDashboard({ data, setData }) {
   const hoje = new Date();
   const [mesSel,        setMesSel]        = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`);
-  const [modalDetalhes, setModalDetalhes] = useState(false);
-  const [modalCalc,     setModalCalc]     = useState(false);
+  const [modalDetalhes,   setModalDetalhes]   = useState(false);
+  const [modalCalc,       setModalCalc]       = useState(false);
+
+  // ── Fluxo calculadora → operação ────────────────────────────────────────────
+  const [calcRascunho,    setCalcRascunho]    = useState(null);   // dados da calc
+  const [modalSel,        setModalSel]        = useState(false);  // selecionar evento
+  const [modalEventoCalc, setModalEventoCalc] = useState(false);  // criar novo evento
+  const [modalOpCalc,     setModalOpCalc]     = useState(false);  // abrir operação
+  const [eventoAlvoId,    setEventoAlvoId]    = useState(null);
+
+  function handleUsarNaOp(rascunho) {
+    setCalcRascunho(rascunho);
+    setModalCalc(false);
+    setModalSel(true);
+  }
+
+  function handleSelecionarEvento(ev) {
+    setEventoAlvoId(ev.id);
+    setModalSel(false);
+    setModalOpCalc(true);
+  }
+
+  function handleCriarNovoEvento() {
+    setModalSel(false);
+    setModalEventoCalc(true);
+  }
+
+  function salvarEventoCalc(ev) {
+    setData(d => {
+      const existe = d.eventos.find(e => e.id === ev.id);
+      return {
+        ...d,
+        eventos: existe
+          ? d.eventos.map(e => e.id === ev.id ? { ...e, ...ev } : e)
+          : [...d.eventos, ev],
+      };
+    });
+    setEventoAlvoId(ev.id);
+    setModalEventoCalc(false);
+    setModalOpCalc(true);
+  }
+
+  function salvarOpCalc(op) {
+    setData(d => ({
+      ...d,
+      eventos: d.eventos.map(ev => ev.id !== eventoAlvoId ? ev : {
+        ...ev,
+        operacoes: [...(ev.operacoes || []), op],
+      }),
+    }));
+    setCalcRascunho(null);
+    setEventoAlvoId(null);
+    setModalOpCalc(false);
+  }
+
+  function cancelarOpCalc() {
+    setCalcRascunho(null);
+    setEventoAlvoId(null);
+    setModalOpCalc(false);
+  }
   const [anoSel, mesMes] = mesSel.split("-").map(Number);
 
   function opDoMes(ev) {
@@ -233,7 +295,38 @@ export function TelaDashboard({ data }) {
       </Card>
 
       <ModalDetalhesMes open={modalDetalhes} onClose={() => setModalDetalhes(false)} data={data} mesSel={mesSel} />
-      <ModalCalculadora  open={modalCalc}     onClose={() => setModalCalc(false)} />
+
+      <ModalCalculadora
+        open={modalCalc}
+        onClose={() => setModalCalc(false)}
+        onUsarNaOp={handleUsarNaOp}
+      />
+
+      <ModalSelecionarEvento
+        open={modalSel}
+        onClose={() => setModalSel(false)}
+        eventos={data.eventos || []}
+        onSelecionarEvento={handleSelecionarEvento}
+        onCriarNovoEvento={handleCriarNovoEvento}
+      />
+
+      <ModalEvento
+        open={modalEventoCalc}
+        onClose={() => setModalEventoCalc(false)}
+        onSalvar={salvarEventoCalc}
+        eventosList={data.eventos || []}
+      />
+
+      {eventoAlvoId && (
+        <ModalOperacao
+          open={modalOpCalc}
+          onClose={cancelarOpCalc}
+          onSalvar={salvarOpCalc}
+          casas={data.casas || []}
+          evento={(data.eventos || []).find(ev => ev.id === eventoAlvoId) ?? null}
+          rascunhoCalc={calcRascunho}
+        />
+      )}
 
       <div style={{ textAlign: "center", marginTop: 32, paddingBottom: 8 }}>
         <a
