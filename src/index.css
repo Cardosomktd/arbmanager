@@ -20,6 +20,18 @@ body {
 input, select, textarea { font-family: 'DM Sans', sans-serif; }
 button                  { cursor: pointer; font-family: 'DM Sans', sans-serif; }
 
+/* Remove setinhas dos inputs numéricos (spinner) — Chrome / Safari / Edge */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove setinhas dos inputs numéricos — Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .evento-card            { transition: all 0.2s; }
 .evento-card:hover      { border-color: #2a3d5e !important; }
 

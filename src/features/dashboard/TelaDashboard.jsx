@@ -6,12 +6,14 @@ import { statusOp } from "../../utils/status";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { lucroCassino } from "../../utils/lucroCassino";
 import { Card } from "../../components/ui/Card";
-import { ModalDetalhesMes } from "./modals/ModalDetalhesMes";
+import { ModalDetalhesMes }  from "./modals/ModalDetalhesMes";
+import { ModalCalculadora }  from "./modals/ModalCalculadora";
 
 export function TelaDashboard({ data }) {
   const hoje = new Date();
   const [mesSel,        setMesSel]        = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`);
   const [modalDetalhes, setModalDetalhes] = useState(false);
+  const [modalCalc,     setModalCalc]     = useState(false);
   const [anoSel, mesMes] = mesSel.split("-").map(Number);
 
   function opDoMes(ev) {
@@ -96,14 +98,32 @@ export function TelaDashboard({ data }) {
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div className="dash-title" style={{ color: G.accent }}>Dashboard</div>
-        <select value={mesSel} onChange={e => setMesSel(e.target.value)}
-          style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "6px 12px", color: G.text, fontSize: 13 }}>
-          {mesesDisp.map(m => {
-            const [y, mo] = m.split("-");
-            const nome = new Date(y, mo - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-            return <option key={m} value={m}>{nome.charAt(0).toUpperCase() + nome.slice(1)}</option>;
-          })}
-        </select>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Card de acesso rápido à calculadora */}
+          <button onClick={() => setModalCalc(true)} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: G.surface2, border: `1px solid ${G.border}`,
+            borderRadius: 6, padding: "6px 12px", cursor: "pointer",
+            color: G.textDim, fontSize: 13, fontWeight: 600,
+            fontFamily: "'DM Sans', sans-serif",
+            transition: "border-color 0.15s, color 0.15s",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = G.accent; e.currentTarget.style.color = G.accent; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = G.border; e.currentTarget.style.color = G.textDim; }}
+          >
+            <span style={{ fontSize: 15 }}>🧮</span>
+            Calculadora
+          </button>
+
+          <select value={mesSel} onChange={e => setMesSel(e.target.value)}
+            style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "6px 12px", color: G.text, fontSize: 13 }}>
+            {mesesDisp.map(m => {
+              const [y, mo] = m.split("-");
+              const nome = new Date(y, mo - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+              return <option key={m} value={m}>{nome.charAt(0).toUpperCase() + nome.slice(1)}</option>;
+            })}
+          </select>
+        </div>
       </div>
 
       {/* KPIs */}
@@ -213,6 +233,7 @@ export function TelaDashboard({ data }) {
       </Card>
 
       <ModalDetalhesMes open={modalDetalhes} onClose={() => setModalDetalhes(false)} data={data} mesSel={mesSel} />
+      <ModalCalculadora  open={modalCalc}     onClose={() => setModalCalc(false)} />
 
       <div style={{ textAlign: "center", marginTop: 32, paddingBottom: 8 }}>
         <a

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { G } from "../../../constants/colors";
 import { uid } from "../../../storage";
-import { fmt, fmtOdd, getCasaNome } from "../../../utils/format";
+import { fmt, fmtNum, fmtOdd, getCasaNome } from "../../../utils/format";
 import { calcRetorno } from "../../../utils/calculos";
 import { resolveCategoria, CATEGORIAS } from "../../../utils/categoriaOp";
 import { Modal } from "../../../components/ui/Modal";
@@ -47,7 +47,7 @@ const BANNERS = {
 };
 
 function entradaVazia() {
-  return { id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "", odd: "", valor: "", tipo: "normal", situacao: "pendente", pa: false };
+  return { id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "", odd: "", valor: "", comissao: "", tipo: "normal", situacao: "pendente", pa: false };
 }
 
 // ── Seletor de casa com busca ─────────────────────────────────────────────────
@@ -184,6 +184,11 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
     }));
   }
 
+  // Atualiza múltiplos campos de uma entrada ao mesmo tempo (usado para conflitos de flags)
+  function updMulti(i, fields) {
+    setEntradas(prev => prev.map((e, idx) => idx === i ? { ...e, ...fields } : e));
+  }
+
   // Atualiza odd a partir do retorno digitado (modo retorno)
   function updRetorno(i, retStr) {
     setEntradas(prev => prev.map((e, idx) => {
@@ -225,8 +230,12 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
     // Desestrutura campos UI-only (modoRetorno, retornoStr) — não devem ser persistidos
     const entradasFinal = entradas.map(({ modoRetorno: _m, retornoStr: _r, ...e }) => ({
       ...e,
-      // Tipo de entrada: só freebet/bonus em extração; demais sempre normal
-      tipo: tipoOp !== "extracao_freebet" ? "normal" : e.tipo,
+      // Exchange é preservado para qualquer tipo de operação.
+      // Freebet/bonus só são preservados em Extração de Freebet.
+      // Tudo o mais vira "normal".
+      tipo: (e.tipo === "exchange_back" || e.tipo === "exchange_lay")
+        ? e.tipo
+        : tipoOp === "extracao_freebet" ? e.tipo : "normal",
       // Situação nasce sempre como pendente (conclusão feita via ModalConcluirOp)
       situacao: e.situacao === "pendente" ? "pendente" : e.situacao,
       entradaDisplay: e.entrada === "outro" ? (e.entradaCustom || "?") : e.entrada,
@@ -329,167 +338,305 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento }
 
           {/* Lista de entradas */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-            {entradas.map((e, i) => (
-              <div key={e.id} style={{
-                background: G.surface2,
-                border: `1px solid ${corEntrada.borda}`,
-                borderRadius: 8, padding: 12,
-              }}>
+            {entradas.map((e, i) => {
+              // ── Derivados de tipo ────────────────────────────────────────────
+              const isExch   = e.tipo === "exchange_back" || e.tipo === "exchange_lay";
+              const isBack   = e.tipo === "exchange_back";
+              const isLay    = e.tipo === "exchange_lay";
+              const isFb     = e.tipo === "freebet" || e.tipo === "bonus";
+              // Exchange usa label de odd específico para Lay; normal/back usam "Odd"
+              const labelOdd = "Odd";
+              // Exchange unifica em "Stake (R$)"; modo normal usa "Valor (R$)"
+              const labelValor = isExch ? "Stake (R$)" : "Valor (R$)";
+              // Valor do terceiro campo no modo exchange: (odd−1) × stake
+              // → Lucro para Back, Responsabilidade para Lay — mesma fórmula, semânticas opostas
+              const exchCalc = isExch
+                ? (parseFloat(e.valor) || 0) * ((parseFloat(String(e.odd || "").replace(",", ".")) || 0) - 1)
+                : 0;
 
-                {/* ── Cabeçalho: label da entrada + toggle modo odd/retorno ── */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div style={{ fontSize: 11, color: corEntrada.label, fontWeight: 700, letterSpacing: 1 }}>
-                    ENTRADA {i + 1}
-                  </div>
-                  <button onClick={() => toggleEntradaModoRetorno(i)} style={{
-                    padding: "2px 8px", borderRadius: 4,
-                    border: `1px solid ${e.modoRetorno ? G.accent : G.border}`,
-                    background: e.modoRetorno ? "#00d4ff11" : "transparent",
-                    color: e.modoRetorno ? G.accent : G.textMuted,
-                    fontSize: 10, fontWeight: 600, cursor: "pointer",
-                    fontFamily: "'DM Sans', sans-serif",
-                  }}>
-                    {e.modoRetorno ? "↩ por Retorno" : "↪ por Odd"}
-                  </button>
-                </div>
+              return (
+                <div key={e.id} style={{
+                  background: G.surface2,
+                  border: `1px solid ${isExch ? "#f9731644" : corEntrada.borda}`,
+                  borderRadius: 8, padding: 12,
+                }}>
 
-                {/* ── Linha 1: Casa | Resultado | Múltipla ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 8 }}>
-                  <CasaSelect casas={casasAtivas} value={e.casa} onChange={v => upd(i, "casa", v)} required />
-
-                  {/* Resultado apostado / principal */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
-                      {e.multipla ? "Resultado principal" : "Resultado apostado"} <span style={{ color: G.red }}>*</span>
-                    </label>
-                    {evento?.mandante && evento?.visitante ? (
-                      <select value={e.entrada}
-                        onChange={ev => { upd(i, "entrada", ev.target.value); if (ev.target.value !== "outro") upd(i, "entradaCustom", ""); }}
-                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 10px", color: G.text, fontSize: 13, outline: "none", appearance: "none" }}>
-                        <option value="">— selecionar —</option>
-                        <option value={evento.mandante}>{evento.mandante}</option>
-                        <option value="Empate">Empate</option>
-                        <option value={evento.visitante}>{evento.visitante}</option>
-                        <option value="outro">Outro (digitar)</option>
-                      </select>
-                    ) : (
-                      <input value={e.entrada} onChange={ev => upd(i, "entrada", ev.target.value)} placeholder="Ex: Flamengo"
-                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, outline: "none" }} />
-                    )}
-                    {e.entrada === "outro" && (
-                      <input value={e.entradaCustom || ""} onChange={ev => upd(i, "entradaCustom", ev.target.value)}
-                        placeholder="Descreva o resultado..."
-                        style={{ background: G.surface2, border: `1px solid ${G.accent}44`, borderRadius: 6, padding: "7px 12px", color: G.text, fontSize: 13, outline: "none" }} />
-                    )}
-                  </div>
-
-                  {/* Múltipla — toggle no topo da entrada */}
-                  <label style={{
-                    display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
-                    fontSize: 12, color: e.multipla ? G.yellow : G.textDim,
-                    paddingBottom: 2, whiteSpace: "nowrap",
-                  }}>
-                    <input type="checkbox" checked={e.multipla || false}
-                      onChange={ev => upd(i, "multipla", ev.target.checked)}
-                      style={{ accentColor: G.yellow, width: 14, height: 14 }} />
-                    <span style={{ fontWeight: 600 }}>Múltipla</span>
-                  </label>
-                </div>
-
-                {/* ── Linha 2: Descrição da múltipla (condicional) ── */}
-                {e.multipla && (
-                  <div style={{ marginBottom: 8 }}>
-                    <input value={e.multiplaDesc || ""} onChange={ev => upd(i, "multiplaDesc", ev.target.value)}
-                      placeholder="O que foi adicionado na múltipla? Ex: + Mais de 1.5 gols"
-                      style={{
-                        background: "#ffd60011", border: `1px solid ${G.yellow}44`,
-                        borderRadius: 6, padding: "7px 12px", color: G.text,
-                        fontSize: 12, width: "100%", boxSizing: "border-box", outline: "none",
-                      }} />
-                  </div>
-                )}
-
-                {/* ── Linha 3: Odd | Valor | Retorno ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-
-                  {/* Odd: editável no modo Odd, read-only no modo Retorno */}
-                  {e.modoRetorno ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>Odd</label>
-                      <div style={{
-                        background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6,
-                        padding: "8px 12px", color: e.odd ? G.textDim : G.textMuted,
-                        fontSize: 13, minHeight: 37, display: "flex", alignItems: "center",
-                      }}>
-                        {e.odd ? fmtOdd(e.odd) : "—"}
+                  {/* ── Cabeçalho: label da entrada + toggle odd/retorno (oculto em exchange) ── */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ fontSize: 11, color: isExch ? "#f97316" : corEntrada.label, fontWeight: 700, letterSpacing: 1 }}>
+                        ENTRADA {i + 1}
                       </div>
+                      {isBack && <span style={{ fontSize: 10, fontWeight: 700, color: "#3b82f6", background: "#3b82f622", borderRadius: 4, padding: "1px 6px" }}>BACK</span>}
+                      {isLay  && <span style={{ fontSize: 10, fontWeight: 700, color: "#ec4899", background: "#ec489922", borderRadius: 4, padding: "1px 6px" }}>LAY</span>}
                     </div>
-                  ) : (
-                    <Input label="Odd" value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required inputMode="decimal" />
-                  )}
+                    {/* Toggle por Retorno oculto em Exchange: campo 3 já é Lucro/Responsabilidade */}
+                    {!isExch && (
+                      <button onClick={() => toggleEntradaModoRetorno(i)} style={{
+                        padding: "2px 8px", borderRadius: 4,
+                        border: `1px solid ${e.modoRetorno ? G.accent : G.border}`,
+                        background: e.modoRetorno ? "#00d4ff11" : "transparent",
+                        color: e.modoRetorno ? G.accent : G.textMuted,
+                        fontSize: 10, fontWeight: 600, cursor: "pointer",
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}>
+                        {e.modoRetorno ? "↩ por Retorno" : "↪ por Odd"}
+                      </button>
+                    )}
+                  </div>
 
-                  <Input label="Valor (R$)" value={e.valor} onChange={v => upd(i, "valor", v)} type="number" placeholder="0,00" required />
+                  {/* ── Linha 1: Casa | Resultado | Múltipla ── */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 8 }}>
+                    <CasaSelect casas={casasAtivas} value={e.casa} onChange={v => upd(i, "casa", v)} required />
 
-                  {/* Retorno: editável no modo Retorno, calculado no modo Odd */}
-                  {e.modoRetorno ? (
+                    {/* Resultado apostado / principal */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
-                        Retorno (R$) <span style={{ color: G.red }}>*</span>
+                        {e.multipla ? "Resultado principal" : "Resultado apostado"} <span style={{ color: G.red }}>*</span>
                       </label>
-                      <input
-                        value={e.retornoStr ?? ""}
-                        onChange={ev => updRetorno(i, ev.target.value)}
-                        placeholder="Ex: 250,00"
-                        inputMode="decimal"
-                        style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, outline: "none" }}
-                      />
+                      {evento?.mandante && evento?.visitante ? (
+                        <select value={e.entrada}
+                          onChange={ev => { upd(i, "entrada", ev.target.value); if (ev.target.value !== "outro") upd(i, "entradaCustom", ""); }}
+                          style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 10px", color: G.text, fontSize: 13, outline: "none", appearance: "none" }}>
+                          <option value="">— selecionar —</option>
+                          <option value={evento.mandante}>{evento.mandante}</option>
+                          <option value="Empate">Empate</option>
+                          <option value={evento.visitante}>{evento.visitante}</option>
+                          <option value="outro">Outro (digitar)</option>
+                        </select>
+                      ) : (
+                        <input value={e.entrada} onChange={ev => upd(i, "entrada", ev.target.value)} placeholder="Ex: Flamengo"
+                          style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, outline: "none" }} />
+                      )}
+                      {e.entrada === "outro" && (
+                        <input value={e.entradaCustom || ""} onChange={ev => upd(i, "entradaCustom", ev.target.value)}
+                          placeholder="Descreva o resultado..."
+                          style={{ background: G.surface2, border: `1px solid ${G.accent}44`, borderRadius: 6, padding: "7px 12px", color: G.text, fontSize: 13, outline: "none" }} />
+                      )}
                     </div>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>Retorno (R$)</label>
-                      <div style={{
-                        background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6,
-                        padding: "8px 12px", color: (e.odd && e.valor) ? G.textDim : G.textMuted,
-                        fontSize: 13, minHeight: 37, display: "flex", alignItems: "center",
-                      }}>
-                        {(e.odd && e.valor) ? fmt(calcRetorno(e)) : "—"}
-                      </div>
+
+                    {/* Múltipla — toggle no topo da entrada */}
+                    <label style={{
+                      display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
+                      fontSize: 12, color: e.multipla ? G.yellow : G.textDim,
+                      paddingBottom: 2, whiteSpace: "nowrap",
+                    }}>
+                      <input type="checkbox" checked={e.multipla || false}
+                        onChange={ev => upd(i, "multipla", ev.target.checked)}
+                        style={{ accentColor: G.yellow, width: 14, height: 14 }} />
+                      <span style={{ fontWeight: 600 }}>Múltipla</span>
+                    </label>
+                  </div>
+
+                  {/* ── Linha 2: Descrição da múltipla (condicional) ── */}
+                  {e.multipla && (
+                    <div style={{ marginBottom: 8 }}>
+                      <input value={e.multiplaDesc || ""} onChange={ev => upd(i, "multiplaDesc", ev.target.value)}
+                        placeholder="O que foi adicionado na múltipla? Ex: + Mais de 1.5 gols"
+                        style={{
+                          background: "#ffd60011", border: `1px solid ${G.yellow}44`,
+                          borderRadius: 6, padding: "7px 12px", color: G.text,
+                          fontSize: 12, width: "100%", boxSizing: "border-box", outline: "none",
+                        }} />
                     </div>
                   )}
-                </div>
 
-                {/* ── Tipo de entrada — só para Extração de Freebet ── */}
-                {tipoOp === "extracao_freebet" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: e.tipo !== "normal" ? G.green : G.textDim }}>
-                      <input
-                        type="checkbox"
-                        checked={e.tipo !== "normal"}
-                        onChange={ev => upd(i, "tipo", ev.target.checked ? "freebet" : "normal")}
-                        style={{ accentColor: G.green }}
-                      />
-                      <span style={{ fontWeight: 600 }}>Entrada de freebet</span>
-                    </label>
-                    {e.tipo !== "normal" && (
-                      <select value={e.tipo} onChange={ev => upd(i, "tipo", ev.target.value)}
-                        style={{ background: G.surface2, border: `1px solid #22c55e44`, borderRadius: 6, padding: "4px 10px", color: G.text, fontSize: 12, outline: "none" }}>
-                        <option value="freebet">Freebet</option>
-                        <option value="bonus">Bônus</option>
-                      </select>
+                  {/* ── Linha 3: Odd | Stake/Valor | Lucro/Responsabilidade/Retorno ── */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+
+                    {/* Coluna 1 — Odd: sempre editável em exchange; toggle em modo normal */}
+                    {(!isExch && e.modoRetorno) ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>{labelOdd}</label>
+                        <div style={{
+                          background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6,
+                          padding: "8px 12px", color: e.odd ? G.textDim : G.textMuted,
+                          fontSize: 13, minHeight: 37, display: "flex", alignItems: "center",
+                        }}>
+                          {e.odd ? fmtOdd(e.odd) : "—"}
+                        </div>
+                      </div>
+                    ) : (
+                      <Input label={labelOdd} value={e.odd} onChange={v => upd(i, "odd", v)} placeholder="Ex: 2,50" required inputMode="decimal" />
+                    )}
+
+                    {/* Coluna 2 — Valor / Stake */}
+                    <Input label={labelValor} value={e.valor} onChange={v => upd(i, "valor", v)} type="number" placeholder="0,00" required />
+
+                    {/* Coluna 3 — Exchange: Lucro (Back) em azul | Responsabilidade (Lay) em rosa */}
+                    {/*            Normal: Retorno calculado ou editável (modoRetorno)             */}
+                    {isExch ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <label style={{
+                          fontSize: 11, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase",
+                          color: isBack ? "#3b82f6" : "#ec4899",
+                        }}>
+                          {isBack ? "Lucro (R$)" : "Responsabilidade (R$)"}
+                        </label>
+                        <div style={{
+                          background: G.surface2, borderRadius: 6, padding: "8px 12px",
+                          border: `1px solid ${isBack ? "#3b82f633" : "#ec489933"}`,
+                          fontSize: 13, fontWeight: 700, minHeight: 37, display: "flex", alignItems: "center",
+                          color: exchCalc > 0 ? (isBack ? "#3b82f6" : "#ec4899") : G.textMuted,
+                        }}>
+                          {exchCalc > 0 ? fmtNum(exchCalc) : "—"}
+                        </div>
+                      </div>
+                    ) : e.modoRetorno ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                          Retorno (R$) <span style={{ color: G.red }}>*</span>
+                        </label>
+                        <input
+                          value={e.retornoStr ?? ""}
+                          onChange={ev => updRetorno(i, ev.target.value)}
+                          placeholder="Ex: 250,00"
+                          inputMode="decimal"
+                          style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "8px 12px", color: G.text, fontSize: 13, outline: "none" }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>Retorno (R$)</label>
+                        <div style={{
+                          background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6,
+                          padding: "8px 12px", color: (e.odd && e.valor) ? G.textDim : G.textMuted,
+                          fontSize: 13, minHeight: 37, display: "flex", alignItems: "center",
+                        }}>
+                          {(e.odd && e.valor) ? fmt(calcRetorno(e)) : "—"}
+                        </div>
+                      </div>
                     )}
                   </div>
-                )}
 
-                {/* ── Flag PA ── */}
-                <div style={{ marginTop: 10 }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: e.pa ? G.accent : G.textDim }}>
-                    <input type="checkbox" checked={e.pa} onChange={ev => upd(i, "pa", ev.target.checked)} style={{ accentColor: G.accent }} />
-                    <span style={{ fontWeight: 600 }}>PA (Pagamento Antecipado)</span>
-                  </label>
+                  {/* ── Flags: PA | Freebet | Exchange | [Back][Lay] | Comissão ── */}
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+
+                      {/* PA — marcar PA desmarca Exchange */}
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: e.pa ? G.accent : G.textDim }}>
+                        <input type="checkbox" checked={e.pa || false}
+                          onChange={ev => {
+                            if (ev.target.checked && isExch) {
+                              updMulti(i, { pa: true, tipo: "normal" });
+                            } else {
+                              upd(i, "pa", ev.target.checked);
+                            }
+                          }}
+                          style={{ accentColor: G.accent, width: 14, height: 14 }} />
+                        <span style={{ fontWeight: 600 }}>PA</span>
+                      </label>
+
+                      {/* Freebet — só em Extração; marcar Freebet desmarca Exchange */}
+                      {tipoOp === "extracao_freebet" && (
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: isFb ? G.green : G.textDim }}>
+                          <input type="checkbox" checked={isFb}
+                            onChange={ev => updMulti(i, { tipo: ev.target.checked ? "freebet" : "normal" })}
+                            style={{ accentColor: G.green, width: 14, height: 14 }} />
+                          <span style={{ fontWeight: 600 }}>Freebet</span>
+                        </label>
+                      )}
+
+                      {/* Exchange checkbox */}
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: isExch ? "#f97316" : G.textDim }}>
+                        <input type="checkbox" checked={isExch}
+                          onChange={ev => updMulti(i, ev.target.checked
+                            ? { tipo: "exchange_back", pa: false }
+                            : { tipo: "normal" }
+                          )}
+                          style={{ accentColor: "#f97316", width: 14, height: 14 }} />
+                        <span style={{ fontWeight: 600 }}>Exchange</span>
+                      </label>
+
+                      {/* Seletor Back/Lay inline — Back azul, Lay rosa */}
+                      {isExch && (
+                        <div style={{ display: "flex", gap: 2, background: G.surface, borderRadius: 6, padding: 2 }}>
+                          <button onClick={() => updMulti(i, { tipo: "exchange_back" })} style={{
+                            padding: "3px 14px", borderRadius: 5, border: "none", cursor: "pointer",
+                            background: isBack ? "#3b82f622" : "transparent",
+                            color: isBack ? "#3b82f6" : G.textDim,
+                            fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                            transition: "all 0.15s",
+                          }}>Back</button>
+                          <button onClick={() => updMulti(i, { tipo: "exchange_lay" })} style={{
+                            padding: "3px 14px", borderRadius: 5, border: "none", cursor: "pointer",
+                            background: isLay ? "#ec489922" : "transparent",
+                            color: isLay ? "#ec4899" : G.textDim,
+                            fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                            transition: "all 0.15s",
+                          }}>Lay</button>
+                        </div>
+                      )}
+
+                      {/* Comissão inline — visível apenas quando Exchange ativo */}
+                      {isExch && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 12, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
+                            Comissão (%):
+                          </span>
+                          <input
+                            value={e.comissao ?? ""}
+                            onChange={ev => upd(i, "comissao", ev.target.value)}
+                            placeholder="5"
+                            type="number"
+                            inputMode="decimal"
+                            style={{
+                              background: G.surface2, border: `1px solid #f9731633`,
+                              borderRadius: 6, padding: "4px 8px", color: G.text,
+                              fontSize: 13, outline: "none", width: 58,
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Retorno Exchange — um único bloco, Back ou Lay, nunca os dois */}
+                      {isExch && (
+                        isBack ? (
+                          /* Back: retorno líquido oficial = stake + lucro após comissão */
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 12, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
+                              Retorno:
+                            </span>
+                            <span style={{
+                              fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
+                              color: (e.valor && e.odd) ? "#3b82f6" : G.textMuted,
+                            }}>
+                              {(e.valor && e.odd) ? fmt(calcRetorno(e)) : "—"}
+                            </span>
+                          </div>
+                        ) : (
+                          /* Lay: total que retorna à banca = responsabilidade + ganho líquido
+                             Auxiliar visual de conferência — não entra nos cálculos oficiais */
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 12, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
+                              Retorno Lay:
+                            </span>
+                            <span style={{
+                              fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
+                              color: (e.valor && e.odd) ? "#ec4899" : G.textMuted,
+                            }}>
+                              {(e.valor && e.odd) ? fmt(exchCalc + calcRetorno(e)) : "—"}
+                            </span>
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {/* Sub-seletor Freebet: Freebet / Bônus — abaixo das flags */}
+                    {tipoOp === "extracao_freebet" && isFb && (
+                      <div style={{ marginTop: 8 }}>
+                        <select value={e.tipo} onChange={ev => upd(i, "tipo", ev.target.value)}
+                          style={{ background: G.surface2, border: `1px solid #22c55e44`, borderRadius: 6, padding: "4px 10px", color: G.text, fontSize: 12, outline: "none" }}>
+                          <option value="freebet">Freebet</option>
+                          <option value="bonus">Bônus</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
-
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* ── Configuração da Freebet (apenas para Proc. Freebet) ─────────── */}

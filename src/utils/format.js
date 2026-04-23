@@ -2,6 +2,11 @@ export function fmt(v) {
   return "R$ " + (Number(v) || 0).toFixed(2).replace(".", ",");
 }
 
+// Número sem prefixo "R$" — usado em campos onde o símbolo já está no label.
+export function fmtNum(v) {
+  return (Number(v) || 0).toFixed(2).replace(".", ",");
+}
+
 // Formata odd apenas para exibição — até 2 casas decimais, sem zeros desnecessários.
 // Exemplos: 2 → "2", 1.5 → "1.5", 1.8519 → "1.85", 3.0000 → "3"
 // NÃO usar para persistência/cálculo — apenas em JSX display.
