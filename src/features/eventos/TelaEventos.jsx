@@ -12,9 +12,11 @@ import { ModalOperacao } from "./modals/ModalOperacao";
 import { ModalApostaAvulsa } from "./modals/ModalApostaAvulsa";
 import { ModalCassino } from "./modals/ModalCassino";
 import { ModalProtecao } from "./modals/ModalProtecao";
+import { ModalSelecionarEvento } from "../dashboard/modals/ModalSelecionarEvento";
 import { lucroCassino } from "../../utils/lucroCassino";
 
 export function TelaEventos({ data, setData }) {
+  const [modalSel,         setModalSel]         = useState(false);
   const [modalEvento,      setModalEvento]      = useState(false);
   const [editEvento,       setEditEvento]       = useState(null);
   const [modalOp,          setModalOp]          = useState(false);
@@ -49,6 +51,17 @@ export function TelaEventos({ data, setData }) {
   // ── Operações ─────────────────────────────────────────────────────────────────
   function abrirNovaOp(eventoId)       { setEventoAlvoId(eventoId); setEditOp(null); setModalOp(true); }
   function abrirEditarOp(eventoId, op) { setEventoAlvoId(eventoId); setEditOp(op);  setModalOp(true); }
+
+  // ── Fluxo "Nova Operação" (modal seleção → operação) ──────────────────────────
+  function handleSelecionarEventoParaOp(ev) {
+    setModalSel(false);
+    abrirNovaOp(ev.id);
+  }
+  function handleCriarNovoEventoParaOp() {
+    setModalSel(false);
+    setEditEvento(null);
+    setModalEvento(true);
+  }
 
   function salvarOp(op) {
     setData(d => ({
@@ -178,7 +191,7 @@ export function TelaEventos({ data, setData }) {
         <div style={{ display: "flex", gap: 8 }}>
           <Btn variant="ghost" onClick={() => setModalAvulsa(true)}>🎰 Bingo</Btn>
           <Btn variant="ghost" onClick={() => setModalCassino(true)}>🎲 Cassino</Btn>
-          <Btn onClick={() => { setEditEvento(null); setModalEvento(true); }}>+ Novo evento</Btn>
+          <Btn onClick={() => setModalSel(true)}>+ Nova Operação</Btn>
         </div>
       </div>
 
@@ -205,21 +218,6 @@ export function TelaEventos({ data, setData }) {
         />
       </div>
 
-      {/* ── Alerta: conclusão pendente ── */}
-      {alertasAtraso.length > 0 && (
-        <div style={{ background: "#ff440011", border: "1px solid #ff444433", borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: G.red, fontWeight: 700, marginBottom: 6 }}>⏱️ CONCLUSÃO PENDENTE</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {alertasAtraso.map(ev => (
-              <div key={ev.id} style={{ background: "#ff44440a", border: "1px solid #ff444433", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
-                <span style={{ color: G.text, fontWeight: 600 }}>{ev.nome}</span>
-                <span style={{ color: G.red, marginLeft: 6 }}>{fmtDate(ev.data)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── Lista ── */}
       {lancamentos.length === 0 && (
         <Card style={{ textAlign: "center", padding: 48, color: G.textDim }}>
@@ -238,9 +236,9 @@ export function TelaEventos({ data, setData }) {
         {lancamentos.map(({ tipo, item }) => {
           if (tipo === "evento") return (
             <CardEvento key={item.id} evento={item} casas={data.casas || []}
+              atrasado={alertasAtraso.some(a => a.id === item.id)}
               onEditarEvento={e => { setEditEvento(e); setModalEvento(true); }}
               onExcluirEvento={excluirEvento}
-              onAddOp={abrirNovaOp}
               onEditarOp={abrirEditarOp}
               onExcluirOp={excluirOp}
               onConcluirOp={concluirOp}
@@ -324,6 +322,13 @@ export function TelaEventos({ data, setData }) {
         })}
       </div>
 
+      <ModalSelecionarEvento
+        open={modalSel}
+        onClose={() => setModalSel(false)}
+        eventos={data.eventos || []}
+        onSelecionarEvento={handleSelecionarEventoParaOp}
+        onCriarNovoEvento={handleCriarNovoEventoParaOp}
+      />
       <ModalEvento       open={modalEvento}   onClose={() => setModalEvento(false)}   onSalvar={salvarEvento}  editEvento={editEvento} eventosList={data.eventos || []} />
       <ModalOperacao     open={modalOp}       onClose={() => setModalOp(false)}       onSalvar={salvarOp}      casas={data.casas || []} editOp={editOp} evento={(data.eventos || []).find(e => e.id === eventoAlvoId)} />
       <ModalApostaAvulsa open={modalAvulsa}   onClose={() => setModalAvulsa(false)}   onSalvar={salvarAposta}  casas={data.casas || []} />

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { G } from "../../constants/colors";
 import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
 import { lucroEfetivoOp, calcRetorno } from "../../utils/calculos";
+import { lucroProtecao } from "../../utils/lucroProtecao";
 import { statusEvento, statusOp } from "../../utils/status";
 import { Badge } from "../../components/ui/Badge";
 import { Btn } from "../../components/ui/Btn";
@@ -9,15 +10,7 @@ import { Card } from "../../components/ui/Card";
 import { CardOperacao } from "./CardOperacao";
 import { ModalConcluirOp } from "./modals/ModalConcluirOp";
 
-function lucroProtecao(p) {
-  const odd   = parseFloat(String(p.odd).replace(",", ".")) || 0;
-  const valor = parseFloat(p.valor) || 0;
-  if (p.situacao === "green") return (odd - 1) * valor;
-  if (p.situacao === "red")   return -valor;
-  return 0;
-}
-
-export function CardEvento({ evento, casas, onEditarEvento, onExcluirEvento, onAddOp, onEditarOp, onExcluirOp, onConcluirOp, onAddProtecao, onConcluirProtecao, onExcluirProtecao }) {
+export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, onExcluirEvento, onEditarOp, onExcluirOp, onConcluirOp, onAddProtecao, onConcluirProtecao, onExcluirProtecao }) {
   const [expandido, setExpandido] = useState(false);
   const [concluindoOp, setConcluindoOp] = useState(null);
 
@@ -29,7 +22,9 @@ export function CardEvento({ evento, casas, onEditarEvento, onExcluirEvento, onA
   const lucro = lucroOps + lucroProts;
 
   const st = statusEvento(evento);
-  const statusCor   = { vazio: "gray", pendente: "yellow", andamento: "blue", finalizado: "green" }[st];
+  const statusCor   = atrasado && (st === "pendente" || st === "andamento")
+    ? "red"
+    : { vazio: "gray", pendente: "yellow", andamento: "blue", finalizado: "green" }[st];
   const statusLabel = { vazio: "Sem operações", pendente: "Pendente", andamento: "Em andamento", finalizado: "Finalizado" }[st];
 
   const todasEntradas = (evento.operacoes || []).flatMap(op => op.entradas || []);
@@ -47,17 +42,42 @@ export function CardEvento({ evento, casas, onEditarEvento, onExcluirEvento, onA
           <span style={{ color: G.textDim, fontSize: 14, flexShrink: 0 }}>{expandido ? "▼" : "▶"}</span>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2 }}>{evento.nome}</div>
-            <div style={{ fontSize: 12, color: G.textDim }}>{fmtDate(evento.data)}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 12, color: G.textDim }}>{fmtDate(evento.data)}</span>
+              {(evento.protecoes || []).length > 0 && (
+                <span style={{ fontSize: 11, color: "#aa66ff", background: "#aa66ff18", borderRadius: 4, padding: "1px 7px", fontWeight: 600 }}>
+                  🛡 Proteção
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Ações rápidas + status + lucro */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, marginLeft: 12 }}>
-          {/* Botões de ação rápida — stopPropagation para não colapsar o card */}
-          <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
-            <Btn size="sm" onClick={() => onAddOp(evento.id)}>+ Op</Btn>
-            <Btn size="sm" variant="secondary" onClick={() => onAddProtecao(evento.id)}>🛡️</Btn>
-          </div>
+          {/* Botão de proteção — stopPropagation para não colapsar o card */}
+          {(() => {
+            const n = (evento.protecoes || []).length;
+            const sub = n === 0 ? "nenhuma" : n === 1 ? "1 ativa" : `${n} ativas`;
+            return (
+              <button
+                onClick={e => { e.stopPropagation(); onAddProtecao(evento.id); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: "#aa66ff18", border: "1px solid #aa66ff44",
+                  borderRadius: 7, padding: "6px 12px",
+                  color: "#aa66ff", cursor: "pointer", flexShrink: 0,
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>🛡</span>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, lineHeight: 1.2 }}>PROTEÇÃO</span>
+                  <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, lineHeight: 1.2 }}>{sub}</span>
+                </div>
+              </button>
+            );
+          })()}
           {/* Status + lucro */}
           <div style={{ textAlign: "right" }}>
             <Badge cor={statusCor}>{statusLabel}</Badge>

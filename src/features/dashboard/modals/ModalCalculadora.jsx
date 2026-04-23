@@ -13,7 +13,16 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   const [odds,        setOdds]        = useState(["", ""]);
   const [stakeBase,   setStakeBase]   = useState("");
   const [totalStr,    setTotalStr]    = useState("");
-  const [modo,        setModo]        = useState("stake_base"); // "stake_base" | "total" | "freebet"
+
+  // ── Modos ────────────────────────────────────────────────────────────────────
+  // modoPrincipal: "arbitragem" | "freebet_red" | "freebet"
+  // modoArb:       "stake_base" | "total"  (sub-modo, só ativo em arbitragem)
+  // modo (derivado): alimenta toda a pipeline de cálculo sem alterar nenhuma fórmula
+  const [modoPrincipal, setModoPrincipal] = useState("arbitragem");
+  const [modoArb,       setModoArb]       = useState("stake_base");
+  const modo = modoPrincipal === "arbitragem" ? modoArb
+             : modoPrincipal === "freebet_red" ? "stake_base"
+             : "freebet"; // modoPrincipal === "freebet"
 
   // Exchange — no máximo 1 entrada por cálculo
   const [exchIdx,  setExchIdx]  = useState(null);              // índice ou null
@@ -21,6 +30,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   const [exchComm, setExchComm] = useState("");                // comissão em %
 
   // Diferença de retorno: entradas secundárias retornam este valor a menos que a principal
+  // Armazenado sempre, mas só aplicado matematicamente em modoPrincipal === "freebet_red"
   const [diferencaStr, setDiferencaStr] = useState("0");
 
   function ajustarEntradas(n) {
@@ -43,9 +53,9 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
     setExchIdx(prev => (prev === i ? null : i));
   }
 
-  // Ao trocar para total: pré-preenche o campo com o totalInvestido já calculado (se houver)
-  function ajustarModo(novoModo) {
-    if (novoModo === "total" && modo === "stake_base") {
+  // Sub-modo de arbitragem: ao trocar para total, pré-preenche o campo com o total calculado
+  function ajustarModoArb(novoModoArb) {
+    if (novoModoArb === "total" && modoArb === "stake_base") {
       const st  = parseFloat(stakeBase) || 0;
       const o0  = parseFloat(String(odds[0] || "").replace(",", ".")) || 0;
       if (st > 0 && o0 > 0) {
@@ -59,7 +69,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
         setTotalStr(tot.toFixed(2));
       }
     }
-    setModo(novoModo);
+    setModoArb(novoModoArb);
   }
 
   // ── Cálculo ─────────────────────────────────────────────────────────────────
@@ -75,8 +85,10 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   const comm = (parseFloat(exchComm) || 0) / 100;
 
   // Diferença de retorno (R$): retorno-alvo das entradas secundárias = retornoBase − difNum
-  // 0 = comportamento padrão (retornos equilibrados)
-  const difNum = Math.max(0, parseFloat(diferencaStr) || 0);
+  // Só aplicada matematicamente no modo "freebet_red"; nos demais é sempre 0
+  const difNum = modoPrincipal === "freebet_red"
+    ? Math.max(0, parseFloat(diferencaStr) || 0)
+    : 0;
 
   // Flags de exchange
   const hasExchLay  = exchIdx !== null && exchTipo === "exchange_lay";
@@ -223,30 +235,55 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
         </div>
       </div>
 
-      {/* ── Toggle de modo: Stake base | Aposta total | Ext. Freebet ─────── */}
-      <div style={{ display: "flex", gap: 2, background: G.surface, borderRadius: 6, padding: 2, marginBottom: 14, width: "fit-content" }}>
-        {[
-          { value: "stake_base", label: "Stake base"   },
-          { value: "total",      label: "Aposta total" },
-          { value: "freebet",    label: "Ext. Freebet" },
-        ].map(({ value, label }) => {
-          const ativo = modo === value;
-          return (
-            <button key={value} onClick={() => ajustarModo(value)} style={{
-              padding: "4px 16px", borderRadius: 5, border: "none", cursor: "pointer",
-              background: ativo ? "#00d4ff22" : "transparent",
-              color: ativo ? G.accent : G.textDim,
-              fontSize: 12, fontWeight: 700,
-              fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
-            }}>
-              {label}
-            </button>
-          );
-        })}
+      {/* ── Seletor de modo principal ─────────────────────────────────────── */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ display: "flex", gap: 2, background: G.surface, borderRadius: 6, padding: 2, width: "fit-content" }}>
+          {[
+            { value: "arbitragem",  label: "Arbitragem"    },
+            { value: "freebet_red", label: "Freebet se Red" },
+            { value: "freebet",     label: "Ext. Freebet"   },
+          ].map(({ value, label }) => {
+            const ativo = modoPrincipal === value;
+            return (
+              <button key={value} onClick={() => setModoPrincipal(value)} style={{
+                padding: "4px 16px", borderRadius: 5, border: "none", cursor: "pointer",
+                background: ativo ? "#00d4ff22" : "transparent",
+                color: ativo ? G.accent : G.textDim,
+                fontSize: 12, fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+              }}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sub-seletor Stake base | Total base — apenas no modo Arbitragem */}
+        {modoPrincipal === "arbitragem" && (
+          <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 5, padding: 2, width: "fit-content", marginTop: 6 }}>
+            {[
+              { value: "stake_base", label: "Stake base"  },
+              { value: "total",      label: "Total base"  },
+            ].map(({ value, label }) => {
+              const ativo = modoArb === value;
+              return (
+                <button key={value} onClick={() => ajustarModoArb(value)} style={{
+                  padding: "3px 14px", borderRadius: 4, border: "none", cursor: "pointer",
+                  background: ativo ? `${G.accent}18` : "transparent",
+                  color: ativo ? G.accent : G.textMuted,
+                  fontSize: 11, fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* ── Diferença de retorno — apenas no modo Stake base ────────────── */}
-      {modo === "stake_base" && <div style={{
+      {/* ── Diferença de retorno — apenas no modo Freebet se Red ────────── */}
+      {modoPrincipal === "freebet_red" && <div style={{
         display: "flex", alignItems: "center", gap: 10, marginBottom: 14,
         background: G.surface2, border: `1px solid ${G.border}`,
         borderRadius: 8, padding: "8px 14px",
