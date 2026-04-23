@@ -5,6 +5,7 @@ import { lucroEfetivoOp } from "../../utils/calculos";
 import { statusOp } from "../../utils/status";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { lucroCassino } from "../../utils/lucroCassino";
+import { lucroProtecao } from "../../utils/lucroProtecao";
 import { Card } from "../../components/ui/Card";
 import { ModalDetalhesMes }       from "./modals/ModalDetalhesMes";
 import { ModalCalculadora }       from "./modals/ModalCalculadora";
@@ -83,15 +84,6 @@ export function TelaDashboard({ data, setData }) {
     return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes;
   }
 
-  // Lucro LÍQUIDO de uma proteção: green=(odd-1)*valor, red=-valor, pendente=0
-  function lucroProtecaoDash(p) {
-    const odd   = parseFloat(String(p.odd).replace(",", ".")) || 0;
-    const valor = parseFloat(p.valor) || 0;
-    if (p.situacao === "green") return (odd - 1) * valor;
-    if (p.situacao === "red")   return -valor;
-    return 0;
-  }
-
   const todosEventos    = data.eventos || [];
   const todasOpsDoMes   = todosEventos.flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev })).filter(({ ev }) => opDoMes(ev)));
   const totalOps        = todasOpsDoMes.length;
@@ -102,17 +94,20 @@ export function TelaDashboard({ data, setData }) {
   const lucroMes        = todasOpsDoMes.reduce((s, { op }) => s + lucroEfetivoOp(op), 0)
     + avulsasDoMes.reduce((s, a) => s + lucroAvulsa(a), 0)
     + cassinosDoMes.reduce((s, c) => s + lucroCassino(c), 0)
-    + protecoesMes.reduce((s, p) => s + lucroProtecaoDash(p), 0);
+    + protecoesMes.reduce((s, p) => s + lucroProtecao(p), 0);
 
   const hojeStr  = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
   const lucroHoje = todosEventos.flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev }))).filter(({ ev }) => (ev.data || "").slice(0, 10) === hojeStr).reduce((s, { op }) => s + lucroEfetivoOp(op), 0)
     + (data.apostasAvulsas || []).filter(a => (a.data || "").slice(0, 10) === hojeStr).reduce((s, a) => s + lucroAvulsa(a), 0)
     + (data.cassinos || []).filter(c => (c.data || "").slice(0, 10) === hojeStr).reduce((s, c) => s + lucroCassino(c), 0)
-    + todosEventos.filter(ev => (ev.data || "").slice(0, 10) === hojeStr).flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecaoDash(p), 0);
+    + todosEventos.filter(ev => (ev.data || "").slice(0, 10) === hojeStr).flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecao(p), 0);
+
+  // Extrai o dia do mês a partir de strings "YYYY-MM-DD" sem conversão de fuso
+  const diaStr = d => parseInt((d || "").slice(8, 10), 10);
 
   const diasComOps   = new Set([
-    ...todasOpsDoMes.map(({ ev }) => new Date(ev.data).getDate()),
-    ...avulsasDoMes.map(a => new Date(a.data).getDate()),
+    ...todasOpsDoMes.map(({ ev }) => diaStr(ev.data)),
+    ...avulsasDoMes.map(a => diaStr(a.data)),
   ]);
   const mediaDiaria  = diasComOps.size > 0 ? lucroMes / diasComOps.size : 0;
   const mediaOpsDia  = diasComOps.size > 0 ? totalOps / diasComOps.size : 0;
@@ -132,7 +127,7 @@ export function TelaDashboard({ data, setData }) {
     const lucroOpsM  = evDoMesM.flatMap(ev => ev.operacoes || []).reduce((s, op) => s + lucroEfetivoOp(op), 0);
     const lucroAvM   = (data.apostasAvulsas || []).filter(a => { const d = new Date(a.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, a) => s + lucroAvulsa(a), 0);
     const lucroCasM  = (data.cassinos || []).filter(c => { const d = new Date(c.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, c) => s + lucroCassino(c), 0);
-    const lucroProtM = evDoMesM.flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecaoDash(p), 0);
+    const lucroProtM = evDoMesM.flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecao(p), 0);
     return lucroOpsM + lucroAvM + lucroCasM + lucroProtM;
   });
   const mediaUltimosMeses = lucrosPorMes.length > 0 ? lucrosPorMes.reduce((a, b) => a + b, 0) / lucrosPorMes.length : null;
@@ -140,14 +135,14 @@ export function TelaDashboard({ data, setData }) {
   const diasNoMes    = new Date(anoSel, mesMes, 0).getDate();
   const lucrosPorDia = Array.from({ length: diasNoMes }, (_, i) => {
     const dia  = i + 1;
-    const lOps = todasOpsDoMes.filter(({ ev }) => new Date(ev.data).getDate() === dia).reduce((s, { op }) => s + lucroEfetivoOp(op), 0);
-    const lAv  = avulsasDoMes.filter(a => new Date(a.data).getDate() === dia).reduce((s, a) => s + lucroAvulsa(a), 0);
-    const lCas = cassinosDoMes.filter(c => new Date(c.data).getDate() === dia).reduce((s, c) => s + lucroCassino(c), 0);
+    const lOps = todasOpsDoMes.filter(({ ev }) => diaStr(ev.data) === dia).reduce((s, { op }) => s + lucroEfetivoOp(op), 0);
+    const lAv  = avulsasDoMes.filter(a => diaStr(a.data) === dia).reduce((s, a) => s + lucroAvulsa(a), 0);
+    const lCas = cassinosDoMes.filter(c => diaStr(c.data) === dia).reduce((s, c) => s + lucroCassino(c), 0);
     const lProt = protecoesMes.filter(p => {
       // Proteções são indexadas pelo evento — busca o evento-pai para pegar a data
       const ev = todosEventos.find(ev => (ev.protecoes || []).some(pp => pp.id === p.id));
-      return ev && new Date(ev.data).getDate() === dia;
-    }).reduce((s, p) => s + lucroProtecaoDash(p), 0);
+      return ev && diaStr(ev.data) === dia;
+    }).reduce((s, p) => s + lucroProtecao(p), 0);
     return { dia, lucro: lOps + lAv + lCas + lProt };
   });
   const maxLucro = Math.max(...lucrosPorDia.map(d => Math.abs(d.lucro)), 1);

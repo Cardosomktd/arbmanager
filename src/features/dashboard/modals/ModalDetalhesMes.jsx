@@ -4,20 +4,12 @@ import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../../utils/format";
 import { lucroEfetivoOp } from "../../../utils/calculos";
 import { lucroAvulsa } from "../../../utils/lucroAvulsa";
 import { lucroCassino } from "../../../utils/lucroCassino";
+import { lucroProtecao } from "../../../utils/lucroProtecao";
 import { statusOp } from "../../../utils/status";
 import { resolveCategoria, CATEGORIAS } from "../../../utils/categoriaOp";
 import { Modal } from "../../../components/ui/Modal";
 
 // ── Helpers de cálculo ────────────────────────────────────────────────────────
-
-// Lucro LÍQUIDO de uma proteção (green = retorno menos stake, não retorno bruto)
-function lucroProtecao(p) {
-  const odd   = parseFloat(String(p.odd).replace(",", ".")) || 0;
-  const valor = parseFloat(p.valor) || 0;
-  if (p.situacao === "green") return (odd - 1) * valor;
-  if (p.situacao === "red")   return -valor;
-  return 0;
-}
 
 // Verifica se a condição de geração de freebet foi atingida (espelha getFreebets)
 function fbAtingida(op) {
