@@ -5,7 +5,7 @@ export function Modal({ open, onClose, title, children, width = 560 }) {
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-      onClick={onClose}
+      /* onClick removido: fechar por clique fora desabilitado para evitar perda de dados */
     >
       <div
         style={{ background: G.surface, border: `1px solid ${G.border}`, borderRadius: 12, width: "100%", maxWidth: width, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px #000a" }}

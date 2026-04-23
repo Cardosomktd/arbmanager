@@ -96,22 +96,22 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
       if (i === 0) return stakeNum > 0 ? stakeNum : null;
       if (retornoBase <= 0 || odd <= 0) return null;
 
-      // Exchange: apenas no modo stake_base (freebet não combina com exchange)
-      if (modo === "stake_base") {
-        if (i === exchIdx && exchTipo === "exchange_back") {
-          // Equaliza: s × [1 + (odd−1)×(1−comm)] = retornoBase
-          const denom = 1 + (odd - 1) * (1 - comm);
-          return denom > 0 ? Math.round((retornoBase / denom) * 100) / 100 : null;
-        }
-        if (i === exchIdx && exchTipo === "exchange_lay") {
-          // Equaliza: s_lay × (odd_lay − comm) = retornoBase
-          const divisor = odd - comm;
-          return divisor > 0 ? Math.round((retornoBase / divisor) * 100) / 100 : null;
-        }
+      // Exchange: aplica em stake_base e freebet — mesmas fórmulas, retornoBase diferente
+      //   stake_base: retornoBase = stake × odd
+      //   freebet:    retornoBase = freebet × (odd_fb − 1)
+      if (i === exchIdx && exchTipo === "exchange_back") {
+        // Equaliza: s × [1 + (odd−1)×(1−comm)] = retornoBase
+        const denom = 1 + (odd - 1) * (1 - comm);
+        return denom > 0 ? Math.round((retornoBase / denom) * 100) / 100 : null;
+      }
+      if (i === exchIdx && exchTipo === "exchange_lay") {
+        // Equaliza: s_lay × (odd_lay − comm) = retornoBase
+        const divisor = odd - comm;
+        return divisor > 0 ? Math.round((retornoBase / divisor) * 100) / 100 : null;
       }
 
-      // Entradas secundárias normais: retorno-alvo = retornoBase − diferença
-      const retornoAlvo = difNum > 0 ? retornoBase - difNum : retornoBase;
+      // Entradas secundárias normais: diferença só se aplica no modo stake_base
+      const retornoAlvo = (difNum > 0 && modo === "stake_base") ? retornoBase - difNum : retornoBase;
       if (retornoAlvo <= 0) return null;
       return Math.round((retornoAlvo / odd) * 100) / 100;
 
@@ -138,7 +138,9 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   );
 
   const totalInvestido = hasExchLay
-    ? somaStakesNormais + responsabilidade
+    ? (modo === "freebet"
+        ? responsabilidade                              // freebet não é capital → só responsabilidade
+        : somaStakesNormais + responsabilidade)
     : modo === "freebet"
       ? stakesCalc.slice(1).reduce((s, v) => s + (v ?? 0), 0)   // exclui a freebet (entrada 0)
       : stakesCalc.reduce((s, v) => s + (v ?? 0), 0);
@@ -147,14 +149,17 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   //   Freebet  i=0:   retorno = s × (odd − 1) → lucro = s×(odd−1) − totalInvestido
   //   Normal   i:     lucro = s × odd − totalInvestido
   //   Exch Back:      lucro = (s + s×(odd−1)×(1−comm)) − totalInvestido
-  //   Exch Lay wins:  lucro = s_lay × (1−comm) − somaStakesNormais
+  //   Exch Lay wins (stake_base): lucro = s_lay×(1−comm) − somaStakesNormais
+  //   Exch Lay wins (freebet):    lucro = s_lay×(1−comm)  [freebet não é capital]
   const lucros = oddsNum.map((odd, i) => {
     const s = stakesCalc[i];
     if (s === null || odd <= 0) return null;
 
     if (hasExchLay && i === exchIdx) {
       if (layStakeCalc === null) return null;
-      return layStakeCalc * (1 - comm) - somaStakesNormais;
+      // Em freebet a freebet não é capital real: custo de saída do lay = 0
+      const custoSaida = modo === "freebet" ? 0 : somaStakesNormais;
+      return layStakeCalc * (1 - comm) - custoSaida;
     }
     if (hasExchBack && i === exchIdx) {
       return s + s * (odd - 1) * (1 - comm) - totalInvestido;
@@ -410,8 +415,8 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
               </div>
 
               {/* ── Controles de Exchange (abaixo do grid) ──────────────── */}
-              {/* Exchange não se aplica ao modo freebet */}
-              {modo !== "freebet" && (
+              {/* Exchange: apenas na entrada 2 (i === 1), em todos os modos */}
+              {i === 1 && (
                 <div style={{
                   marginTop: 8, paddingTop: 8,
                   borderTop: `1px solid ${G.border}`,
