@@ -47,12 +47,12 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
   return (
     <Modal open={open} onClose={onClose} title="🎰 Bingo" width={440}>
       {erro && (
-        <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
         </div>
       )}
 
-      <div style={{ background: "#aa66ff0d", border: "1px solid #aa66ff33", borderRadius: 8, padding: "8px 12px", marginBottom: 16, fontSize: 12, color: "#cc88ff" }}>
+      <div style={{ background: "#8B5CF60d", border: "1px solid #8B5CF633", borderRadius: 8, padding: "8px 12px", marginBottom: 16, fontSize: 12, color: "#A78BFA" }}>
         🎲 Cadastre aqui a sua múltipla.
       </div>
 

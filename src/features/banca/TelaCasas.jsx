@@ -61,17 +61,17 @@ export function TelaCasas({ data, setData }) {
 
   return (
     <div style={{ maxWidth: 780, margin: "0 auto" }}>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, color: G.accent }}>
+      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, color: G.text }}>
         Banca
       </div>
 
       {/* Alertas */}
       {alertas.length > 0 && (
-        <div style={{ background: "#ff440011", border: "1px solid #ff444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
+        <div style={{ background: "#F8717111", border: "1px solid #F8717133", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: G.red, fontWeight: 700, marginBottom: 6 }}>⚠️ DEPÓSITO PENDENTE DE LANÇAMENTO</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {alertas.map(c => (
-              <div key={c.id} style={{ background: "#ff44440a", border: "1px solid #ff444433", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
+              <div key={c.id} style={{ background: "#F871710A", border: "1px solid #F8717133", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
                 <span style={{ color: G.text, fontWeight: 600 }}>{c.nome}</span>
               </div>
             ))}
@@ -101,7 +101,7 @@ export function TelaCasas({ data, setData }) {
           const temAlerta = saldo < 0;
 
           return (
-            <Card key={c.id} style={{ padding: 0, overflow: "hidden", border: `1px solid ${temAlerta ? "#ff444433" : G.border}` }}>
+            <Card key={c.id} style={{ padding: 0, overflow: "hidden", border: `1px solid ${temAlerta ? "#F8717133" : G.border}` }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", cursor: "pointer" }}
                 onClick={() => setCasaDetalhe(aberta ? null : c.id)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -109,7 +109,7 @@ export function TelaCasas({ data, setData }) {
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
                       {c.nome}
-                      {temAlerta && <span style={{ fontSize: 10, color: G.red, background: "#ff444422", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>DEP. PENDENTE</span>}
+                      {temAlerta && <span style={{ fontSize: 10, color: G.red, background: "#F8717122", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>DEP. PENDENTE</span>}
                     </div>
                     <div style={{ fontSize: 11, color: G.textDim, marginTop: 1 }}>
                       {c.titular && <span style={{ marginRight: 6 }}>👤 {c.titular} ·</span>}

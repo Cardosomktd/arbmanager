@@ -72,7 +72,7 @@ export function ModalEvento({ open, onClose, onSalvar, editEvento, eventosList =
   return (
     <Modal open={open} onClose={onClose} title={editEvento ? "Editar Evento" : "Novo Evento"} width={460}>
       {erro && (
-        <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
         </div>
       )}
@@ -102,7 +102,7 @@ export function ModalEvento({ open, onClose, onSalvar, editEvento, eventosList =
             </label>
             <input
               type="time" value={hora} onChange={e => setHora(e.target.value)}
-              style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 6, padding: "9px 12px", color: hora ? G.text : G.textMuted, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box", fontFamily: "'DM Sans', sans-serif" }}
+              style={{ background: G.surface2, border: `1px solid ${G.border}`, borderRadius: 7, padding: "9px 12px", color: hora ? G.text : G.textMuted, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" }}
             />
           </div>
         </div>

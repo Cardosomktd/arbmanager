@@ -45,7 +45,7 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
               <span style={{ fontSize: 12, color: G.textDim }}>{fmtDate(evento.data)}</span>
               {(evento.protecoes || []).length > 0 && (
-                <span style={{ fontSize: 11, color: "#aa66ff", background: "#aa66ff18", borderRadius: 4, padding: "1px 7px", fontWeight: 600 }}>
+                <span style={{ fontSize: 11, color: "#8B5CF6", background: "#8B5CF618", borderRadius: 4, padding: "1px 7px", fontWeight: 600 }}>
                   🛡 Proteção
                 </span>
               )}
@@ -64,10 +64,10 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
                 onClick={e => { e.stopPropagation(); onAddProtecao(evento.id); }}
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  background: "#aa66ff18", border: "1px solid #aa66ff44",
+                  background: "#8B5CF618", border: "1px solid #8B5CF644",
                   borderRadius: 7, padding: "6px 12px",
-                  color: "#aa66ff", cursor: "pointer", flexShrink: 0,
-                  fontFamily: "'DM Sans', sans-serif",
+                  color: "#8B5CF6", cursor: "pointer", flexShrink: 0,
+                  
                 }}
               >
                 <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>🛡</span>
@@ -94,7 +94,7 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
 
           {/* Painel PA */}
           {entradasPA.length > 0 && (
-            <div style={{ background: "#00d4ff0a", border: "1px solid #00d4ff22", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
+            <div style={{ background: "#22D3EE0a", border: "1px solid #22D3EE22", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
               <div style={{ fontSize: 11, color: G.accent, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>PAGAMENTO ANTECIPADO</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                 {[{ label: evento.mandante, key: evento.mandante }, { label: evento.visitante, key: evento.visitante }]
@@ -119,12 +119,12 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
           {/* Proteções */}
           {(evento.protecoes || []).length > 0 && (
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: G.yellow, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>🛡️ PROTEÇÕES</div>
+              <div style={{ fontSize: 11, color: G.purple, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>🛡️ PROTEÇÕES</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {(evento.protecoes || []).map(p => {
                   const cor = p.situacao === "green" ? G.green : p.situacao === "red" ? G.red : G.textDim;
                   return (
-                    <div key={p.id} style={{ background: "#ffd60008", border: "1px solid #ffd60033", borderRadius: 6, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div key={p.id} style={{ background: "#FBBF2408", border: "1px solid #FBBF2433", borderRadius: 6, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                         <span style={{ fontSize: 12, color: G.textDim }}>{getCasaNome(casas, p.casa)}</span>
                         <span style={{ fontSize: 12, color: G.text }}>· {p.entrada}</span>

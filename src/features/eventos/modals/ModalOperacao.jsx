@@ -16,18 +16,18 @@ const CONDICAO_OPTS = [
 
 // ── Opções de tipo de operação (labels sincronizados com CATEGORIAS) ──────────
 const TIPO_OP_OPTS = [
-  { value: "arbitragem",           ...CATEGORIAS.arbitragem,           corAtivo: "#00d4ff22", corText: "#00d4ff" },
+  { value: "arbitragem",           ...CATEGORIAS.arbitragem,           corAtivo: "#22D3EE22", corText: "#22D3EE" },
   { value: "procedimento_freebet", ...CATEGORIAS.procedimento_freebet, corAtivo: "#fbbf2422", corText: "#fbbf24" },
-  { value: "extracao_freebet",     ...CATEGORIAS.extracao_freebet,     corAtivo: "#22c55e22", corText: "#22c55e" },
-  { value: "duplo",                ...CATEGORIAS.duplo,                corAtivo: "#aa66ff33", corText: "#cc88ff" },
+  { value: "extracao_freebet",     ...CATEGORIAS.extracao_freebet,     corAtivo: "#34D39922", corText: "#34D399" },
+  { value: "duplo",                ...CATEGORIAS.duplo,                corAtivo: "#8B5CF633", corText: "#A78BFA" },
 ];
 
 // Cor da borda e do label das entradas conforme tipo de operação
 const COR_ENTRADA = {
   arbitragem:           { borda: G.border,    label: G.accent   },
   procedimento_freebet: { borda: "#fbbf2444", label: "#fbbf24"  },
-  extracao_freebet:     { borda: "#22c55e44", label: "#22c55e"  },
-  duplo:                { borda: "#aa66ff44", label: "#cc88ff"  },
+  extracao_freebet:     { borda: "#34D39944", label: "#34D399"  },
+  duplo:                { borda: "#8B5CF644", label: "#A78BFA"  },
 };
 
 // Banner informativo por tipo
@@ -37,11 +37,11 @@ const BANNERS = {
     texto: "🎯 Proc. Freebet — configure abaixo a freebet gerada ao completar a condição.",
   },
   extracao_freebet: {
-    bg:   "#22c55e0d", borda: "#22c55e33", cor: "#22c55e",
+    bg:   "#34D3990d", borda: "#34D39933", cor: "#34D399",
     texto: "🎁 Ext. Freebet — marque abaixo as entradas que usam freebet para o cálculo correto do retorno líquido.",
   },
   duplo: {
-    bg:   "#aa66ff0d", borda: "#aa66ff33", cor: "#cc88ff",
+    bg:   "#8B5CF60d", borda: "#8B5CF633", cor: "#A78BFA",
     texto: "🎲 Chance de Duplo — cobertura de dois resultados. Sem lucro mínimo garantido.",
   },
 };
@@ -285,7 +285,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
   return (
     <Modal open={open} onClose={onClose} title={editOp ? "Editar Operação" : "Nova Operação"} width={680}>
       {erro && (
-        <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
         </div>
       )}
@@ -304,7 +304,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                 background: ativo ? t.corAtivo : "transparent",
                 color: ativo ? t.corText : G.textDim,
                 fontSize: 13, fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif",
+                
                 transition: "all 0.15s",
               }}>
                 {t.emoji} {t.label}
@@ -340,7 +340,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                 <button key={n} onClick={() => ajustarEntradas(n)} style={{
                   width: 30, height: 30, borderRadius: 6,
                   border: `1px solid ${numEntradas === n ? G.accent : G.border}`,
-                  background: numEntradas === n ? "#00d4ff22" : G.surface2,
+                  background: numEntradas === n ? "#22D3EE22" : G.surface2,
                   color: numEntradas === n ? G.accent : G.textDim,
                   fontWeight: 600, fontSize: 13, cursor: "pointer",
                 }}>
@@ -389,10 +389,10 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                       <button onClick={() => toggleEntradaModoRetorno(i)} style={{
                         padding: "2px 8px", borderRadius: 4,
                         border: `1px solid ${e.modoRetorno ? G.accent : G.border}`,
-                        background: e.modoRetorno ? "#00d4ff11" : "transparent",
+                        background: e.modoRetorno ? "#22D3EE11" : "transparent",
                         color: e.modoRetorno ? G.accent : G.textMuted,
                         fontSize: 10, fontWeight: 600, cursor: "pointer",
-                        fontFamily: "'DM Sans', sans-serif",
+                        
                       }}>
                         {e.modoRetorno ? "↩ por Retorno" : "↪ por Odd"}
                       </button>
@@ -448,7 +448,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                       <input value={e.multiplaDesc || ""} onChange={ev => upd(i, "multiplaDesc", ev.target.value)}
                         placeholder="O que foi adicionado na múltipla? Ex: + Mais de 1.5 gols"
                         style={{
-                          background: "#ffd60011", border: `1px solid ${G.yellow}44`,
+                          background: "#FBBF2411", border: `1px solid ${G.yellow}44`,
                           borderRadius: 6, padding: "7px 12px", color: G.text,
                           fontSize: 12, width: "100%", boxSizing: "border-box", outline: "none",
                         }} />
@@ -569,14 +569,14 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                             padding: "3px 14px", borderRadius: 5, border: "none", cursor: "pointer",
                             background: isBack ? "#3b82f622" : "transparent",
                             color: isBack ? "#3b82f6" : G.textDim,
-                            fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                            fontSize: 12, fontWeight: 700, 
                             transition: "all 0.15s",
                           }}>Back</button>
                           <button onClick={() => updMulti(i, { tipo: "exchange_lay" })} style={{
                             padding: "3px 14px", borderRadius: 5, border: "none", cursor: "pointer",
                             background: isLay ? "#ec489922" : "transparent",
                             color: isLay ? "#ec4899" : G.textDim,
-                            fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+                            fontSize: 12, fontWeight: 700, 
                             transition: "all 0.15s",
                           }}>Lay</button>
                         </div>
@@ -640,7 +640,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                     {tipoOp === "extracao_freebet" && isFb && (
                       <div style={{ marginTop: 8 }}>
                         <select value={e.tipo} onChange={ev => upd(i, "tipo", ev.target.value)}
-                          style={{ background: G.surface2, border: `1px solid #22c55e44`, borderRadius: 6, padding: "4px 10px", color: G.text, fontSize: 12, outline: "none" }}>
+                          style={{ background: G.surface2, border: `1px solid #34D39944`, borderRadius: 6, padding: "4px 10px", color: G.text, fontSize: 12, outline: "none" }}>
                           <option value="freebet">Freebet</option>
                           <option value="bonus">Bônus</option>
                         </select>
@@ -671,7 +671,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                       padding: "4px 12px", borderRadius: 5, border: "none", cursor: "pointer",
                       background: fbTipo === t.value ? "#fbbf2422" : "transparent",
                       color: fbTipo === t.value ? "#fbbf24" : G.textDim,
-                      fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                      fontSize: 12, fontWeight: 600, 
                       transition: "all 0.15s",
                     }}>
                       {t.label}

@@ -26,7 +26,7 @@ export function ModalMovimento({ open, onClose, onSalvar, casas }) {
   return (
     <Modal open={open} onClose={onClose} title="Nova Movimentação" width={400}>
       {erro && (
-        <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
         </div>
       )}
@@ -40,7 +40,7 @@ export function ModalMovimento({ open, onClose, onSalvar, casas }) {
                 <button key={t} onClick={() => setTipo(t)} style={{
                   flex: 1, padding: "8px", borderRadius: 6,
                   border: `1px solid ${tipo === t ? (t === "deposito" ? G.green : G.red) : G.border}`,
-                  background: tipo === t ? (t === "deposito" ? "#00e67622" : "#ff444422") : "transparent",
+                  background: tipo === t ? (t === "deposito" ? "#34D39922" : "#F8717122") : "transparent",
                   color: tipo === t ? (t === "deposito" ? G.green : G.red) : G.textDim,
                   fontWeight: 600, fontSize: 13, cursor: "pointer",
                 }}>

@@ -218,7 +218,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
               <button key={n} onClick={() => ajustarEntradas(n)} style={{
                 width: 30, height: 30, borderRadius: 6,
                 border: `1px solid ${numEntradas === n ? G.accent : G.border}`,
-                background: numEntradas === n ? "#00d4ff22" : G.surface2,
+                background: numEntradas === n ? "#22D3EE22" : G.surface2,
                 color: numEntradas === n ? G.accent : G.textDim,
                 fontWeight: 600, fontSize: 13, cursor: "pointer",
               }}>
@@ -247,10 +247,10 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
             return (
               <button key={value} onClick={() => setModoPrincipal(value)} style={{
                 padding: "4px 16px", borderRadius: 5, border: "none", cursor: "pointer",
-                background: ativo ? "#00d4ff22" : "transparent",
+                background: ativo ? "#22D3EE22" : "transparent",
                 color: ativo ? G.accent : G.textDim,
                 fontSize: 12, fontWeight: 700,
-                fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                transition: "all 0.15s",
               }}>
                 {label}
               </button>
@@ -272,7 +272,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                   background: ativo ? `${G.accent}18` : "transparent",
                   color: ativo ? G.accent : G.textMuted,
                   fontSize: 11, fontWeight: 700,
-                  fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                  transition: "all 0.15s",
                 }}>
                   {label}
                 </button>
@@ -485,7 +485,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                         background: isBack ? "#3b82f622" : "transparent",
                         color: isBack ? "#3b82f6" : G.textDim,
                         fontSize: 11, fontWeight: 700,
-                        fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                        transition: "all 0.15s",
                       }}>
                         Back
                       </button>
@@ -494,7 +494,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                         background: isLay ? "#ec489922" : "transparent",
                         color: isLay ? "#ec4899" : G.textDim,
                         fontSize: 11, fontWeight: 700,
-                        fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s",
+                        transition: "all 0.15s",
                       }}>
                         Lay
                       </button>
@@ -599,13 +599,13 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
         })} style={{
           display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           width: "100%", marginTop: 12,
-          background: "#00d4ff22", border: `1px solid ${G.accent}`,
+          background: "#22D3EE22", border: `1px solid ${G.accent}`,
           borderRadius: 8, padding: "10px 16px", cursor: "pointer",
           color: G.accent, fontSize: 13, fontWeight: 700,
-          fontFamily: "'DM Sans', sans-serif", transition: "background 0.15s",
+          transition: "background 0.15s",
         }}
-          onMouseEnter={e => e.currentTarget.style.background = "#00d4ff33"}
-          onMouseLeave={e => e.currentTarget.style.background = "#00d4ff22"}
+          onMouseEnter={e => e.currentTarget.style.background = "#22D3EE33"}
+          onMouseLeave={e => e.currentTarget.style.background = "#22D3EE22"}
         >
           🏟️ Usar na operação
         </button>

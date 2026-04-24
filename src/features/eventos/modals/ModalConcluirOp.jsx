@@ -42,7 +42,7 @@ export function ModalConcluirOp({ open, onClose, op, casas, onConcluir }) {
           const retorno = calcRetorno(e);
           return (
             <div key={e.id} onClick={() => toggleGreen(e.id)}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: sel ? "#00e67611" : G.surface2, border: `1px solid ${sel ? G.green : G.border}`, borderRadius: 8, padding: "10px 14px", cursor: "pointer", transition: "all 0.15s" }}>
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: sel ? "#34D39911" : G.surface2, border: `1px solid ${sel ? G.green : G.border}`, borderRadius: 8, padding: "10px 14px", cursor: "pointer", transition: "all 0.15s" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${sel ? G.green : G.border}`, background: sel ? G.green : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   {sel && <span style={{ color: "#000", fontSize: 11, fontWeight: 900 }}>✓</span>}

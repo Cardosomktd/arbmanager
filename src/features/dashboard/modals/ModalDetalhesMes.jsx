@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { G } from "../../../constants/colors";
+import { G, GRAD } from "../../../constants/colors";
 import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../../utils/format";
 import { lucroEfetivoOp } from "../../../utils/calculos";
 import { lucroAvulsa } from "../../../utils/lucroAvulsa";
@@ -52,7 +52,10 @@ function TagStatus({ st }) {
   return (
     <span style={{
       fontSize: 10, fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0,
-      color: cfg.cor, background: `${cfg.cor}22`, borderRadius: 3, padding: "1px 6px",
+      color: cfg.cor,
+      background: `${cfg.cor}20`,
+      border: `1px solid ${cfg.cor}44`,
+      borderRadius: 4, padding: "1px 8px",
     }}>
       {cfg.label}
     </span>
@@ -63,7 +66,7 @@ function LinhaItem({ children }) {
   return (
     <div style={{
       display: "flex", alignItems: "flex-start", justifyContent: "space-between",
-      padding: "8px 0", borderBottom: `1px solid ${G.border}`,
+      padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.05)",
     }}>
       {children}
     </div>
@@ -73,11 +76,11 @@ function LinhaItem({ children }) {
 function ValorLinha({ v, muted }) {
   const cor = v == null ? G.textMuted : v >= 0 ? G.green : G.red;
   return (
-    <div style={{ flexShrink: 0, marginLeft: 12, textAlign: "right" }}>
-      <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 15, fontWeight: 700, color: muted ? G.textMuted : cor }}>
+    <div style={{ flexShrink: 0, marginLeft: 14, textAlign: "right" }}>
+      <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 16, fontWeight: 700, color: muted ? G.textMuted : cor }}>
         {v == null ? "—" : fmt(v)}
       </span>
-      {muted && <div style={{ fontSize: 9, color: G.textMuted }}>mín</div>}
+      {muted && <div style={{ fontSize: 9, color: G.textMuted, marginTop: 1 }}>mín</div>}
     </div>
   );
 }
@@ -154,16 +157,20 @@ function ItemAvulsa({ a, casas }) {
 function Secao({ titulo, cor, count, subtotal, aberto, onToggle, children }) {
   if (count === 0) return null;
   return (
-    <div style={{ border: `1px solid ${G.border}`, borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>
+    <div style={{ border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, overflow: "hidden", marginBottom: 8 }}>
       <div onClick={onToggle} style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "10px 14px", cursor: "pointer", background: G.surface2,
         userSelect: "none", borderLeft: `3px solid ${cor}`,
-      }}>
+        transition: "background 0.15s",
+      }}
+        onMouseEnter={e => { e.currentTarget.style.background = G.surface3; }}
+        onMouseLeave={e => { e.currentTarget.style.background = G.surface2; }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 10, color: G.textMuted }}>{aberto ? "▼" : "▶"}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, color: cor }}>{titulo}</span>
-          <span style={{ fontSize: 10, color: G.textMuted, background: G.surface, borderRadius: 4, padding: "1px 7px" }}>
+          <span style={{ fontSize: 9, color: G.textMuted }}>{aberto ? "▼" : "▶"}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, color: cor }}>{titulo}</span>
+          <span style={{ fontSize: 10, color: G.textMuted, background: G.surface, borderRadius: 4, padding: "1px 7px", border: "1px solid rgba(255,255,255,0.07)" }}>
             {count}
           </span>
         </div>
@@ -175,7 +182,7 @@ function Secao({ titulo, cor, count, subtotal, aberto, onToggle, children }) {
         </span>
       </div>
       {aberto && (
-        <div style={{ padding: "0 14px 10px" }}>
+        <div style={{ padding: "0 14px 10px", background: G.surface }}>
           {children}
         </div>
       )}
@@ -287,26 +294,38 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
 
         {/* Card 1 — Lucro atual */}
-        <div style={{ background: G.surface2, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: G.textDim, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+        <div style={{
+          background: G.surface2, borderRadius: 10, padding: "16px 14px", textAlign: "center",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: GRAD }} />
+          <div style={{ fontSize: 9, color: G.textMuted, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 6 }}>
             Lucro atual
           </div>
-          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 22, fontWeight: 800, color: lucroAtual >= 0 ? G.green : G.red }}>
+          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 24, fontWeight: 800, color: lucroAtual >= 0 ? G.green : G.red, lineHeight: 1 }}>
             {fmt(lucroAtual)}
           </div>
-          <div style={{ fontSize: 10, color: G.textMuted, marginTop: 2 }}>ops + proteções + bingo</div>
+          <div style={{ fontSize: 10, color: G.textMuted, marginTop: 6 }}>ops + proteções + bingo</div>
         </div>
 
         {/* Card 2 — Freebets disponíveis */}
-        <div style={{ background: G.surface2, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: G.textDim, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+        <div style={{
+          background: G.surface2, borderRadius: 10, padding: "16px 14px", textAlign: "center",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: GRAD }} />
+          <div style={{ fontSize: 9, color: G.textMuted, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 6 }}>
             Freebets disponíveis
           </div>
-          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 22, fontWeight: 800, color: fbDisponivel > 0 ? G.yellow : G.textMuted }}>
+          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 24, fontWeight: 800, color: fbDisponivel > 0 ? G.yellow : G.textMuted, lineHeight: 1 }}>
             {fmt(fbDisponivel)}
           </div>
-          <div style={{ fontSize: 10, color: G.textMuted, marginTop: 2 }}>
-            Lucro estimado:{" "}
+          <div style={{ fontSize: 10, color: G.textMuted, marginTop: 6 }}>
+            Est.:{" "}
             <span style={{ color: fbLucroEstimado > 0 ? G.green : G.textMuted, fontWeight: 600 }}>
               {fmt(fbLucroEstimado)}
             </span>
@@ -314,14 +333,20 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
         </div>
 
         {/* Card 3 — Total previsto */}
-        <div style={{ background: G.surface2, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: G.textDim, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+        <div style={{
+          background: G.surface2, borderRadius: 10, padding: "16px 14px", textAlign: "center",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: GRAD }} />
+          <div style={{ fontSize: 9, color: G.textMuted, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 6 }}>
             Total previsto
           </div>
-          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 22, fontWeight: 800, color: totalPrevisto >= 0 ? G.accent : G.red }}>
+          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 24, fontWeight: 800, color: totalPrevisto >= 0 ? G.green : G.red, lineHeight: 1 }}>
             {fmt(totalPrevisto)}
           </div>
-          <div style={{ fontSize: 10, color: G.textMuted, marginTop: 2 }}>lucro atual + est. freebets</div>
+          <div style={{ fontSize: 10, color: G.textMuted, marginTop: 6 }}>lucro + est. freebets</div>
         </div>
       </div>
 
@@ -390,7 +415,7 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
 
       {/* ── Proteções ─────────────────────────────────────────────────────── */}
       <Secao
-        titulo="🛡️ PROTEÇÕES" cor="#aa66ff"
+        titulo="🛡️ PROTEÇÕES" cor="#8B5CF6"
         count={protecoesMes.length} subtotal={lucroProtecoes}
         aberto={abertas.protecoes} onToggle={() => toggle("protecoes")}
       >

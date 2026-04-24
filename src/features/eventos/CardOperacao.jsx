@@ -10,8 +10,8 @@ import { Btn } from "../../components/ui/Btn";
 const BORDA_CAT = {
   arbitragem:           G.border,
   procedimento_freebet: "#fbbf2433",
-  extracao_freebet:     "#22c55e33",
-  duplo:                "#aa66ff44",
+  extracao_freebet:     "#34D39933",
+  duplo:                "#8B5CF644",
 };
 
 // ── Helper: informação da freebet gerada ──────────────────────────────────────

@@ -30,11 +30,11 @@ export function ModalProtecao({ open, onClose, onSalvar, casas, evento }) {
   return (
     <Modal open={open} onClose={onClose} title="🛡️ Proteção do Duplo" width={440}>
       {erro && (
-        <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
         </div>
       )}
-      <div style={{ background: "#ffd60011", border: "1px solid #ffd60033", borderRadius: 8, padding: "8px 12px", marginBottom: 14, fontSize: 12, color: G.yellow }}>
+      <div style={{ background: "#FBBF2411", border: "1px solid #FBBF2433", borderRadius: 8, padding: "8px 12px", marginBottom: 14, fontSize: 12, color: G.yellow }}>
         Entrada avulsa de proteção — cobre o lucro de todas as operações do evento somadas.
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

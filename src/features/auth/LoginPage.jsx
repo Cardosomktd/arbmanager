@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { G } from "../../constants/colors";
+import { G, GRAD } from "../../constants/colors";
+import ebLogoUrl   from "../../assets/EB.svg";
+import wordmarkUrl from "../../assets/EDGEARB.svg";
 
 export function LoginPage() {
   const [modo,         setModo]         = useState("senha"); // "senha" | "magic"
@@ -56,17 +58,16 @@ export function LoginPage() {
       alignItems: "center",
       justifyContent: "center",
       padding: 20,
-      fontFamily: "'DM Sans', sans-serif",
     }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 38, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase" }}>
-            <span style={{ color: G.accent }}>ARB</span>
-            <span style={{ color: G.text }}>MANAGER</span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+            <img src={ebLogoUrl}   alt="EB"      height={64} style={{ display: "block" }} />
+            <img src={wordmarkUrl} alt="EdgeArb" height={22} style={{ display: "block" }} />
           </div>
-          <div style={{ color: G.textDim, fontSize: 13, marginTop: 6 }}>Gestão de arbitragem esportiva</div>
+          <div style={{ color: G.textDim, fontSize: 13, marginTop: 12 }}>Gestão de arbitragem esportiva</div>
         </div>
 
         {/* Card */}
@@ -83,8 +84,7 @@ export function LoginPage() {
                 background: modo === t.id ? G.surface : "transparent",
                 color:      modo === t.id ? G.text    : G.textDim,
                 fontSize: 13, fontWeight: 500,
-                boxShadow: modo === t.id ? "0 1px 4px #0005" : "none",
-                fontFamily: "'DM Sans', sans-serif",
+                boxShadow: modo === t.id ? `0 1px 4px ${G.bg}` : "none",
                 transition: "all 0.15s",
               }}>
                 {t.label}
@@ -188,7 +188,7 @@ function Campo({ label, children }) {
 
 function ErroBanner({ msg }) {
   return (
-    <div style={{ background: "#ff444415", border: "1px solid #ff444444", borderRadius: 6, padding: "9px 12px", fontSize: 13, color: "#ff6b6b", lineHeight: 1.4 }}>
+    <div style={{ background: "#F8717115", border: "1px solid #F8717144", borderRadius: 7, padding: "9px 12px", fontSize: 13, color: G.red, lineHeight: 1.4 }}>
       {msg}
     </div>
   );
@@ -197,14 +197,13 @@ function ErroBanner({ msg }) {
 function BtnPrimary({ children, loading }) {
   return (
     <button type="submit" disabled={loading} style={{
-      background: loading ? G.border : G.accent,
-      color: loading ? G.textDim : "#000",
+      background: loading ? G.surface3 : GRAD,
+      color: loading ? G.textDim : "#fff",
       fontWeight: 700, fontSize: 14,
       border: "none", borderRadius: 8,
       padding: "11px 0", width: "100%",
       cursor: loading ? "not-allowed" : "pointer",
-      fontFamily: "'DM Sans', sans-serif",
-      transition: "background 0.15s",
+      transition: "opacity 0.15s",
     }}>
       {children}
     </button>
@@ -215,9 +214,8 @@ function inputSt() {
   return {
     display: "block", width: "100%", boxSizing: "border-box",
     background: G.surface2, border: `1px solid ${G.border}`,
-    borderRadius: 6, padding: "10px 12px",
+    borderRadius: 7, padding: "10px 12px",
     color: G.text, fontSize: 14, outline: "none",
-    fontFamily: "'DM Sans', sans-serif",
   };
 }
 

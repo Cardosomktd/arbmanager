@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+/* ── Tipografia ─────────────────────────────────────────────────────────────── */
+/* Inter carregado via index.html; Barlow Condensed via Google Fonts abaixo    */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&display=swap');
 
 * {
   box-sizing: border-box;
@@ -7,37 +9,50 @@
 }
 
 body {
-  background: #0a0e1a;
-  color: #e8edf5;
-  font-family: 'DM Sans', sans-serif;
+  background: #0B0F1A;
+  color: #E5E7EB;
+  font-family: 'Inter', sans-serif;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar        { width: 6px; }
-::-webkit-scrollbar-track  { background: #111827; }
-::-webkit-scrollbar-thumb  { background: #1e2d45; border-radius: 3px; }
+/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; }
+::-webkit-scrollbar-track  { background: #121826; }
+::-webkit-scrollbar-thumb  { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(34,211,238,0.3); }
 
-input, select, textarea { font-family: 'DM Sans', sans-serif; }
-button                  { cursor: pointer; font-family: 'DM Sans', sans-serif; }
+/* ── Inputs e botões ────────────────────────────────────────────────────────── */
+input, select, textarea { font-family: 'Inter', sans-serif; }
+button                  { cursor: pointer; font-family: 'Inter', sans-serif; }
 
-/* Remove setinhas dos inputs numéricos (spinner) — Chrome / Safari / Edge */
+/* Remove spinners numéricos — Chrome / Safari / Edge */
 input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"]             { -moz-appearance: textfield; }
+
+/* Foco nos inputs — animação azul neon */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #22D3EE !important;
+  box-shadow: 0 0 0 2px rgba(34,211,238,0.15) !important;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-/* Remove setinhas dos inputs numéricos — Firefox */
-input[type="number"] {
-  -moz-appearance: textfield;
+/* ── Cards de evento ────────────────────────────────────────────────────────── */
+.evento-card { transition: border-color 0.2s, box-shadow 0.2s; }
+.evento-card:hover {
+  border-color: rgba(255,255,255,0.12) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35) !important;
 }
 
-.evento-card            { transition: all 0.2s; }
-.evento-card:hover      { border-color: #2a3d5e !important; }
+/* ── Botões primários — glow suave ao hover ─────────────────────────────────── */
+.btn-primary-glow:hover {
+  box-shadow: 0 4px 16px rgba(139,92,246,0.25);
+  opacity: 0.92;
+}
 
-/* ── Header responsivo ──────────────────────────────────────────────────────── */
-
-/* Desktop: tudo em uma linha, altura fixa */
+/* ── Header ─────────────────────────────────────────────────────────────────── */
 .app-header-inner {
   max-width: 960px;
   margin: 0 auto;
@@ -47,7 +62,6 @@ input[type="number"] {
   height: 54px;
 }
 
-/* Seção do usuário (email + botão sair) */
 .app-header-user {
   display: flex;
   align-items: center;
@@ -55,7 +69,6 @@ input[type="number"] {
   flex-shrink: 0;
 }
 
-/* Email: trunca quando não cabe */
 .app-header-email {
   font-size: 11px;
   max-width: 160px;
@@ -64,9 +77,9 @@ input[type="number"] {
   white-space: nowrap;
 }
 
-/* Botões de navegação: propriedades estáticas */
+/* Nav buttons */
 .app-header-nav-btn {
-  border-radius: 6px;
+  border-radius: 7px;
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 500;
@@ -74,56 +87,15 @@ input[type="number"] {
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.app-header-nav-btn:hover {
+  color: #E5E7EB !important;
+  border-color: rgba(255,255,255,0.15) !important;
+  background: rgba(255,255,255,0.05) !important;
 }
 
-/* Mobile: duas linhas — logo+usuário em cima, nav embaixo */
-@media (max-width: 600px) {
-  .app-header-inner {
-    flex-wrap: wrap;
-    height: auto;
-    padding: 8px 0;
-    gap: 6px;
-    align-items: center;
-    justify-content: flex-start;
-  }
-
-  /* Linha 1 — logo à esquerda */
-  .app-header-logo { order: 1; }
-
-  /* Linha 1 — usuário à direita (margin-left: auto empurra para a extremidade) */
-  .app-header-user {
-    order: 2;
-    margin-left: auto;
-    gap: 8px;
-  }
-
-  /* Linha 2 — nav ocupa 100% da largura */
-  .app-header-nav {
-    order: 3;
-    width: 100%;
-    display: flex;
-    gap: 2px;
-    flex-wrap: wrap;
-  }
-
-  /* Botões dividem a largura da nav igualmente */
-  .app-header-nav-btn {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 6px 6px;
-    font-size: 12px;
-    justify-content: center;
-  }
-
-  /* Email mais curto no mobile */
-  .app-header-email {
-    max-width: 110px;
-  }
-}
-
-/* ── Dashboard responsivo ───────────────────────────────────────────────────── */
-
-/* Desktop — valores de referência (saem do inline style) */
+/* ── Dashboard ──────────────────────────────────────────────────────────────── */
 .dash-title {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 28px;
@@ -139,12 +111,23 @@ input[type="number"] {
   margin-bottom: 20px;
 }
 
-/* Valor principal de cada KPI (ex: "R$ 1.234,56") */
+/* Valor KPI — tipografia limpa sem glow */
 .dash-kpi-value {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+/* KPI card hover — elevação suave */
+.dash-kpi-card {
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s !important;
+}
+.dash-kpi-card:hover {
+  border-color: rgba(255,255,255,0.14) !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45) !important;
+  transform: translateY(-2px);
 }
 
 /* Container das barras do gráfico */
@@ -152,44 +135,77 @@ input[type="number"] {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 80px;
-  padding-bottom: 4px;
+  height: 76px;
+  padding-bottom: 0;
   overflow: hidden;
 }
 
+/* Itens da lista de operações — hover com elevação */
+.dash-ops-item {
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.dash-ops-item:hover {
+  background: #1E2433 !important;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.35) !important;
+  transform: translateY(-1px);
+}
+
+/* ── Responsivo mobile ──────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  /* Título compacto */
+  .app-header-inner {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 0;
+    gap: 6px;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .app-header-logo { order: 1; }
+
+  .app-header-user {
+    order: 2;
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .app-header-nav {
+    order: 3;
+    width: 100%;
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  .app-header-nav-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 6px 6px;
+    font-size: 12px;
+    justify-content: center;
+  }
+
+  .app-header-email { max-width: 110px; }
+
   .dash-title {
     font-size: 20px;
     letter-spacing: 1px;
   }
 
-  /* Grid: 2 colunas no mobile */
   .dash-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: 12px;
   }
 
-  /* Primeiro KPI (Lucro do Mês) ocupa linha inteira */
-  .dash-kpi-grid > *:first-child {
-    grid-column: 1 / -1;
-  }
+  .dash-kpi-grid > *:first-child { grid-column: 1 / -1; }
 
-  /* Padding reduzido nos cards — !important necessário pois o Card
-     injeta padding via style attribute (especificidade inline) */
-  .dash-kpi-card {
-    padding: 10px 10px !important;
-  }
+  .dash-kpi-card { padding: 10px 10px !important; }
 
-  /* Valor principal menor */
-  .dash-kpi-value {
-    font-size: 22px;
-  }
+  .dash-kpi-value { font-size: 24px; }
 
-  /* Gráfico mais compacto */
   .dash-chart-bars {
-    height: 56px;
+    height: 60px;
     gap: 2px;
   }
 }

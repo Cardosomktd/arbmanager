@@ -185,7 +185,7 @@ export function TelaEventos({ data, setData }) {
 
       {/* ── Cabeçalho ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: G.accent }}>
+        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: G.text }}>
           Lançamentos
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -204,7 +204,7 @@ export function TelaEventos({ data, setData }) {
               background: filtroStatus === f.id ? G.surface : "transparent",
               color: filtroStatus === f.id ? G.text : G.textDim,
               fontSize: 13, fontWeight: 500,
-              fontFamily: "'DM Sans', sans-serif",
+              
               transition: "all 0.15s",
             }}>
               {f.label}
@@ -254,7 +254,7 @@ export function TelaEventos({ data, setData }) {
             const lucro = lucroCassino(c);
             const tipoLabel = { giros: "🎡 Giros", bonus: "🎰 Bônus", cashback: "💰 Cashback" }[c.tipoBeneficio] ?? "🎲";
             return (
-              <Card key={c.id} style={{ border: "1px solid #00e67622" }}>
+              <Card key={c.id} style={{ border: "1px solid #34D39922" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -286,7 +286,7 @@ export function TelaEventos({ data, setData }) {
                                  : a.situacao === "red"   ? -(parseFloat(a.valor) || 0) : 0;
 
           return (
-            <Card key={a.id} style={{ border: "1px solid #aa66ff33" }}>
+            <Card key={a.id} style={{ border: "1px solid #8B5CF633" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>

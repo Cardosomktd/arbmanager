@@ -2,8 +2,9 @@ import { G } from "../../constants/colors";
 
 const fieldStyle = {
   background: G.surface2, border: `1px solid ${G.border}`,
-  borderRadius: 6, padding: "8px 12px", color: G.text,
+  borderRadius: 7, padding: "8px 12px", color: G.text,
   fontSize: 13, width: "100%", outline: "none",
+  transition: "border-color 0.15s, box-shadow 0.15s",
 };
 
 export function Input({ label, value, onChange, type = "text", placeholder, style: sx = {}, options, required, inputMode }) {

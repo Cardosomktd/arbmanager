@@ -82,19 +82,19 @@ export function TelaFreebets({ data, setData }) {
 
   return (
     <div style={{ maxWidth: 780, margin: "0 auto" }}>
-      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, color: G.accent }}>
+      <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, color: G.text }}>
         Freebets
       </div>
 
       {/* Alertas de vencimento */}
       {alertas.length > 0 && (
-        <div style={{ background: "#ffd60011", border: "1px solid #ffd60044", borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
+        <div style={{ background: "#FBBF2411", border: "1px solid #FBBF2444", borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
           <div style={{ fontSize: 12, color: G.yellow, fontWeight: 700, marginBottom: 6 }}>⏰ VENCENDO EM BREVE</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {alertas.map(f => {
               const dias = diasParaVencer(f.prazo);
               return (
-                <div key={f.id} style={{ background: "#ffd60011", border: "1px solid #ffd60033", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
+                <div key={f.id} style={{ background: "#FBBF2411", border: "1px solid #FBBF2433", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
                   <span style={{ color: G.text, fontWeight: 600 }}>{getCasaNome(data.casas || [], f.casaId)}</span>
                   <span style={{ color: G.textDim, marginLeft: 4 }}>{fmt(f.valor)}</span>
                   <span style={{ color: dias <= 0 ? G.red : G.yellow, fontWeight: 700, marginLeft: 6 }}>
@@ -144,7 +144,7 @@ export function TelaFreebets({ data, setData }) {
               const urgente   = dias !== null && dias <= 3;
               const estimado  = (f.valor || 0) * (PCT_EXTRACAO / 100);
               return (
-                <Card key={f.id} style={{ border: `1px solid ${urgente ? "#ffd60044" : G.border}`, padding: "12px 16px" }}>
+                <Card key={f.id} style={{ border: `1px solid ${urgente ? "#FBBF2444" : G.border}`, padding: "12px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
@@ -173,7 +173,7 @@ export function TelaFreebets({ data, setData }) {
                             </>
                           ) : (
                             <button onClick={() => abrirEditPrazo(f)}
-                              style={{ background: "none", border: `1px dashed ${G.border}`, borderRadius: 4, cursor: "pointer", padding: "2px 8px", fontSize: 11, color: G.textMuted, fontFamily: "'DM Sans', sans-serif" }}>
+                              style={{ background: "none", border: `1px dashed ${G.border}`, borderRadius: 4, cursor: "pointer", padding: "2px 8px", fontSize: 11, color: G.textMuted,  }}>
                               + Adicionar vencimento
                             </button>
                           )}

@@ -31,7 +31,7 @@ export function ModalNovaFreebet({ open, onClose, onSalvar, casas }) {
   return (
     <Modal open={open} onClose={onClose} title="🎁 Nova Freebet" width={400}>
       {erro && (
-        <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
         </div>
       )}

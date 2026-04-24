@@ -16,7 +16,7 @@ export const CATEGORIAS = {
   arbitragem: {
     label:  "Arbitragem",
     emoji:  "💰",
-    cor:    "#00d4ff",   // accent
+    cor:    "#22D3EE",   // accent
     badge:  "blue",
   },
   procedimento_freebet: {
@@ -28,13 +28,13 @@ export const CATEGORIAS = {
   extracao_freebet: {
     label:  "Ext. Freebet",
     emoji:  "🎁",
-    cor:    "#22c55e",   // green
+    cor:    "#34D399",   // green
     badge:  "green",
   },
   duplo: {
     label:  "Chance de Duplo",
     emoji:  "🎲",
-    cor:    "#aa66ff",   // purple
+    cor:    "#8B5CF6",   // purple
     badge:  "purple",
   },
 };

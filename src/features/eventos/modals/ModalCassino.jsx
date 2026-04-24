@@ -53,12 +53,12 @@ export function ModalCassino({ open, onClose, onSalvar, casas }) {
   return (
     <Modal open={open} onClose={onClose} title="🎲 Cassino" width={460}>
       {erro && (
-        <div style={{ background: "#ff444422", border: "1px solid #ff444444", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
         </div>
       )}
 
-      <div style={{ background: "#00e67608", border: "1px solid #00e67622", borderRadius: 8, padding: "8px 12px", marginBottom: 16, fontSize: 12, color: G.green }}>
+      <div style={{ background: "#34D3990d", border: "1px solid #34D39933", borderRadius: 8, padding: "8px 12px", marginBottom: 16, fontSize: 12, color: G.green }}>
         🎲 Registre o resultado de giros, bônus ou cashback de cassino.
       </div>
 
@@ -89,9 +89,9 @@ export function ModalCassino({ open, onClose, onSalvar, casas }) {
             {TIPO_OPTS.map(t => (
               <button key={t.value} onClick={() => setTipoBeneficio(t.value)} style={{
                 flex: 1, padding: "6px 8px", borderRadius: 6, border: "none", cursor: "pointer",
-                background: tipoBeneficio === t.value ? "#00e67622" : "transparent",
+                background: tipoBeneficio === t.value ? "#34D39922" : "transparent",
                 color: tipoBeneficio === t.value ? G.green : G.textDim,
-                fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                fontSize: 12, fontWeight: 600,
                 transition: "all 0.15s",
               }}>
                 {t.label}
