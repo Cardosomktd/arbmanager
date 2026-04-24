@@ -33,11 +33,7 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
   return (
     <Card className="evento-card" style={{
       padding: 0, overflow: "hidden",
-      ...(expandido && {
-        background:  "rgba(34, 211, 238, 0.04)",
-        border:      "1px solid rgba(34, 211, 238, 0.30)",
-        boxShadow:   "0 0 0 1px rgba(34, 211, 238, 0.06), 0 4px 20px rgba(0,0,0,0.35)",
-      }),
+      background: expandido ? "#182033" : undefined,
     }}>
       {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
       <div
