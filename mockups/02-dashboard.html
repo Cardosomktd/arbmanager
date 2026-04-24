@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdgeArb — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0B0F1A;
+    color: #E5E7EB;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header style="
+    height: 54px;
+    background: rgba(15,23,42,0.93);
+    border-bottom: 1px solid #1E2433;
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+  ">
+    <div style="
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    ">
+      <!-- Wordmark -->
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; white-space: nowrap;">
+        <span style="color: #E5E7EB;">Edge</span><span style="background: linear-gradient(135deg, #8B5CF6, #22D3EE); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Arb</span>
+      </div>
+      <!-- Nav -->
+      <nav style="display: flex; align-items: center; gap: 4px;">
+        <a href="#" style="
+          background: #121826;
+          border: 1px solid #1E2433;
+          border-radius: 7px;
+          padding: 6px 14px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #E5E7EB;
+          text-decoration: none;
+        ">Dashboard</a>
+        <a href="#" style="
+          background: transparent;
+          border: none;
+          border-radius: 7px;
+          padding: 6px 14px;
+          font-size: 13px;
+          color: #94A3B8;
+          text-decoration: none;
+        ">Lançamentos</a>
+        <a href="#" style="
+          background: transparent;
+          border: none;
+          border-radius: 7px;
+          padding: 6px 14px;
+          font-size: 13px;
+          color: #94A3B8;
+          text-decoration: none;
+        ">Freebets</a>
+        <a href="#" style="
+          background: transparent;
+          border: none;
+          border-radius: 7px;
+          padding: 6px 14px;
+          font-size: 13px;
+          color: #94A3B8;
+          text-decoration: none;
+        ">Banca</a>
+      </nav>
+      <!-- User -->
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: #64748B; font-size: 11px;">usuario@email.com</span>
+        <button style="
+          background: transparent;
+          border: 1px solid #1E2433;
+          border-radius: 7px;
+          padding: 5px 12px;
+          color: #94A3B8;
+          font-family: 'Inter', sans-serif;
+          font-size: 12px;
+          cursor: pointer;
+        ">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main style="max-width: 960px; margin: 0 auto; padding: 24px 20px;">
+
+    <!-- Section header row -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #E5E7EB;
+      ">DASHBOARD</div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button style="
+          background: #121826;
+          border: 1px solid #1E2433;
+          border-radius: 8px;
+          padding: 9px 14px;
+          color: #94A3B8;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          cursor: pointer;
+        ">🧮 Calculadora</button>
+        <select style="
+          background: #121826;
+          border: 1px solid #1E2433;
+          border-radius: 8px;
+          padding: 9px 14px;
+          color: #94A3B8;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          cursor: pointer;
+          outline: none;
+        ">
+          <option>Abril 2026</option>
+          <option>Março 2026</option>
+          <option>Fevereiro 2026</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- KPI grid -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+
+      <!-- KPI 1: Lucro do mês -->
+      <div style="
+        background: #0F172A;
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 10px;
+        padding: 20px 14px 18px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      ">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #8B5CF6, #22D3EE);"></div>
+        <div style="font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;">LUCRO DO MÊS</div>
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 800; line-height: 1; color: #34D399;">R$ 2.847,50</div>
+        <div style="font-size: 11px; margin-top: 6px; color: #34D399;">↗ média R$ 1.923,00/mês</div>
+      </div>
+
+      <!-- KPI 2: Operações -->
+      <div style="
+        background: #0F172A;
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 10px;
+        padding: 20px 14px 18px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      ">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #8B5CF6, #22D3EE);"></div>
+        <div style="font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;">OPERAÇÕES</div>
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 800; line-height: 1; color: #E5E7EB;">23</div>
+        <div style="font-size: 11px; margin-top: 6px; color: #64748B;">média 3,8 ops/dia</div>
+      </div>
+
+      <!-- KPI 3: Lucro do dia -->
+      <div style="
+        background: #0F172A;
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 10px;
+        padding: 20px 14px 18px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      ">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(135deg, #8B5CF6, #22D3EE);"></div>
+        <div style="font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;">LUCRO DO DIA</div>
+        <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 800; line-height: 1; color: #34D399;">R$ 312,00</div>
+        <div style="font-size: 11px; margin-top: 6px; color: #34D399;">↗ média R$ 190,00/dia no mês</div>
+      </div>
+
+    </div>
+
+    <!-- Chart card -->
+    <div style="
+      background: #0F172A;
+      border: 1px solid #1E2433;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    ">
+      <!-- Chart header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">RESULTADO DIÁRIO</div>
+        <div style="display: flex; gap: 14px; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94A3B8;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #34D399;"></div>
+            Lucro
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94A3B8;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #F87171;"></div>
+            Perda
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart area -->
+      <div style="background: #0B0F1A; border-radius: 8px; padding: 10px 8px 0;">
+        <div style="
+          display: flex;
+          align-items: flex-end;
+          gap: 2px;
+          height: 76px;
+          border-bottom: 1px solid rgba(255,255,255,0.10);
+          padding-bottom: 0;
+        ">
+          <!-- 30 bars for April, heights vary, mostly green with a few red -->
+          <!-- Day 1 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 40%;"></div>
+          <!-- Day 2 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 55%;"></div>
+          <!-- Day 3 --> <div style="flex:1; background: linear-gradient(to top, #9F1239, #F87171); border-radius: 2px 2px 0 0; height: 20%;"></div>
+          <!-- Day 4 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 65%;"></div>
+          <!-- Day 5 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 72%;"></div>
+          <!-- Day 6 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 48%;"></div>
+          <!-- Day 7 --> <div style="flex:1; background: linear-gradient(to top, #9F1239, #F87171); border-radius: 2px 2px 0 0; height: 15%;"></div>
+          <!-- Day 8 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 60%;"></div>
+          <!-- Day 9 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 85%;"></div>
+          <!-- Day 10 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 52%;"></div>
+          <!-- Day 11 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 38%;"></div>
+          <!-- Day 12 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 70%;"></div>
+          <!-- Day 13 --> <div style="flex:1; background: linear-gradient(to top, #9F1239, #F87171); border-radius: 2px 2px 0 0; height: 25%;"></div>
+          <!-- Day 14 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 80%;"></div>
+          <!-- Day 15 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 92%;"></div>
+          <!-- Day 16 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 45%;"></div>
+          <!-- Day 17 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 62%;"></div>
+          <!-- Day 18 --> <div style="flex:1; background: linear-gradient(to top, #9F1239, #F87171); border-radius: 2px 2px 0 0; height: 18%;"></div>
+          <!-- Day 19 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 75%;"></div>
+          <!-- Day 20 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 88%;"></div>
+          <!-- Day 21 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 55%;"></div>
+          <!-- Day 22 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 42%;"></div>
+          <!-- Day 23 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 68%;"></div>
+          <!-- Day 24 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 100%;"></div>
+          <!-- Day 25 --> <div style="flex:1; background: linear-gradient(to top, #9F1239, #F87171); border-radius: 2px 2px 0 0; height: 12%;"></div>
+          <!-- Day 26 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 58%;"></div>
+          <!-- Day 27 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 76%;"></div>
+          <!-- Day 28 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 50%;"></div>
+          <!-- Day 29 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 82%;"></div>
+          <!-- Day 30 --> <div style="flex:1; background: linear-gradient(to top, #047857, #34D399); border-radius: 2px 2px 0 0; height: 66%;"></div>
+        </div>
+        <!-- X-axis labels -->
+        <div style="display: flex; justify-content: space-between; padding: 4px 0 6px;">
+          <span style="font-size: 9px; color: #64748B;">1</span>
+          <span style="font-size: 9px; color: #64748B;">15</span>
+          <span style="font-size: 9px; color: #64748B;">30</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Last operations card -->
+    <div style="
+      background: #0F172A;
+      border: 1px solid #1E2433;
+      border-radius: 10px;
+      padding: 16px;
+    ">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+        <div style="font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;">ÚLTIMAS OPERAÇÕES</div>
+        <span style="
+          background: rgba(255,255,255,0.05);
+          color: #94A3B8;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 5px;
+          padding: 2px 8px;
+          font-size: 11px;
+          font-weight: 700;
+        ">23</span>
+      </div>
+
+      <!-- Operation rows -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+
+        <!-- Row 1: Finalizado / green -->
+        <div style="
+          background: #121826;
+          border-radius: 8px;
+          padding: 11px 14px;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-left: 3px solid #34D399;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        ">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span style="font-size: 13px; font-weight: 700; color: #E5E7EB;">Flamengo x Corinthians</span>
+              <span style="
+                background: #34D39918;
+                color: #34D399;
+                border: 1px solid #34D39944;
+                border-radius: 5px;
+                padding: 2px 8px;
+                font-size: 11px;
+                font-weight: 700;
+              ">Finalizado</span>
+            </div>
+            <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">25/04/2026</div>
+            <div style="font-size: 11px; color: #94A3B8;">Betano · Flamengo &nbsp;·&nbsp; Sportingbet · Corinthians</div>
+          </div>
+          <div style="
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #34D399;
+            white-space: nowrap;
+          ">R$ 145,00</div>
+        </div>
+
+        <!-- Row 2: Pendente / yellow -->
+        <div style="
+          background: #121826;
+          border-radius: 8px;
+          padding: 11px 14px;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-left: 3px solid #FBBF24;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        ">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span style="font-size: 13px; font-weight: 700; color: #E5E7EB;">Palmeiras x São Paulo</span>
+              <span style="
+                background: #FBBF2418;
+                color: #FBBF24;
+                border: 1px solid #FBBF2444;
+                border-radius: 5px;
+                padding: 2px 8px;
+                font-size: 11px;
+                font-weight: 700;
+              ">Pendente</span>
+            </div>
+            <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">26/04/2026</div>
+            <div style="font-size: 11px; color: #94A3B8;">Bet365 · Palmeiras</div>
+          </div>
+          <div style="
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #FBBF24;
+            white-space: nowrap;
+          ">R$ 89,50</div>
+        </div>
+
+        <!-- Row 3: Em andamento / blue -->
+        <div style="
+          background: #121826;
+          border-radius: 8px;
+          padding: 11px 14px;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-left: 3px solid #22D3EE;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        ">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span style="font-size: 13px; font-weight: 700; color: #E5E7EB;">Real Madrid x Barcelona</span>
+              <span style="
+                background: #22D3EE18;
+                color: #22D3EE;
+                border: 1px solid #22D3EE44;
+                border-radius: 5px;
+                padding: 2px 8px;
+                font-size: 11px;
+                font-weight: 700;
+              ">Em andamento</span>
+            </div>
+            <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">27/04/2026</div>
+            <div style="font-size: 11px; color: #94A3B8;">Stake · Real Madrid</div>
+          </div>
+          <div style="
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #34D399;
+            white-space: nowrap;
+          ">R$ 210,00</div>
+        </div>
+
+        <!-- Row 4: Finalizado / green -->
+        <div style="
+          background: #121826;
+          border-radius: 8px;
+          padding: 11px 14px;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-left: 3px solid #34D399;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        ">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span style="font-size: 13px; font-weight: 700; color: #E5E7EB;">Arsenal x Chelsea</span>
+              <span style="
+                background: #34D39918;
+                color: #34D399;
+                border: 1px solid #34D39944;
+                border-radius: 5px;
+                padding: 2px 8px;
+                font-size: 11px;
+                font-weight: 700;
+              ">Finalizado</span>
+            </div>
+            <div style="font-size: 11px; color: #64748B; margin-bottom: 4px;">24/04/2026</div>
+            <div style="font-size: 11px; color: #94A3B8;">Pinnacle · Arsenal</div>
+          </div>
+          <div style="
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #34D399;
+            white-space: nowrap;
+          ">R$ 67,00</div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdgeArb — Lançamentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0B0F1A;
+    color: #E5E7EB;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header style="
+    height: 54px;
+    background: rgba(15,23,42,0.93);
+    border-bottom: 1px solid #1E2433;
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+  ">
+    <div style="
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    ">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; white-space: nowrap;">
+        <span style="color: #E5E7EB;">Edge</span><span style="background: linear-gradient(135deg, #8B5CF6, #22D3EE); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Arb</span>
+      </div>
+      <nav style="display: flex; align-items: center; gap: 4px;">
+        <a href="#" style="background: transparent; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; color: #94A3B8; text-decoration: none;">Dashboard</a>
+        <a href="#" style="background: #121826; border: 1px solid #1E2433; border-radius: 7px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: #E5E7EB; text-decoration: none;">Lançamentos</a>
+        <a href="#" style="background: transparent; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; color: #94A3B8; text-decoration: none;">Freebets</a>
+        <a href="#" style="background: transparent; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; color: #94A3B8; text-decoration: none;">Banca</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: #64748B; font-size: 11px;">usuario@email.com</span>
+        <button style="background: transparent; border: 1px solid #1E2433; border-radius: 7px; padding: 5px 12px; color: #94A3B8; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer;">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main style="max-width: 960px; margin: 0 auto; padding: 24px 20px;">
+
+    <!-- Title row -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #E5E7EB;">LANÇAMENTOS</div>
+      <div style="display: flex; gap: 8px;">
+        <button style="background: transparent; color: #94A3B8; border: 1px solid #1E2433; border-radius: 8px; padding: 9px 18px; font-family: 'Inter', sans-serif; font-size: 13px; cursor: pointer;">🛡 Proteção</button>
+        <button style="background: linear-gradient(135deg, #8B5CF6, #22D3EE); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer;">+ Nova Operação</button>
+      </div>
+    </div>
+
+    <!-- Filter/search row -->
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+      <div style="display: inline-flex; gap: 4px; background: #121826; border-radius: 8px; padding: 3px;">
+        <button style="background: #0F172A; border: 1px solid #1E2433; border-radius: 6px; color: #E5E7EB; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; padding: 6px 14px; cursor: pointer;">Pendentes</button>
+        <button style="background: transparent; border: none; border-radius: 6px; color: #94A3B8; font-family: 'Inter', sans-serif; font-size: 13px; padding: 6px 14px; cursor: pointer;">Concluídos</button>
+      </div>
+      <input type="text" placeholder="🔍 Buscar evento..." style="
+        flex: 1;
+        background: #121826;
+        border: 1px solid #1E2433;
+        border-radius: 7px;
+        padding: 9px 12px;
+        color: #E5E7EB;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        outline: none;
+      ">
+    </div>
+
+    <!-- Card 1 — EXPANDED -->
+    <div style="background: #182033; border: 1px solid #1E2433; border-radius: 10px; margin-bottom: 8px; overflow: hidden;">
+      <!-- Header -->
+      <div style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+        <span style="color: #94A3B8; font-size: 12px;">▼</span>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 15px; font-weight: 700; color: #E5E7EB;">Flamengo x Corinthians</span>
+            <span style="font-size: 12px; color: #64748B;">26/04/2026</span>
+            <span style="
+              background: #8B5CF618;
+              color: #8B5CF6;
+              border: 1px solid #8B5CF644;
+              border-radius: 5px;
+              padding: 2px 8px;
+              font-size: 11px;
+              font-weight: 700;
+            ">🛡 Proteção</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <!-- Protection button -->
+          <div style="
+            background: #8B5CF618;
+            border: 1px solid #8B5CF644;
+            border-radius: 7px;
+            padding: 5px 10px;
+            cursor: pointer;
+            text-align: center;
+          ">
+            <div style="font-size: 11px; color: #8B5CF6; font-weight: 700;">🛡 PROTEÇÃO</div>
+            <div style="font-size: 10px; color: #8B5CF6; opacity: 0.7;">1 ativa</div>
+          </div>
+          <span style="
+            background: #22D3EE18;
+            color: #22D3EE;
+            border: 1px solid #22D3EE44;
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+          ">Em andamento</span>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #34D399; white-space: nowrap;">R$ 145,00</div>
+        </div>
+      </div>
+
+      <!-- Expanded body -->
+      <div style="border-top: 1px solid #1E2433; padding: 12px 16px;">
+
+        <!-- PA panel -->
+        <div style="
+          background: rgba(34,211,238,0.04);
+          border: 1px solid rgba(34,211,238,0.13);
+          border-radius: 8px;
+          padding: 10px 14px;
+          margin-bottom: 12px;
+        ">
+          <div style="font-size: 10px; color: #22D3EE; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;">PAGAMENTO ANTECIPADO</div>
+          <div style="display: flex; gap: 24px; font-size: 12px; color: #E5E7EB;">
+            <span>Flamengo: <strong style="color: #22D3EE;">R$ 320,00</strong></span>
+            <span>Corinthians: <strong style="color: #22D3EE;">R$ 280,00</strong></span>
+          </div>
+        </div>
+
+        <!-- Proteções section -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 10px; color: #8B5CF6; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;">🛡️ PROTEÇÕES</div>
+          <div style="
+            background: rgba(251,191,36,0.03);
+            border: 1px solid rgba(251,191,36,0.20);
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          ">
+            <div style="font-size: 12px; color: #E5E7EB;">
+              <strong>Betano</strong> · Flamengo @1.45 &nbsp;·&nbsp; R$ 50,00
+              <span style="
+                background: #FBBF2418;
+                color: #FBBF24;
+                border: 1px solid #FBBF2444;
+                border-radius: 4px;
+                padding: 1px 6px;
+                font-size: 10px;
+                font-weight: 700;
+                margin-left: 6px;
+              ">PENDENTE</span>
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <button style="background: #34D39918; color: #34D399; border: 1px solid #34D39940; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;">✓G</button>
+              <button style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;">✕R</button>
+              <button style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;">🗑️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operation details -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;">OPERAÇÃO 1</div>
+          <div style="background: #121826; border: 1px solid #1E2433; border-radius: 8px; padding: 10px 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 12px; color: #94A3B8; margin-bottom: 4px;">Arbitragem · Betano + Sportingbet</div>
+                <div style="font-size: 13px; color: #E5E7EB; font-weight: 600;">Betano @2.10 · R$ 200,00 &nbsp;&nbsp; Sportingbet @2.30 · R$ 180,00</div>
+              </div>
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; color: #34D399;">R$ 145,00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer buttons -->
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;">
+          <button style="background: transparent; color: #94A3B8; border: 1px solid #1E2433; border-radius: 8px; padding: 7px 14px; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer;">✏️ Editar</button>
+          <button style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer;">🗑️</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Card 2 — CLOSED -->
+    <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; margin-bottom: 8px; overflow: hidden;">
+      <div style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+        <span style="color: #94A3B8; font-size: 12px;">▶</span>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 15px; font-weight: 700; color: #E5E7EB;">Palmeiras x Santos</span>
+            <span style="font-size: 12px; color: #64748B;">28/04/2026</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #8B5CF618; border: 1px solid #8B5CF644; border-radius: 7px; padding: 5px 10px; cursor: pointer;">
+            <div style="font-size: 11px; color: #8B5CF6; font-weight: 700;">🛡 PROTEÇÃO</div>
+          </div>
+          <span style="background: #FBBF2418; color: #FBBF24; border: 1px solid #FBBF2444; border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 700;">Pendente</span>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #FBBF24; white-space: nowrap;">R$ 89,50</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3 — CLOSED -->
+    <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; margin-bottom: 20px; overflow: hidden;">
+      <div style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+        <span style="color: #94A3B8; font-size: 12px;">▶</span>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 15px; font-weight: 700; color: #E5E7EB;">Real Madrid x Barcelona</span>
+            <span style="font-size: 12px; color: #64748B;">30/04/2026</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #8B5CF618; border: 1px solid #8B5CF644; border-radius: 7px; padding: 5px 10px; cursor: pointer;">
+            <div style="font-size: 11px; color: #8B5CF6; font-weight: 700;">🛡 PROTEÇÃO</div>
+          </div>
+          <span style="background: rgba(255,255,255,0.05); color: #94A3B8; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 700;">Sem operações</span>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #64748B; white-space: nowrap;">R$ 0,00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apostas Avulsas -->
+    <div style="margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="font-size: 12px; color: #64748B; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">APOSTAS AVULSAS</div>
+        <button style="background: transparent; color: #94A3B8; border: 1px solid #1E2433; border-radius: 6px; padding: 4px 10px; font-family: 'Inter', sans-serif; font-size: 11px; cursor: pointer;">+ Nova avulsa</button>
+      </div>
+      <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #E5E7EB; margin-bottom: 3px;">Betano · Over 2.5 gols</div>
+          <div style="font-size: 11px; color: #94A3B8;">26/04/2026 · @2.10 · Stake: R$ 100,00</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: #64748B; margin-bottom: 2px;">Resultado</div>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; color: #34D399;">GREEN +R$ 110,00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cassinos -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="font-size: 12px; color: #64748B; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">CASSINOS</div>
+        <button style="background: transparent; color: #94A3B8; border: 1px solid #1E2433; border-radius: 6px; padding: 4px 10px; font-family: 'Inter', sans-serif; font-size: 11px; cursor: pointer;">+ Novo registro</button>
+      </div>
+      <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #E5E7EB; margin-bottom: 3px;">Stake · Slots</div>
+          <div style="font-size: 11px; color: #94A3B8;">25/04/2026</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 11px; color: #64748B; margin-bottom: 2px;">Ganho</div>
+          <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; color: #34D399;">R$ 45,00</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>

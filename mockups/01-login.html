@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdgeArb — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0B0F1A;
+    color: #E5E7EB;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+</style>
+</head>
+<body>
+  <div style="width: 100%; max-width: 420px;">
+
+    <!-- Logo area -->
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        background: linear-gradient(135deg, #8B5CF6, #22D3EE);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+      ">EDGEARB</div>
+      <div style="color: #94A3B8; font-size: 13px; margin-top: 8px;">Gestão de arbitragem esportiva</div>
+    </div>
+
+    <!-- Card -->
+    <div style="
+      background: #0F172A;
+      border: 1px solid #1E2433;
+      border-radius: 12px;
+      padding: 28px;
+    ">
+
+      <!-- Tab switcher -->
+      <div style="
+        background: #121826;
+        border-radius: 8px;
+        padding: 3px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 2px;
+      ">
+        <button style="
+          flex: 1;
+          background: #1E2433;
+          border: 1px solid #2D3748;
+          border-radius: 6px;
+          color: #E5E7EB;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          padding: 8px 12px;
+          cursor: pointer;
+        ">Email e senha</button>
+        <button style="
+          flex: 1;
+          background: transparent;
+          border: none;
+          border-radius: 6px;
+          color: #94A3B8;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          padding: 8px 12px;
+          cursor: pointer;
+        ">Magic link</button>
+      </div>
+
+      <!-- Form -->
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+
+        <!-- Email field -->
+        <div>
+          <div style="
+            font-size: 11px;
+            color: #94A3B8;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          ">EMAIL</div>
+          <input
+            type="email"
+            placeholder="seu@email.com"
+            style="
+              background: #121826;
+              border: 1px solid #1E2433;
+              border-radius: 7px;
+              padding: 9px 12px;
+              color: #E5E7EB;
+              font-family: 'Inter', sans-serif;
+              font-size: 13px;
+              width: 100%;
+              box-sizing: border-box;
+              outline: none;
+            "
+          >
+        </div>
+
+        <!-- Password field -->
+        <div>
+          <div style="
+            font-size: 11px;
+            color: #94A3B8;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          ">SENHA</div>
+          <input
+            type="password"
+            placeholder="••••••••"
+            style="
+              background: #121826;
+              border: 1px solid #1E2433;
+              border-radius: 7px;
+              padding: 9px 12px;
+              color: #E5E7EB;
+              font-family: 'Inter', sans-serif;
+              font-size: 13px;
+              width: 100%;
+              box-sizing: border-box;
+              outline: none;
+            "
+          >
+        </div>
+
+        <!-- Primary button -->
+        <button style="
+          background: linear-gradient(135deg, #8B5CF6, #22D3EE);
+          color: #fff;
+          border: none;
+          border-radius: 8px;
+          padding: 11px 18px;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          width: 100%;
+          cursor: pointer;
+          margin-top: 4px;
+        ">Entrar</button>
+
+        <!-- Link text -->
+        <div style="color: #94A3B8; font-size: 12px; text-align: center; margin-top: 2px;">
+          Não tenho conta — <span style="color: #22D3EE; cursor: pointer;">criar agora</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom text -->
+    <div style="color: #64748B; font-size: 11px; text-align: center; margin-top: 16px;">
+      Seus dados ficam salvos na nuvem com segurança.
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdgeArb — Banca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0B0F1A;
+    color: #E5E7EB;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header style="
+    height: 54px;
+    background: rgba(15,23,42,0.93);
+    border-bottom: 1px solid #1E2433;
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+  ">
+    <div style="max-width: 960px; width: 100%; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; white-space: nowrap;">
+        <span style="color: #E5E7EB;">Edge</span><span style="background: linear-gradient(135deg, #8B5CF6, #22D3EE); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Arb</span>
+      </div>
+      <nav style="display: flex; align-items: center; gap: 4px;">
+        <a href="#" style="background: transparent; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; color: #94A3B8; text-decoration: none;">Dashboard</a>
+        <a href="#" style="background: transparent; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; color: #94A3B8; text-decoration: none;">Lançamentos</a>
+        <a href="#" style="background: transparent; border: none; border-radius: 7px; padding: 6px 14px; font-size: 13px; color: #94A3B8; text-decoration: none;">Freebets</a>
+        <a href="#" style="background: #121826; border: 1px solid #1E2433; border-radius: 7px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: #E5E7EB; text-decoration: none;">Banca</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: #64748B; font-size: 11px;">usuario@email.com</span>
+        <button style="background: transparent; border: 1px solid #1E2433; border-radius: 7px; padding: 5px 12px; color: #94A3B8; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer;">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main style="max-width: 780px; margin: 0 auto; padding: 24px 20px;">
+
+    <!-- Title -->
+    <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 800; text-transform: uppercase; color: #E5E7EB; margin-bottom: 14px; letter-spacing: 2px;">BANCA</div>
+
+    <!-- Alert banner -->
+    <div style="
+      background: rgba(248,113,113,0.07);
+      border: 1px solid rgba(248,113,113,0.20);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    ">
+      <span style="font-size: 12px; color: #F87171; font-weight: 700;">⚠️ DEPÓSITO PENDENTE DE LANÇAMENTO</span>
+      <span style="
+        background: rgba(248,113,113,0.04);
+        color: #F87171;
+        border: 1px solid rgba(248,113,113,0.20);
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+      ">Betano</span>
+    </div>
+
+    <!-- KPI card -->
+    <div style="
+      background: #0F172A;
+      border: 1px solid #1E2433;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    ">
+      <div style="font-size: 12px; color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">SALDO TOTAL DA BANCA</div>
+      <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 800; color: #34D399;">R$ 4.250,00</div>
+    </div>
+
+    <!-- Actions row -->
+    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+      <button style="background: linear-gradient(135deg, #8B5CF6, #22D3EE); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;">+ Depósito / Saque</button>
+      <input type="text" placeholder="🔍 Buscar casa..." style="
+        flex: 1;
+        background: #121826;
+        border: 1px solid #1E2433;
+        border-radius: 7px;
+        padding: 9px 12px;
+        color: #E5E7EB;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        outline: none;
+      ">
+    </div>
+
+    <!-- Casa list -->
+    <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px;">
+
+      <!-- Casa 1 — EXPANDED (Betano / DEP. PENDENTE) -->
+      <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; overflow: hidden;">
+        <!-- Header -->
+        <div style="padding: 13px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #94A3B8; font-size: 12px;">▼</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 14px; font-weight: 700; color: #E5E7EB;">Betano</span>
+              <span style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 700;">DEP. PENDENTE</span>
+              <span style="font-size: 11px; color: #64748B;">👤 Titular: João Silva &nbsp;·&nbsp; Inicial: R$ 1.000,00 &nbsp;·&nbsp; 3 movimentações</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+            <div style="text-align: right;">
+              <div style="font-size: 10px; color: #64748B; margin-bottom: 1px;">Saldo atual</div>
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #34D399;">R$ 1.250,00</div>
+            </div>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">✏️</button>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">📦</button>
+          </div>
+        </div>
+        <!-- Expanded movements -->
+        <div style="border-top: 1px solid #1E2433; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px;">
+
+          <div style="background: #121826; border: 1px solid #1E2433; border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: #34D399; font-weight: 600;">⬆️ Depósito</span>
+            </div>
+            <div style="flex: 1; text-align: left; padding-left: 8px; font-size: 11px; color: #64748B;">15/03/2026</div>
+            <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: #34D399;">R$ 500,00</div>
+            <button style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 6px; padding: 3px 7px; font-size: 11px; cursor: pointer;">🗑️</button>
+          </div>
+
+          <div style="background: #121826; border: 1px solid #1E2433; border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: #34D399; font-weight: 600;">⬆️ Depósito</span>
+            </div>
+            <div style="flex: 1; text-align: left; padding-left: 8px; font-size: 11px; color: #64748B;">01/04/2026</div>
+            <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: #34D399;">R$ 200,00</div>
+            <button style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 6px; padding: 3px 7px; font-size: 11px; cursor: pointer;">🗑️</button>
+          </div>
+
+          <div style="background: #121826; border: 1px solid #1E2433; border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 12px; color: #F87171; font-weight: 600;">⬇️ Saque</span>
+            </div>
+            <div style="flex: 1; text-align: left; padding-left: 8px; font-size: 11px; color: #64748B;">20/04/2026</div>
+            <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: #F87171;">-R$ 450,00</div>
+            <button style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 6px; padding: 3px 7px; font-size: 11px; cursor: pointer;">🗑️</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Casa 2 — CLOSED (Bet365 / Maria) -->
+      <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; overflow: hidden;">
+        <div style="padding: 13px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #94A3B8; font-size: 12px;">▶</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 14px; font-weight: 700; color: #E5E7EB;">Bet365</span>
+              <span style="font-size: 11px; color: #64748B;">👤 Maria &nbsp;·&nbsp; Inicial: R$ 2.000,00 &nbsp;·&nbsp; 5 movimentações</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+            <div style="text-align: right;">
+              <div style="font-size: 10px; color: #64748B; margin-bottom: 1px;">Saldo atual</div>
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #34D399;">R$ 2.100,00</div>
+            </div>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">✏️</button>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">📦</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Casa 3 — CLOSED (Sportingbet) -->
+      <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; overflow: hidden;">
+        <div style="padding: 13px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #94A3B8; font-size: 12px;">▶</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 14px; font-weight: 700; color: #E5E7EB;">Sportingbet</span>
+              <span style="font-size: 11px; color: #64748B;">Inicial: R$ 500,00 &nbsp;·&nbsp; 1 movimentação</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+            <div style="text-align: right;">
+              <div style="font-size: 10px; color: #64748B; margin-bottom: 1px;">Saldo atual</div>
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #34D399;">R$ 450,00</div>
+            </div>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">✏️</button>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">📦</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Casa 4 — CLOSED (Betano 2 / alert / saldo negativo) -->
+      <div style="background: #0F172A; border: 1px solid rgba(248,113,113,0.20); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 13px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <span style="color: #94A3B8; font-size: 12px;">▶</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 14px; font-weight: 700; color: #E5E7EB;">Betano 2</span>
+              <span style="background: #F8717118; color: #F87171; border: 1px solid #F8717140; border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 700;">DEP. PENDENTE</span>
+              <span style="font-size: 11px; color: #64748B;">Inicial: R$ 300,00 &nbsp;·&nbsp; 2 movimentações</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+            <div style="text-align: right;">
+              <div style="font-size: 10px; color: #64748B; margin-bottom: 1px;">Saldo atual</div>
+              <div style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #F87171;">R$ -50,00</div>
+            </div>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">✏️</button>
+            <button style="background: transparent; border: none; color: #94A3B8; font-size: 14px; cursor: pointer; padding: 4px;">📦</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Nova casa form -->
+    <div style="background: #0F172A; border: 1px solid #1E2433; border-radius: 10px; padding: 16px; margin-bottom: 24px;">
+      <div style="font-size: 13px; font-weight: 600; color: #E5E7EB; margin-bottom: 12px;">➕ Nova casa</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+        <div>
+          <div style="font-size: 11px; color: #94A3B8; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">NOME</div>
+          <input type="text" placeholder="Ex: Betano" style="background: #121826; border: 1px solid #1E2433; border-radius: 7px; padding: 9px 12px; color: #E5E7EB; font-family: 'Inter', sans-serif; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;">
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #94A3B8; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">TITULAR DA CONTA</div>
+          <input type="text" placeholder="Ex: João Silva" style="background: #121826; border: 1px solid #1E2433; border-radius: 7px; padding: 9px 12px; color: #E5E7EB; font-family: 'Inter', sans-serif; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;">
+        </div>
+        <div>
+          <div style="font-size: 11px; color: #94A3B8; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px;">SALDO INICIAL</div>
+          <input type="text" placeholder="R$ 0,00" style="background: #121826; border: 1px solid #1E2433; border-radius: 7px; padding: 9px 12px; color: #E5E7EB; font-family: 'Inter', sans-serif; font-size: 13px; width: 100%; box-sizing: border-box; outline: none;">
+        </div>
+      </div>
+      <button style="background: linear-gradient(135deg, #8B5CF6, #22D3EE); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 12px;">Adicionar casa</button>
+    </div>
+
+    <!-- Arquivadas section -->
+    <div>
+      <div style="font-size: 12px; color: #64748B; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">ARQUIVADAS (2)</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+
+        <div style="
+          background: #0F172A;
+          border: 1px solid #1E2433;
+          border-radius: 10px;
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          opacity: 0.5;
+        ">
+          <div>
+            <span style="font-size: 13px; font-weight: 600; color: #E5E7EB;">Unibet</span>
+            <span style="font-size: 11px; color: #64748B; margin-left: 8px;">Arquivada em 01/03/2026</span>
+          </div>
+          <button style="background: transparent; color: #94A3B8; border: 1px solid #1E2433; border-radius: 8px; padding: 6px 14px; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer;">Reativar</button>
+        </div>
+
+        <div style="
+          background: #0F172A;
+          border: 1px solid #1E2433;
+          border-radius: 10px;
+          padding: 12px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          opacity: 0.5;
+        ">
+          <div>
+            <span style="font-size: 13px; font-weight: 600; color: #E5E7EB;">1xBet</span>
+            <span style="font-size: 11px; color: #64748B; margin-left: 8px;">Arquivada em 15/02/2026</span>
+          </div>
+          <button style="background: transparent; color: #94A3B8; border: 1px solid #1E2433; border-radius: 8px; padding: 6px 14px; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer;">Reativar</button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>
