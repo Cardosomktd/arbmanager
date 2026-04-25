@@ -8,6 +8,7 @@ import { lucroCassino } from "../../utils/lucroCassino";
 import { lucroProtecao } from "../../utils/lucroProtecao";
 import { Card } from "../../components/ui/Card";
 import { ModalDetalhesMes }       from "./modals/ModalDetalhesMes";
+import { ModalDetalhesDias }      from "./modals/ModalDetalhesDias";
 import { ModalCalculadora }       from "./modals/ModalCalculadora";
 import { ModalSelecionarEvento }  from "./modals/ModalSelecionarEvento";
 import { ModalEvento }            from "../eventos/modals/ModalEvento";
@@ -17,7 +18,8 @@ import { uid }                    from "../../storage";
 export function TelaDashboard({ data, setData }) {
   const hoje = new Date();
   const [mesSel,        setMesSel]        = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`);
-  const [modalDetalhes,   setModalDetalhes]   = useState(false);
+  const [modalDetalhes,     setModalDetalhes]     = useState(false);
+  const [modalDetalhesDias, setModalDetalhesDias] = useState(false);
   const [modalCalc,       setModalCalc]       = useState(false);
 
   // ── Fluxo calculadora → operação ────────────────────────────────────────────
@@ -145,7 +147,8 @@ export function TelaDashboard({ data, setData }) {
     }).reduce((s, p) => s + lucroProtecao(p), 0);
     return { dia, lucro: lOps + lAv + lCas + lProt };
   });
-  const maxLucro = Math.max(...lucrosPorDia.map(d => Math.abs(d.lucro)), 1);
+  const maxLucro   = Math.max(...lucrosPorDia.map(d => Math.abs(d.lucro)), 1);
+  const chartHalf  = 50; // px de cada metade — total = 100px (corresponde ao CSS)
 
   const ultimasOps = todosEventos
     .flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev })))
@@ -185,16 +188,16 @@ export function TelaDashboard({ data, setData }) {
       {/* KPIs */}
       <div className="dash-kpi-grid">
         {[
-          { label: "Lucro do Mês",  value: fmt(lucroMes),   cor: lucroMes  >= 0 ? G.green : G.red, sub: mediaUltimosMeses !== null ? `média ${fmt(mediaUltimosMeses)}/mês` : null, subCor: mediaUltimosMeses !== null ? (mediaUltimosMeses >= 0 ? G.green : G.red) : G.textMuted, clicavel: true },
+          { label: "Lucro do Mês",  value: fmt(lucroMes),   cor: lucroMes  >= 0 ? G.green : G.red, sub: mediaUltimosMeses !== null ? `média ${fmt(mediaUltimosMeses)}/mês` : null, subCor: mediaUltimosMeses !== null ? (mediaUltimosMeses >= 0 ? G.green : G.red) : G.textMuted, onClick: () => setModalDetalhes(true) },
           { label: "Operações",     value: totalOps,        cor: G.text,   sub: `média ${mediaOpsDia.toFixed(1)} ops/dia`,  subCor: G.textMuted },
-          { label: "Lucro do Dia",  value: fmt(lucroHoje),  cor: lucroHoje >= 0 ? G.green : G.red, sub: `média ${fmt(mediaDiaria)}/dia no mês`, subCor: mediaDiaria >= 0 ? G.green : G.red },
+          { label: "Lucro do Dia",  value: fmt(lucroHoje),  cor: lucroHoje >= 0 ? G.green : G.red, sub: `média ${fmt(mediaDiaria)}/dia no mês`, subCor: mediaDiaria >= 0 ? G.green : G.red, onClick: () => setModalDetalhesDias(true) },
         ].map(k => (
           <Card key={k.label}
             className="dash-kpi-card"
-            onClick={k.clicavel ? () => setModalDetalhes(true) : undefined}
+            onClick={k.onClick}
             style={{
               textAlign: "center", padding: "20px 14px 18px",
-              cursor: k.clicavel ? "pointer" : "default",
+              cursor: k.onClick ? "pointer" : "default",
               border: "1px solid rgba(255,255,255,0.10)",
               boxShadow: "0 2px 12px rgba(0,0,0,0.3)",
               position: "relative", overflow: "hidden",
@@ -202,7 +205,7 @@ export function TelaDashboard({ data, setData }) {
             {/* Barra gradiente de topo — identidade EdgeArb */}
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: GRAD }} />
             <div style={{ fontSize: 10, color: G.textMuted, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>
-              {k.label}{k.clicavel && <span style={{ marginLeft: 5, fontSize: 10, opacity: 0.6 }}>↗</span>}
+              {k.label}{k.onClick && <span style={{ marginLeft: 5, fontSize: 10, opacity: 0.6 }}>↗</span>}
             </div>
             <div className="dash-kpi-value" style={{ color: k.cor }}>{k.value}</div>
             {k.sub && <div style={{ fontSize: 11, color: k.subCor, marginTop: 6 }}>{k.sub}</div>}
@@ -227,25 +230,43 @@ export function TelaDashboard({ data, setData }) {
             ))}
           </div>
           <div className="dash-chart-bars" style={{ position: "relative", zIndex: 1 }}>
+            {/* Linha de base central */}
+            <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.15)", zIndex: 2, pointerEvents: "none" }} />
             {lucrosPorDia.map(({ dia, lucro }) => {
-              const h      = Math.max(3, (Math.abs(lucro) / maxLucro) * 68);
-              const isZero = lucro === 0;
-              const barBg  = isZero
-                ? "rgba(255,255,255,0.05)"
-                : lucro > 0
-                  ? "linear-gradient(to top, #047857, #34D399)"
-                  : "linear-gradient(to top, #9F1239, #F87171)";
+              const h     = lucro === 0 ? 0 : Math.max(3, (Math.abs(lucro) / maxLucro) * chartHalf);
+              const isPos = lucro > 0;
+              const isNeg = lucro < 0;
               return (
                 <div key={dia} title={`Dia ${dia}: ${fmt(lucro)}`}
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "1 1 0%", minWidth: 0 }}>
-                  <div style={{ width: "100%", height: h, background: barBg, borderRadius: "3px 3px 0 0" }} />
-                  {diasNoMes <= 15 && <div style={{ fontSize: 8, color: G.textMuted, marginTop: 3, lineHeight: 1 }}>{dia}</div>}
+                  style={{ flex: "1 1 0%", minWidth: 0, position: "relative" }}>
+                  {/* Barra positiva — cresce para cima a partir do centro */}
+                  {isPos && (
+                    <div style={{
+                      position: "absolute", bottom: "50%", left: 0, right: 0,
+                      height: h, background: "linear-gradient(to top, #047857, #34D399)",
+                      borderRadius: "3px 3px 0 0",
+                    }} />
+                  )}
+                  {/* Barra negativa — cresce para baixo a partir do centro */}
+                  {isNeg && (
+                    <div style={{
+                      position: "absolute", top: "50%", left: 0, right: 0,
+                      height: h, background: "linear-gradient(to bottom, #9F1239, #F87171)",
+                      borderRadius: "0 0 3px 3px",
+                    }} />
+                  )}
                 </div>
               );
             })}
           </div>
-          {/* baseline */}
-          <div style={{ height: 1, background: "rgba(255,255,255,0.10)", marginTop: 1 }} />
+          {/* Labels dos dias */}
+          {diasNoMes <= 15 && (
+            <div style={{ display: "flex", gap: 3, padding: "4px 0 4px" }}>
+              {lucrosPorDia.map(({ dia }) => (
+                <div key={dia} style={{ flex: "1 1 0%", minWidth: 0, fontSize: 8, color: G.textMuted, textAlign: "center", lineHeight: 1 }}>{dia}</div>
+              ))}
+            </div>
+          )}
           {diasNoMes > 15 && (
             <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 2px 6px" }}>
               <span style={{ fontSize: 9, color: G.textMuted }}>1</span>
@@ -253,7 +274,6 @@ export function TelaDashboard({ data, setData }) {
               <span style={{ fontSize: 9, color: G.textMuted }}>{diasNoMes}</span>
             </div>
           )}
-          {diasNoMes <= 15 && <div style={{ height: 6 }} />}
         </div>
       </Card>
 
@@ -338,7 +358,8 @@ export function TelaDashboard({ data, setData }) {
         }
       </Card>
 
-      <ModalDetalhesMes open={modalDetalhes} onClose={() => setModalDetalhes(false)} data={data} mesSel={mesSel} />
+      <ModalDetalhesMes  open={modalDetalhes}     onClose={() => setModalDetalhes(false)}     data={data} mesSel={mesSel} />
+      <ModalDetalhesDias open={modalDetalhesDias} onClose={() => setModalDetalhesDias(false)} data={data} mesSel={mesSel} />
 
       <ModalCalculadora
         open={modalCalc}

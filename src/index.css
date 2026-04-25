@@ -133,10 +133,9 @@ input:focus, select:focus, textarea:focus {
 /* Container das barras do gráfico */
 .dash-chart-bars {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 3px;
-  height: 76px;
-  padding-bottom: 0;
+  height: 100px;
   overflow: hidden;
 }
 

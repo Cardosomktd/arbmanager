@@ -182,7 +182,7 @@ function Secao({ titulo, cor, count, subtotal, aberto, onToggle, children }) {
         </span>
       </div>
       {aberto && (
-        <div style={{ padding: "0 14px 10px", background: G.surface }}>
+        <div style={{ padding: "0 14px 10px", background: "#182033" }}>
           {children}
         </div>
       )}
@@ -195,11 +195,11 @@ function Secao({ titulo, cor, count, subtotal, aberto, onToggle, children }) {
 export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   const [anoSel, mesMes] = (mesSel || "2026-01").split("-").map(Number);
   const [abertas, setAbertas] = useState(
-    { simples: true, paraFB: true, extFB: true, duplo: true, protecoes: true, avulsas: true, cassinos: true }
+    { simples: false, paraFB: false, extFB: false, duplo: false, protecoes: false, avulsas: false, cassinos: false }
   );
 
   useEffect(() => {
-    if (open) setAbertas({ simples: true, paraFB: true, extFB: true, duplo: true, protecoes: true, avulsas: true, cassinos: true });
+    if (open) setAbertas({ simples: false, paraFB: false, extFB: false, duplo: false, protecoes: false, avulsas: false, cassinos: false });
   }, [open]);
 
   const toggle = k => setAbertas(p => ({ ...p, [k]: !p[k] }));
