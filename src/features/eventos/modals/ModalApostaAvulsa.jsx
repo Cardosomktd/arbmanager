@@ -11,12 +11,14 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
   const [descricao, setDescricao] = useState("");
   const [odd,       setOdd]       = useState("");
   const [valor,     setValor]     = useState("");
+  const [isFb,      setIsFb]      = useState(false);   // checkbox "Freebet"
+  const [fbTipo,    setFbTipo]    = useState("freebet"); // "freebet" | "bonus"
   const [erro,      setErro]      = useState("");
 
   useEffect(() => {
     if (!open) {
       setData(""); setCasa(""); setDescricao("");
-      setOdd(""); setValor(""); setErro("");
+      setOdd(""); setValor(""); setIsFb(false); setFbTipo("freebet"); setErro("");
     }
   }, [open]);
 
@@ -28,16 +30,17 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
 
     const desc = descricao.trim();
     onSalvar({
-      id:       uid(),
-      subtipo:  "bingo",                              // distingue de apostas avulsas legadas
-      tipo:     "avulsa",                             // mantém compatibilidade com filtros existentes
-      nome:     desc ? `Bingo — ${desc}` : "Bingo",
+      id:        uid(),
+      subtipo:   "bingo",                             // distingue de apostas avulsas legadas
+      tipo:      "avulsa",                            // mantém compatibilidade com filtros existentes
+      nome:      desc ? `Bingo — ${desc}` : "Bingo",
       data,
       casa,
       odd,
-      valor:    parseFloat(valor) || 0,
-      situacao: "pendente",                           // nasce sempre pendente
-      criadoEm: new Date().toISOString(),
+      valor:     parseFloat(valor) || 0,
+      tipoValor: isFb ? fbTipo : "dinheiro_real",     // "dinheiro_real" | "freebet" | "bonus"
+      situacao:  "pendente",                          // nasce sempre pendente
+      criadoEm:  new Date().toISOString(),
     });
     onClose();
   }
@@ -77,6 +80,39 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Input label="Odd" value={odd} onChange={setOdd} placeholder="Ex: 2,50" required inputMode="decimal" />
           <Input label="Valor (R$)" value={valor} onChange={setValor} type="number" placeholder="0,00" required />
+        </div>
+
+        {/* ── Checkbox Freebet + sub-seletor ──────────────────────────── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: isFb ? G.green : G.textDim, userSelect: "none" }}>
+            <input
+              type="checkbox"
+              checked={isFb}
+              onChange={e => { setIsFb(e.target.checked); if (!e.target.checked) setFbTipo("freebet"); }}
+              style={{ accentColor: G.green, width: 14, height: 14 }}
+            />
+            <span style={{ fontWeight: 600 }}>Freebet</span>
+          </label>
+
+          {isFb && (
+            <select
+              value={fbTipo}
+              onChange={e => setFbTipo(e.target.value)}
+              style={{
+                background: G.surface2,
+                border: `1px solid #34D39944`,
+                borderRadius: 6,
+                padding: "3px 10px",
+                color: G.text,
+                fontSize: 12,
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              <option value="freebet">Freebet</option>
+              <option value="bonus">Bônus</option>
+            </select>
+          )}
         </div>
       </div>
 

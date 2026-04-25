@@ -108,28 +108,69 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
       if (i === 0) return stakeNum > 0 ? stakeNum : null;
       if (retornoBase <= 0 || odd <= 0) return null;
 
-      // Exchange: aplica em stake_base e freebet — mesmas fórmulas, retornoBase diferente
-      //   stake_base: retornoBase = stake × odd
-      //   freebet:    retornoBase = freebet × (odd_fb − 1)
+      // Exchange Back (cenários 2 e 3):
+      //   retornoAlvo = retornoBase − difNum  (difNum > 0 apenas em freebet_red)
+      //   stakeBack   = retornoAlvo / [1 + (odd−1)×(1−comm)]
       if (i === exchIdx && exchTipo === "exchange_back") {
-        // Equaliza: s × [1 + (odd−1)×(1−comm)] = retornoBase
-        const denom = 1 + (odd - 1) * (1 - comm);
-        return denom > 0 ? Math.round((retornoBase / denom) * 100) / 100 : null;
-      }
-      if (i === exchIdx && exchTipo === "exchange_lay") {
-        // Equaliza: s_lay × (odd_lay − comm) = retornoBase
-        const divisor = odd - comm;
-        return divisor > 0 ? Math.round((retornoBase / divisor) * 100) / 100 : null;
+        const retAlvo = retornoBase - difNum;
+        const denom   = 1 + (odd - 1) * (1 - comm);
+        return (retAlvo > 0 && denom > 0) ? Math.round((retAlvo / denom) * 100) / 100 : null;
       }
 
-      // Entradas secundárias normais: diferença só se aplica no modo stake_base
-      const retornoAlvo = (difNum > 0 && modo === "stake_base") ? retornoBase - difNum : retornoBase;
+      // Exchange Lay (cenário 4 e stake_base normal):
+      //   retornoAlvo = retornoBase − difNum
+      //   stakeLay    = retornoAlvo / (odd − comm)
+      if (i === exchIdx && exchTipo === "exchange_lay") {
+        const retAlvo = retornoBase - difNum;
+        const divisor = odd - comm;
+        return (retAlvo > 0 && divisor > 0) ? Math.round((retAlvo / divisor) * 100) / 100 : null;
+      }
+
+      // Entradas secundárias normais — difNum aplicado quando definido
+      const retornoAlvo = difNum > 0 ? retornoBase - difNum : retornoBase;
       if (retornoAlvo <= 0) return null;
       return Math.round((retornoAlvo / odd) * 100) / 100;
 
     } else {
-      // Aposta total — distribuição proporcional
-      if (!todasPreenchidas || somatorio <= 0 || totalNum <= 0 || odd <= 0) return null;
+      // ── Total base ────────────────────────────────────────────────────────
+      if (!todasPreenchidas || totalNum <= 0 || odd <= 0) return null;
+
+      if (hasExchLay) {
+        // Cenário 1: Arbitragem + Total base + Exchange Lay
+        //   stakeLay = (o1 × T) / [o1 × (oe−1) + (oe−comm)]
+        //   stake1   = T − stakeLay × (oe−1)
+        const o1    = oddsNum[0];
+        const oe    = oddsNum[exchIdx];
+        const denom = o1 * (oe - 1) + (oe - comm);
+        if (denom <= 0 || oe <= 0) return null;
+        const stakeLay = (o1 * totalNum) / denom;
+        if (i === exchIdx) return Math.round(stakeLay * 100) / 100;
+        if (i === 0)       return Math.round((totalNum - stakeLay * (oe - 1)) * 100) / 100;
+        // 3+ vias: proporcional para entradas extras
+        if (somatorio <= 0) return null;
+        return Math.round((totalNum / (odd * somatorio)) * 100) / 100;
+      }
+
+      if (hasExchBack) {
+        // Cenário 2: Arbitragem + Total base + Exchange Back
+        //   backFactor = 1 + (ob−1) × (1−comm)
+        //   stakeBack  = T / (1 + backFactor / o1)
+        //   stake1     = T − stakeBack
+        const o1         = oddsNum[0];
+        const ob         = oddsNum[exchIdx];
+        const backFactor = 1 + (ob - 1) * (1 - comm);
+        const denom      = 1 + backFactor / o1;
+        if (denom <= 0 || o1 <= 0) return null;
+        const stakeBack = totalNum / denom;
+        if (i === exchIdx) return Math.round(stakeBack * 100) / 100;
+        if (i === 0)       return Math.round((totalNum - stakeBack) * 100) / 100;
+        // 3+ vias: proporcional para entradas extras
+        if (somatorio <= 0) return null;
+        return Math.round((totalNum / (odd * somatorio)) * 100) / 100;
+      }
+
+      // Sem exchange: distribuição proporcional clássica
+      if (somatorio <= 0) return null;
       return Math.round((totalNum / (odd * somatorio)) * 100) / 100;
     }
   });
@@ -163,6 +204,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   //   Exch Back:      lucro = (s + s×(odd−1)×(1−comm)) − totalInvestido
   //   Exch Lay wins (stake_base): lucro = s_lay×(1−comm) − somaStakesNormais
   //   Exch Lay wins (freebet):    lucro = s_lay×(1−comm)  [freebet não é capital]
+  //   Freebet se Red + Lay i=0:   lucro1 = lucro2 + d  (garante diferença exata = d)
   const lucros = oddsNum.map((odd, i) => {
     const s = stakesCalc[i];
     if (s === null || odd <= 0) return null;
@@ -180,6 +222,12 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
       // Freebet: stake não retorna → retorno líquido = s × (odd − 1)
       return s * (odd - 1) - totalInvestido;
     }
+    // Freebet se Red + Exchange Lay: ancora lucro1 em lucro2 + d para garantir
+    // diferença exata, eliminando erro residual do arredondamento do stakeLay.
+    if (modoPrincipal === "freebet_red" && hasExchLay && i === 0 && layStakeCalc !== null) {
+      const lucroLay = layStakeCalc * (1 - comm) - somaStakesNormais;
+      return lucroLay + difNum;
+    }
     return s * odd - totalInvestido;
   });
 
@@ -190,15 +238,15 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
     : null;
 
   // ── Arb% ───────────────────────────────────────────────────────────────────
-  //   Exchange:  ROI real → lucroMin / totalInvestido × 100
-  //   Freebet:   taxa de extração → lucroMin / stakeNum × 100
-  //   Demais:    fórmula clássica → (1 − Σ(1/odd)) × 100
+  //   Freebet (Ext.): taxa de extração → lucroMin / stakeNum × 100  (prioridade máxima)
+  //   Exchange (arb): ROI real         → lucroMin / totalInvestido × 100
+  //   Demais:         fórmula clássica → (1 − Σ(1/odd)) × 100
   const arbPct = !todasPreenchidas
     ? null
-    : (exchIdx !== null && totalInvestido > 0 && lucroMin !== null)
-      ? lucroMin / totalInvestido * 100
-      : (modo === "freebet" && stakeNum > 0 && lucroMin !== null)
-        ? lucroMin / stakeNum * 100
+    : (modo === "freebet" && stakeNum > 0 && lucroMin !== null)
+      ? lucroMin / stakeNum * 100
+      : (exchIdx !== null && totalInvestido > 0 && lucroMin !== null)
+        ? lucroMin / totalInvestido * 100
         : (1 - somatorio) * 100;
 
   // temDados: condição para exibir "Usar na operação" e o total no rodapé

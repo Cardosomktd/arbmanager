@@ -47,7 +47,12 @@ const BANNERS = {
 };
 
 function entradaVazia() {
-  return { id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "", odd: "", valor: "", comissao: "", tipo: "normal", situacao: "pendente", pa: false };
+  return {
+    id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "",
+    odd: "", valor: "", comissao: "", tipo: "normal", situacao: "pendente", pa: false,
+    freebetId: null, freebetManual: false,   // link para estoque de freebet
+    bonusId:   null, bonusManual:   false,   // link para estoque de bônus
+  };
 }
 
 // ── Seletor de casa com busca ─────────────────────────────────────────────────
@@ -191,9 +196,35 @@ function CasaSelect({ casas, value, onChange, required }) {
   );
 }
 
+// ── Select de estoque (freebet ou bônus) filtrado por casa ───────────────────
+// Recebe os itens já filtrados pela casa da entrada.
+// "Outra"/"Outro" é sempre a última opção — não dá baixa no estoque.
+function EstoqueSelect({ valor, onChange, itens, temCasa, placeholderSemCasa, placeholder, opcaoOutra, formatarItem }) {
+  const SELECT_STYLE = {
+    width: "100%", boxSizing: "border-box",
+    background: G.surface2, border: `1px solid #34D39944`,
+    borderRadius: 6, padding: "6px 10px",
+    color: G.text, fontSize: 12, outline: "none",
+  };
+  return (
+    <select value={valor} onChange={ev => onChange(ev.target.value)} style={SELECT_STYLE}>
+      <option value="" disabled={temCasa}>
+        {!temCasa ? placeholderSemCasa : placeholder}
+      </option>
+      {temCasa && itens.map(item => (
+        <option key={item.id} value={item.id}>{formatarItem(item)}</option>
+      ))}
+      {temCasa && itens.length === 0 && (
+        <option value="" disabled>Nenhuma disponível para esta casa</option>
+      )}
+      <option value={opcaoOutra === "Outra" ? "__outra__" : "__outro__"}>{opcaoOutra}</option>
+    </select>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, rascunhoCalc }) {
+export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, rascunhoCalc, freebetsDisponiveis = [], bonusDisponiveis = [] }) {
   // null = nenhum tipo selecionado (novo modal); string = tipo selecionado
   const [tipoOp,      setTipoOp]      = useState(null);
   const [numEntradas, setNumEntradas] = useState(2);
@@ -469,7 +500,12 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
 
                   {/* ── Linha 1: Casa | Resultado | Múltipla ── */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "end", marginBottom: 8 }}>
-                    <CasaSelect casas={casasAtivas} value={e.casa} onChange={v => upd(i, "casa", v)} required />
+                    <CasaSelect casas={casasAtivas} value={e.casa}
+                      onChange={v => updMulti(i, {
+                        casa: v,
+                        freebetId: null, freebetManual: false,
+                        bonusId:   null, bonusManual:   false,
+                      })} required />
 
                     {/* Resultado apostado / principal */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -613,7 +649,11 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                       {tipoOp === "extracao_freebet" && (
                         <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: isFb ? G.green : G.textDim }}>
                           <input type="checkbox" checked={isFb}
-                            onChange={ev => updMulti(i, { tipo: ev.target.checked ? "freebet" : "normal" })}
+                            onChange={ev => updMulti(i, {
+                              tipo: ev.target.checked ? "freebet" : "normal",
+                              freebetId: null, freebetManual: false,
+                              bonusId:   null, bonusManual:   false,
+                            })}
                             style={{ accentColor: G.green, width: 14, height: 14 }} />
                           <span style={{ fontWeight: 600 }}>Freebet</span>
                         </label>
@@ -706,12 +746,56 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
 
                     {/* Sub-seletor Freebet: Freebet / Bônus — abaixo das flags */}
                     {tipoOp === "extracao_freebet" && isFb && (
-                      <div style={{ marginTop: 8 }}>
-                        <select value={e.tipo} onChange={ev => upd(i, "tipo", ev.target.value)}
-                          style={{ background: G.surface2, border: `1px solid #34D39944`, borderRadius: 6, padding: "4px 10px", color: G.text, fontSize: 12, outline: "none" }}>
+                      <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+
+                        {/* Tipo: Freebet | Bônus */}
+                        <select
+                          value={e.tipo}
+                          onChange={ev => updMulti(i, {
+                            tipo: ev.target.value,
+                            freebetId: null, freebetManual: false,
+                            bonusId:   null, bonusManual:   false,
+                          })}
+                          style={{ background: G.surface2, border: `1px solid #34D39944`, borderRadius: 6, padding: "4px 10px", color: G.text, fontSize: 12, outline: "none", alignSelf: "flex-start" }}>
                           <option value="freebet">Freebet</option>
                           <option value="bonus">Bônus</option>
                         </select>
+
+                        {/* Select de estoque — filtrado por casa */}
+                        {e.tipo === "freebet" ? (
+                          <EstoqueSelect
+                            valor={e.freebetManual ? "__outra__" : (e.freebetId ?? "")}
+                            onChange={v => updMulti(i, v === "__outra__"
+                              ? { freebetId: null, freebetManual: true  }
+                              : { freebetId: v || null, freebetManual: false }
+                            )}
+                            itens={freebetsDisponiveis.filter(f => f.casaId === e.casa)}
+                            temCasa={!!e.casa}
+                            placeholderSemCasa="Selecione a casa para listar opções"
+                            placeholder="— selecione a freebet a ser usada —"
+                            opcaoOutra="Outra"
+                            formatarItem={f =>
+                              `Freebet ${fmt(f.valor)}${f.prazo ? ` (vence ${new Date(f.prazo + "T12:00:00").toLocaleDateString("pt-BR")})` : ""}`
+                            }
+                          />
+                        ) : (
+                          <EstoqueSelect
+                            valor={e.bonusManual ? "__outro__" : (e.bonusId ?? "")}
+                            onChange={v => updMulti(i, v === "__outro__"
+                              ? { bonusId: null, bonusManual: true  }
+                              : { bonusId: v || null, bonusManual: false }
+                            )}
+                            itens={bonusDisponiveis.filter(b => b.casaId === e.casa)}
+                            temCasa={!!e.casa}
+                            placeholderSemCasa="Selecione a casa para listar opções"
+                            placeholder="— selecione o bônus a ser usado —"
+                            opcaoOutra="Outro"
+                            formatarItem={b =>
+                              `Bônus ${fmt(b.valor)}${b.obs ? ` — ${b.obs}` : ""}`
+                            }
+                          />
+                        )}
+
                       </div>
                     )}
                   </div>

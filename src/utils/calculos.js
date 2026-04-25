@@ -207,6 +207,29 @@ export function calcLucroRealOp(op) {
 }
 
 export function lucroEfetivoOp(op) {
-  const pendente = (op.entradas || []).every(e => e.situacao === "pendente");
+  const ents    = op.entradas || [];
+  const pendente = ents.every(e => e.situacao === "pendente");
+
+  // Operação de entrada única (aposta simples sem cobertura):
+  // Quando pendente, o valor apostado já saiu da banca — mesmo raciocínio do Bingo.
+  // Aplica apenas para tipos normais (exclui exchange e freebet/bonus cujo custo
+  // não vem do saldo próprio).
+  if (pendente && ents.length === 1) {
+    const e    = ents[0];
+    const tipo = e.tipo;
+    // Exchange: cai para calcLucroMinOp (retorna lucro mínimo do cenário)
+    if (tipo === "exchange_back" || tipo === "exchange_lay") {
+      /* falls through */
+    }
+    // Freebet / bônus: stake não é dinheiro próprio → sem impacto no saldo
+    else if (tipo === "freebet" || tipo === "bonus") {
+      return 0;
+    }
+    // Normal (dinheiro real): stake comprometida na casa
+    else {
+      return -(parseFloat(e.valor) || 0);
+    }
+  }
+
   return pendente ? calcLucroMinOp(op) : calcLucroRealOp(op);
 }

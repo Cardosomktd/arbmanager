@@ -3,6 +3,7 @@ import { G } from "../../constants/colors";
 import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { statusEvento } from "../../utils/status";
+import { getFreebets } from "../../utils/freebets";
 import { Badge } from "../../components/ui/Badge";
 import { Btn } from "../../components/ui/Btn";
 import { Card } from "../../components/ui/Card";
@@ -64,12 +65,38 @@ export function TelaEventos({ data, setData }) {
   }
 
   function salvarOp(op) {
+    // Coleta IDs de freebet/bônus com baixa real (exclui Outra/Outro e null)
+    const fbIds = (op.entradas || [])
+      .filter(e => e.freebetId && !e.freebetManual)
+      .map(e => e.freebetId);
+    const bnIds = (op.entradas || [])
+      .filter(e => e.bonusId && !e.bonusManual)
+      .map(e => e.bonusId);
+
+    const fbAutoIds   = fbIds.filter(id => id.startsWith("auto_"));
+    const fbManualIds = fbIds.filter(id => !id.startsWith("auto_"));
+
     setData(d => ({
       ...d,
+      // Salva a operação
       eventos: d.eventos.map(ev => ev.id !== eventoAlvoId ? ev : {
         ...ev,
-        operacoes: editOp ? ev.operacoes.map(o => o.id === op.id ? op : o) : [...(ev.operacoes || []), op],
+        operacoes: editOp
+          ? ev.operacoes.map(o => o.id === op.id ? op : o)
+          : [...(ev.operacoes || []), op],
       }),
+      // Baixa freebets manuais
+      freebets: fbManualIds.length > 0
+        ? (d.freebets || []).map(f => fbManualIds.includes(f.id) ? { ...f, usada: true } : f)
+        : (d.freebets || []),
+      // Baixa freebets automáticas (geradas por procedimento_freebet)
+      freebetsAutoUsadas: fbAutoIds.length > 0
+        ? [...new Set([...(d.freebetsAutoUsadas || []), ...fbAutoIds])]
+        : (d.freebetsAutoUsadas || []),
+      // Baixa bônus
+      bonus: bnIds.length > 0
+        ? (d.bonus || []).map(b => bnIds.includes(b.id) ? { ...b, usada: true } : b)
+        : (d.bonus || []),
     }));
   }
   function excluirOp(eventoId, opId) {
@@ -330,7 +357,13 @@ export function TelaEventos({ data, setData }) {
         onCriarNovoEvento={handleCriarNovoEventoParaOp}
       />
       <ModalEvento       open={modalEvento}   onClose={() => setModalEvento(false)}   onSalvar={salvarEvento}  editEvento={editEvento} eventosList={data.eventos || []} />
-      <ModalOperacao     open={modalOp}       onClose={() => setModalOp(false)}       onSalvar={salvarOp}      casas={data.casas || []} editOp={editOp} evento={(data.eventos || []).find(e => e.id === eventoAlvoId)} />
+      <ModalOperacao
+        open={modalOp} onClose={() => setModalOp(false)} onSalvar={salvarOp}
+        casas={data.casas || []} editOp={editOp}
+        evento={(data.eventos || []).find(e => e.id === eventoAlvoId)}
+        freebetsDisponiveis={getFreebets(data).filter(f => !f.usada)}
+        bonusDisponiveis={(data.bonus || []).filter(b => !b.usada)}
+      />
       <ModalApostaAvulsa open={modalAvulsa}   onClose={() => setModalAvulsa(false)}   onSalvar={salvarAposta}  casas={data.casas || []} />
       <ModalCassino      open={modalCassino}  onClose={() => setModalCassino(false)}  onSalvar={salvarCassino} casas={data.casas || []} />
       <ModalProtecao     open={modalProtecao} onClose={() => setModalProtecao(false)} onSalvar={salvarProtecao} casas={data.casas || []} evento={(data.eventos || []).find(e => e.id === eventoProtecaoId)} />

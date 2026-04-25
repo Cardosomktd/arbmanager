@@ -104,9 +104,23 @@ function ItemProtecao({ p, ev, casas }) {
   );
 }
 
+const BINGO_TIPO_LABEL = {
+  freebet:       { label: "🎁 Freebet", color: G.green  },
+  bonus:         { label: "🎰 Bônus",   color: G.accent },
+  dinheiro_real: null,
+};
+
+function getBingoTipoValor(a) {
+  if (a.tipoValor) return a.tipoValor;
+  if (a.freebet === true) return "freebet";
+  return "dinheiro_real";
+}
+
 function ItemAvulsa({ a, casas }) {
-  const lucro  = lucroAvulsa(a);
-  const isPend = a.situacao === "pendente";
+  const lucro     = lucroAvulsa(a);
+  const isPend    = a.situacao === "pendente";
+  const tipoValor = getBingoTipoValor(a);
+  const tipoMeta  = BINGO_TIPO_LABEL[tipoValor] ?? null;
   return (
     <LinhaItem>
       <div>
@@ -114,6 +128,9 @@ function ItemAvulsa({ a, casas }) {
           <TagStatus st={a.situacao} />
           <span style={{ fontSize: 13, fontWeight: 600 }}>{a.nome}</span>
           <span style={{ fontSize: 11, color: G.yellow }}>🎰 Bingo</span>
+          {tipoMeta && (
+            <span style={{ fontSize: 11, color: tipoMeta.color }}>{tipoMeta.label}</span>
+          )}
         </div>
         <div style={{ fontSize: 11, color: G.textDim }}>
           {getCasaNome(casas, a.casa)}{a.entrada ? ` · ${a.entrada}` : ""} @{fmtOdd(a.odd)} · {fmt(parseFloat(a.valor) || 0)}
