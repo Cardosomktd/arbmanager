@@ -126,7 +126,7 @@ function ItemAvulsa({ a, casas }) {
 
 function ItemCassino({ c, casas }) {
   const lucro     = lucroCassino(c);
-  const tipoLabel = { giros: "🎡 Giros", bonus: "🎰 Bônus", cashback: "💰 Cashback" }[c.tipoBeneficio] ?? "🎲";
+  const tipoLabel = { giros: "🎡 Giros", bonus: "🎰 Bônus", cashback: "💰 Cashback", dinheiro_real: "💵 Dinheiro real" }[c.tipoBeneficio] ?? "🎲";
   return (
     <LinhaItem>
       <div>

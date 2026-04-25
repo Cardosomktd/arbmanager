@@ -443,7 +443,7 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
       >
         {cassinosDoMes.map(c => {
           const lucro = lucroCassino(c);
-          const tipoLabel = { giros: "🎡 Giros", bonus: "🎰 Bônus", cashback: "💰 Cashback" }[c.tipoBeneficio] ?? "🎲";
+          const tipoLabel = { giros: "🎡 Giros", bonus: "🎰 Bônus", cashback: "💰 Cashback", dinheiro_real: "💵 Dinheiro real" }[c.tipoBeneficio] ?? "🎲";
           return (
             <LinhaItem key={c.id}>
               <div>
