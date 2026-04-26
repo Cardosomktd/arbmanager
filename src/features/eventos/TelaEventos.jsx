@@ -65,39 +65,55 @@ export function TelaEventos({ data, setData }) {
   }
 
   function salvarOp(op) {
-    // Coleta IDs de freebet/bônus com baixa real (exclui Outra/Outro e null)
-    const fbIds = (op.entradas || [])
-      .filter(e => e.freebetId && !e.freebetManual)
-      .map(e => e.freebetId);
-    const bnIds = (op.entradas || [])
-      .filter(e => e.bonusId && !e.bonusManual)
-      .map(e => e.bonusId);
+    setData(d => {
+      // ── Baixa de freebets ──────────────────────────────────────────────────
+      let freebets = d.freebets || [];
+      const freebetsAutoUsadas = [...(d.freebetsAutoUsadas || [])];
 
-    const fbAutoIds   = fbIds.filter(id => id.startsWith("auto_"));
-    const fbManualIds = fbIds.filter(id => !id.startsWith("auto_"));
+      for (const e of (op.entradas || [])) {
+        if (!e.freebetId || e.freebetManual) continue;
+        if (e.freebetId.startsWith("auto_")) {
+          // Freebet automática: marca como usada integralmente (sem saldo parcial)
+          freebetsAutoUsadas.push(e.freebetId);
+        } else {
+          // Freebet manual: baixa parcial — subtrai valorUsado do saldo
+          freebets = freebets.map(f => {
+            if (f.id !== e.freebetId) return f;
+            const saldoAtual  = f.saldo ?? f.valor ?? 0;
+            const valorUsado  = parseFloat(e.freebetValorUsado) || saldoAtual; // vazio → usa tudo
+            const novoSaldo   = Math.max(0, saldoAtual - valorUsado);
+            // Acumulada: saldo pode zerar mas nunca marca como usada (carteira permanente)
+            return { ...f, saldo: novoSaldo, usada: f.tipo === "acumulada" ? false : novoSaldo <= 0 };
+          });
+        }
+      }
 
-    setData(d => ({
-      ...d,
-      // Salva a operação
-      eventos: d.eventos.map(ev => ev.id !== eventoAlvoId ? ev : {
-        ...ev,
-        operacoes: editOp
-          ? ev.operacoes.map(o => o.id === op.id ? op : o)
-          : [...(ev.operacoes || []), op],
-      }),
-      // Baixa freebets manuais
-      freebets: fbManualIds.length > 0
-        ? (d.freebets || []).map(f => fbManualIds.includes(f.id) ? { ...f, usada: true } : f)
-        : (d.freebets || []),
-      // Baixa freebets automáticas (geradas por procedimento_freebet)
-      freebetsAutoUsadas: fbAutoIds.length > 0
-        ? [...new Set([...(d.freebetsAutoUsadas || []), ...fbAutoIds])]
-        : (d.freebetsAutoUsadas || []),
-      // Baixa bônus
-      bonus: bnIds.length > 0
-        ? (d.bonus || []).map(b => bnIds.includes(b.id) ? { ...b, usada: true } : b)
-        : (d.bonus || []),
-    }));
+      // ── Baixa de bônus ─────────────────────────────────────────────────────
+      let bonus = d.bonus || [];
+      for (const e of (op.entradas || [])) {
+        if (!e.bonusId || e.bonusManual) continue;
+        bonus = bonus.map(b => {
+          if (b.id !== e.bonusId) return b;
+          const saldoAtual = b.saldo ?? b.valor ?? 0;
+          const valorUsado = parseFloat(e.bonusValorUsado) || saldoAtual;
+          const novoSaldo  = Math.max(0, saldoAtual - valorUsado);
+          return { ...b, saldo: novoSaldo, usada: b.tipo === "acumulada" ? false : novoSaldo <= 0 };
+        });
+      }
+
+      return {
+        ...d,
+        eventos: d.eventos.map(ev => ev.id !== eventoAlvoId ? ev : {
+          ...ev,
+          operacoes: editOp
+            ? ev.operacoes.map(o => o.id === op.id ? op : o)
+            : [...(ev.operacoes || []), op],
+        }),
+        freebets,
+        freebetsAutoUsadas: [...new Set(freebetsAutoUsadas)],
+        bonus,
+      };
+    });
   }
   function excluirOp(eventoId, opId) {
     if (confirm("Excluir esta operação?"))

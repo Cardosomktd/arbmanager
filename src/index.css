@@ -149,43 +149,48 @@ input:focus, select:focus, textarea:focus {
   transform: translateY(-1px);
 }
 
-/* ── Responsivo mobile ──────────────────────────────────────────────────────── */
+/* ── Sidebar ─────────────────────────────────────────────────────────────────── */
+.app-sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 200px;
+  background: #0F172A;
+  border-right: 1px solid #1E2433;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  overflow-y: auto;
+}
+
+.sidebar-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #E5E7EB !important;
+}
+
+/* ── Layout principal (desktop) ─────────────────────────────────────────────── */
+/* Header visível apenas no mobile; sidebar oculta no mobile */
+.app-header { display: none; }
+.app-main   { margin-left: 200px; }
+.bottom-nav { display: none; }
+
+/* ── Mobile (≤ 768px) ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Troca sidebar por header + bottom nav */
+  .app-sidebar { display: none; }
+  .app-header  { display: block; }
+  .bottom-nav  { display: flex; }
+
+  /* Header mobile: linha única logo + Sair */
+  .app-header-nav   { display: none !important; }
+  .app-header-inner { height: 50px; flex-wrap: nowrap; justify-content: space-between; gap: 0; }
+  .app-header-email { display: none; }
+
+  /* Conteúdo: sem margem da sidebar + padding para a bottom nav */
+  .app-main { margin-left: 0; padding-bottom: 80px !important; }
+}
+
+/* ── Dashboard — ajustes mobile (≤ 600px) ───────────────────────────────────── */
 @media (max-width: 600px) {
-  .app-header-inner {
-    flex-wrap: wrap;
-    height: auto;
-    padding: 8px 0;
-    gap: 6px;
-    align-items: center;
-    justify-content: flex-start;
-  }
-
-  .app-header-logo { order: 1; }
-
-  .app-header-user {
-    order: 2;
-    margin-left: auto;
-    gap: 8px;
-  }
-
-  .app-header-nav {
-    order: 3;
-    width: 100%;
-    display: flex;
-    gap: 2px;
-    flex-wrap: wrap;
-  }
-
-  .app-header-nav-btn {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 6px 6px;
-    font-size: 12px;
-    justify-content: center;
-  }
-
-  .app-header-email { max-width: 110px; }
-
   .dash-title {
     font-size: 20px;
     letter-spacing: 1px;
@@ -199,8 +204,7 @@ input:focus, select:focus, textarea:focus {
 
   .dash-kpi-grid > *:first-child { grid-column: 1 / -1; }
 
-  .dash-kpi-card { padding: 10px 10px !important; }
-
+  .dash-kpi-card  { padding: 10px 10px !important; }
   .dash-kpi-value { font-size: 24px; }
 
   .dash-chart-bars {

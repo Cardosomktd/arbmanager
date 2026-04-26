@@ -50,8 +50,8 @@ function entradaVazia() {
   return {
     id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "",
     odd: "", valor: "", comissao: "", tipo: "normal", situacao: "pendente", pa: false,
-    freebetId: null, freebetManual: false,   // link para estoque de freebet
-    bonusId:   null, bonusManual:   false,   // link para estoque de bônus
+    freebetId: null, freebetManual: false, freebetValorUsado: "",  // link freebet
+    bonusId:   null, bonusManual:   false, bonusValorUsado:   "",  // link bônus
   };
 }
 
@@ -191,6 +191,37 @@ function CasaSelect({ casas, value, onChange, required }) {
             })}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Input de valor parcial a usar do estoque ─────────────────────────────────
+// Mostra o saldo disponível e permite digitar quanto será usado.
+// Sem preenchimento → usa o saldo inteiro (tratado na baixa em TelaEventos).
+function ValorUsadoInput({ saldo, value, onChange }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 2 }}>
+      <span style={{ fontSize: 11, color: G.textDim }}>
+        Saldo disponível: <strong style={{ color: G.green }}>{fmt(saldo)}</strong>
+      </span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <label style={{ fontSize: 10, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
+          Valor a usar (R$)
+        </label>
+        <input
+          type="number"
+          value={value}
+          onChange={ev => onChange(ev.target.value)}
+          placeholder={String(saldo)}
+          min="0.01"
+          step="0.01"
+          style={{
+            background: G.surface2, border: `1px solid #34D39944`,
+            borderRadius: 6, padding: "4px 8px",
+            color: G.text, fontSize: 12, outline: "none", width: 110,
+          }}
+        />
       </div>
     </div>
   );
@@ -337,22 +368,76 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
       if (!e.entrada.trim()) { setErro(`Informe o resultado apostado na entrada ${i + 1}.`); return; }
       if (!e.odd)            { setErro(`Informe a odd da entrada ${i + 1}.`); return; }
       if (!e.valor)          { setErro(`Informe o valor da entrada ${i + 1}.`); return; }
+
+      // Valida valor a usar contra saldo disponível (estoque individual)
+      if (e.freebetId && !e.freebetManual && e.freebetValorUsado) {
+        const fb = freebetsDisponiveis.find(f => f.id === e.freebetId);
+        const saldo = fb ? (fb.saldo ?? fb.valor ?? 0) : 0;
+        if (parseFloat(e.freebetValorUsado) > saldo + 0.001) {
+          setErro(`Valor da freebet na entrada ${i + 1} excede o saldo disponível (${fmt(saldo)}).`);
+          return;
+        }
+      }
+      if (e.bonusId && !e.bonusManual && e.bonusValorUsado) {
+        const bn = bonusDisponiveis.find(b => b.id === e.bonusId);
+        const saldo = bn ? (bn.saldo ?? bn.valor ?? 0) : 0;
+        if (parseFloat(e.bonusValorUsado) > saldo + 0.001) {
+          setErro(`Valor do bônus na entrada ${i + 1} excede o saldo disponível (${fmt(saldo)}).`);
+          return;
+        }
+      }
+      // Valida valor a usar contra saldo de carteira acumulada
+      if (tipoOp === "extracao_freebet") {
+        if (e.tipo === "freebet" && !e.freebetId && !e.freebetManual && e.freebetValorUsado) {
+          const acum = freebetsDisponiveis.find(f => f.tipo === "acumulada" && f.casaId === e.casa);
+          if (acum) {
+            const saldo = acum.saldo ?? 0;
+            if (parseFloat(e.freebetValorUsado) > saldo + 0.001) {
+              setErro(`Valor da freebet na entrada ${i + 1} excede o saldo acumulado disponível (${fmt(saldo)}).`);
+              return;
+            }
+          }
+        }
+        if (e.tipo === "bonus" && !e.bonusId && !e.bonusManual && e.bonusValorUsado) {
+          const acum = bonusDisponiveis.find(b => b.tipo === "acumulada" && b.casaId === e.casa);
+          if (acum) {
+            const saldo = acum.saldo ?? 0;
+            if (parseFloat(e.bonusValorUsado) > saldo + 0.001) {
+              setErro(`Valor do bônus na entrada ${i + 1} excede o saldo acumulado disponível (${fmt(saldo)}).`);
+              return;
+            }
+          }
+        }
+      }
     }
     setErro("");
 
     // Desestrutura campos UI-only (modoRetorno, retornoStr) — não devem ser persistidos
-    const entradasFinal = entradas.map(({ modoRetorno: _m, retornoStr: _r, ...e }) => ({
-      ...e,
-      // Exchange é preservado para qualquer tipo de operação.
-      // Freebet/bonus só são preservados em Extração de Freebet.
-      // Tudo o mais vira "normal".
-      tipo: (e.tipo === "exchange_back" || e.tipo === "exchange_lay")
+    const entradasFinal = entradas.map(({ modoRetorno: _m, retornoStr: _r, ...e }) => {
+      const tipoFinal = (e.tipo === "exchange_back" || e.tipo === "exchange_lay")
         ? e.tipo
-        : tipoOp === "extracao_freebet" ? e.tipo : "normal",
-      // Situação nasce sempre como pendente (conclusão feita via ModalConcluirOp)
-      situacao: e.situacao === "pendente" ? "pendente" : e.situacao,
-      entradaDisplay: e.entrada === "outro" ? (e.entradaCustom || "?") : e.entrada,
-    }));
+        : tipoOp === "extracao_freebet" ? e.tipo : "normal";
+
+      let entry = {
+        ...e,
+        tipo: tipoFinal,
+        // Situação nasce sempre como pendente (conclusão feita via ModalConcluirOp)
+        situacao: e.situacao === "pendente" ? "pendente" : e.situacao,
+        entradaDisplay: e.entrada === "outro" ? (e.entradaCustom || "?") : e.entrada,
+      };
+
+      // Injeta ID da carteira acumulada para o baixa em TelaEventos (modo carteira não tem dropdown)
+      if (tipoFinal === "freebet" && !entry.freebetId && !entry.freebetManual) {
+        const acum = freebetsDisponiveis.find(f => f.tipo === "acumulada" && f.casaId === entry.casa);
+        if (acum) entry = { ...entry, freebetId: acum.id };
+      }
+      if (tipoFinal === "bonus" && !entry.bonusId && !entry.bonusManual) {
+        const acum = bonusDisponiveis.find(b => b.tipo === "acumulada" && b.casaId === entry.casa);
+        if (acum) entry = { ...entry, bonusId: acum.id };
+      }
+
+      return entry;
+    });
 
     onSalvar({
       id: editOp?.id || uid(),
@@ -467,6 +552,23 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                 ? (parseFloat(e.valor) || 0) * ((parseFloat(String(e.odd || "").replace(",", ".")) || 0) - 1)
                 : 0;
 
+              // Saldo do item de estoque vinculado (compat: sem saldo → usa valor)
+              const selectedFb = (e.freebetId && !e.freebetManual)
+                ? freebetsDisponiveis.find(f => f.id === e.freebetId) : null;
+              const fbSaldo = selectedFb ? (selectedFb.saldo ?? selectedFb.valor ?? 0) : 0;
+
+              const selectedBn = (e.bonusId && !e.bonusManual)
+                ? bonusDisponiveis.find(b => b.id === e.bonusId) : null;
+              const bnSaldo = selectedBn ? (selectedBn.saldo ?? selectedBn.valor ?? 0) : 0;
+
+              // Detecção de carteira acumulada por casa — se existir, substitui o dropdown por ValorUsadoInput direto
+              const casaFbAcumulada = e.tipo === "freebet" && e.casa
+                ? freebetsDisponiveis.find(f => f.tipo === "acumulada" && f.casaId === e.casa)
+                : null;
+              const casaBnAcumulada = e.tipo === "bonus" && e.casa
+                ? bonusDisponiveis.find(b => b.tipo === "acumulada" && b.casaId === e.casa)
+                : null;
+
               return (
                 <div key={e.id} style={{
                   background: G.surface2,
@@ -503,8 +605,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                     <CasaSelect casas={casasAtivas} value={e.casa}
                       onChange={v => updMulti(i, {
                         casa: v,
-                        freebetId: null, freebetManual: false,
-                        bonusId:   null, bonusManual:   false,
+                        freebetId: null, freebetManual: false, freebetValorUsado: "",
+                        bonusId:   null, bonusManual:   false, bonusValorUsado:   "",
                       })} required />
 
                     {/* Resultado apostado / principal */}
@@ -651,8 +753,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                           <input type="checkbox" checked={isFb}
                             onChange={ev => updMulti(i, {
                               tipo: ev.target.checked ? "freebet" : "normal",
-                              freebetId: null, freebetManual: false,
-                              bonusId:   null, bonusManual:   false,
+                              freebetId: null, freebetManual: false, freebetValorUsado: "",
+                              bonusId:   null, bonusManual:   false, bonusValorUsado:   "",
                             })}
                             style={{ accentColor: G.green, width: 14, height: 14 }} />
                           <span style={{ fontWeight: 600 }}>Freebet</span>
@@ -753,47 +855,106 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                           value={e.tipo}
                           onChange={ev => updMulti(i, {
                             tipo: ev.target.value,
-                            freebetId: null, freebetManual: false,
-                            bonusId:   null, bonusManual:   false,
+                            freebetId: null, freebetManual: false, freebetValorUsado: "",
+                            bonusId:   null, bonusManual:   false, bonusValorUsado:   "",
                           })}
                           style={{ background: G.surface2, border: `1px solid #34D39944`, borderRadius: 6, padding: "4px 10px", color: G.text, fontSize: 12, outline: "none", alignSelf: "flex-start" }}>
                           <option value="freebet">Freebet</option>
                           <option value="bonus">Bônus</option>
                         </select>
 
-                        {/* Select de estoque — filtrado por casa */}
+                        {/* Select de estoque (ou carteira acumulada) — filtrado por casa */}
                         {e.tipo === "freebet" ? (
-                          <EstoqueSelect
-                            valor={e.freebetManual ? "__outra__" : (e.freebetId ?? "")}
-                            onChange={v => updMulti(i, v === "__outra__"
-                              ? { freebetId: null, freebetManual: true  }
-                              : { freebetId: v || null, freebetManual: false }
-                            )}
-                            itens={freebetsDisponiveis.filter(f => f.casaId === e.casa)}
-                            temCasa={!!e.casa}
-                            placeholderSemCasa="Selecione a casa para listar opções"
-                            placeholder="— selecione a freebet a ser usada —"
-                            opcaoOutra="Outra"
-                            formatarItem={f =>
-                              `Freebet ${fmt(f.valor)}${f.prazo ? ` (vence ${new Date(f.prazo + "T12:00:00").toLocaleDateString("pt-BR")})` : ""}`
-                            }
-                          />
+                          casaFbAcumulada ? (
+                            // ── Modo carteira: saldo acumulado, sem dropdown ──────────────────
+                            <>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: G.accent }}>
+                                <span>🔄</span>
+                                <span style={{ fontWeight: 600 }}>Carteira —{getCasaNome(casasAtivas, e.casa)}</span>
+                              </div>
+                              <ValorUsadoInput
+                                saldo={casaFbAcumulada.saldo ?? 0}
+                                value={e.freebetValorUsado}
+                                onChange={v => upd(i, "freebetValorUsado", v)}
+                              />
+                            </>
+                          ) : (
+                            // ── Modo normal: dropdown de estoque ─────────────────────────────
+                            <>
+                              <EstoqueSelect
+                                valor={e.freebetManual ? "__outra__" : (e.freebetId ?? "")}
+                                onChange={v => updMulti(i, v === "__outra__"
+                                  ? { freebetId: null, freebetManual: true,  freebetValorUsado: "" }
+                                  : { freebetId: v || null, freebetManual: false, freebetValorUsado: "" }
+                                )}
+                                itens={freebetsDisponiveis.filter(f => f.casaId === e.casa && f.tipo !== "acumulada")}
+                                temCasa={!!e.casa}
+                                placeholderSemCasa="Selecione a casa para listar opções"
+                                placeholder="— selecione a freebet a ser usada —"
+                                opcaoOutra="Outra"
+                                formatarItem={f => {
+                                  const s = f.saldo ?? f.valor ?? 0;
+                                  const parcial = f.saldo != null && f.saldo < f.valor;
+                                  const saldoStr = parcial ? `${fmt(s)} de ${fmt(f.valor)}` : fmt(s);
+                                  if (!f.prazo) return `Freebet ${saldoStr}`;
+                                  const d = new Date(f.prazo + "T12:00:00").toLocaleDateString("pt-BR");
+                                  const vence = f.vencimentoHora ? `${d} às ${f.vencimentoHora}` : d;
+                                  return `Freebet ${saldoStr} (vence ${vence})`;
+                                }}
+                              />
+                              {selectedFb && (
+                                <ValorUsadoInput
+                                  saldo={fbSaldo}
+                                  value={e.freebetValorUsado}
+                                  onChange={v => upd(i, "freebetValorUsado", v)}
+                                />
+                              )}
+                            </>
+                          )
                         ) : (
-                          <EstoqueSelect
-                            valor={e.bonusManual ? "__outro__" : (e.bonusId ?? "")}
-                            onChange={v => updMulti(i, v === "__outro__"
-                              ? { bonusId: null, bonusManual: true  }
-                              : { bonusId: v || null, bonusManual: false }
-                            )}
-                            itens={bonusDisponiveis.filter(b => b.casaId === e.casa)}
-                            temCasa={!!e.casa}
-                            placeholderSemCasa="Selecione a casa para listar opções"
-                            placeholder="— selecione o bônus a ser usado —"
-                            opcaoOutra="Outro"
-                            formatarItem={b =>
-                              `Bônus ${fmt(b.valor)}${b.obs ? ` — ${b.obs}` : ""}`
-                            }
-                          />
+                          casaBnAcumulada ? (
+                            // ── Modo carteira bônus ───────────────────────────────────────────
+                            <>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: G.accent }}>
+                                <span>🔄</span>
+                                <span style={{ fontWeight: 600 }}>Carteira —{getCasaNome(casasAtivas, e.casa)}</span>
+                              </div>
+                              <ValorUsadoInput
+                                saldo={casaBnAcumulada.saldo ?? 0}
+                                value={e.bonusValorUsado}
+                                onChange={v => upd(i, "bonusValorUsado", v)}
+                              />
+                            </>
+                          ) : (
+                            // ── Modo normal bônus ─────────────────────────────────────────────
+                            <>
+                              <EstoqueSelect
+                                valor={e.bonusManual ? "__outro__" : (e.bonusId ?? "")}
+                                onChange={v => updMulti(i, v === "__outro__"
+                                  ? { bonusId: null, bonusManual: true,  bonusValorUsado: "" }
+                                  : { bonusId: v || null, bonusManual: false, bonusValorUsado: "" }
+                                )}
+                                itens={bonusDisponiveis.filter(b => b.casaId === e.casa && b.tipo !== "acumulada")}
+                                temCasa={!!e.casa}
+                                placeholderSemCasa="Selecione a casa para listar opções"
+                                placeholder="— selecione o bônus a ser usado —"
+                                opcaoOutra="Outro"
+                                formatarItem={b => {
+                                  const s = b.saldo ?? b.valor ?? 0;
+                                  const parcial = b.saldo != null && b.saldo < b.valor;
+                                  const saldoStr = parcial ? `${fmt(s)} de ${fmt(b.valor)}` : fmt(s);
+                                  return `Bônus ${saldoStr}${b.obs ? ` — ${b.obs}` : ""}`;
+                                }}
+                              />
+                              {selectedBn && (
+                                <ValorUsadoInput
+                                  saldo={bnSaldo}
+                                  value={e.bonusValorUsado}
+                                  onChange={v => upd(i, "bonusValorUsado", v)}
+                                />
+                              )}
+                            </>
+                          )
                         )}
 
                       </div>

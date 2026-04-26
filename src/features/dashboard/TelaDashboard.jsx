@@ -15,12 +15,12 @@ import { ModalEvento }            from "../eventos/modals/ModalEvento";
 import { ModalOperacao }          from "../eventos/modals/ModalOperacao";
 import { uid }                    from "../../storage";
 
-export function TelaDashboard({ data, setData }) {
+// modalCalc / setModalCalc são levantados para App.jsx para que a sidebar possa abrir a calculadora
+export function TelaDashboard({ data, setData, modalCalc, setModalCalc }) {
   const hoje = new Date();
   const [mesSel,        setMesSel]        = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`);
   const [modalDetalhes,     setModalDetalhes]     = useState(false);
   const [modalDetalhesDias, setModalDetalhesDias] = useState(false);
-  const [modalCalc,       setModalCalc]       = useState(false);
 
   // ── Fluxo calculadora → operação ────────────────────────────────────────────
   const [calcRascunho,    setCalcRascunho]    = useState(null);   // dados da calc
