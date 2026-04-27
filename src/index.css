@@ -238,6 +238,10 @@ input:focus, select:focus, textarea:focus {
 
 /* ── Mobile (≤ 768px) ───────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .lancamentos-acoes {
+    width: 100%;
+    justify-content: flex-end;
+  }
   /* Troca sidebar por header + bottom nav */
   .app-sidebar { display: none; }
   .app-header  { display: block; }

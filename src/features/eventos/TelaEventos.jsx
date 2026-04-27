@@ -233,7 +233,7 @@ export function TelaEventos({ data, setData }) {
         <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: G.text }}>
           Lançamentos
         </div>
-        <div style={{ display: "flex", alignItems: "stretch", gap: 8, height: 42 }}>
+        <div className="lancamentos-acoes" style={{ display: "flex", alignItems: "stretch", gap: 8, height: 42 }}>
           <Btn variant="ghost" onClick={() => setModalAvulsa(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px", height: "100%" }}>
             <img src={iconBingo} alt="" width={18} height={18} style={{ display: "block", flexShrink: 0 }} />
             Bingo
@@ -241,7 +241,7 @@ export function TelaEventos({ data, setData }) {
           <img
             src={iconCassino} alt="Cassino"
             onClick={() => setModalCassino(true)}
-            style={{ display: "block", height: "100%", width: "auto", cursor: "pointer" }}
+            style={{ display: "block", height: "80%", width: "auto", cursor: "pointer", alignSelf: "center" }}
           />
           <Btn onClick={() => setModalSel(true)} style={{ padding: "0 14px", height: "100%" }}>+ Nova Operação</Btn>
         </div>
@@ -253,10 +253,10 @@ export function TelaEventos({ data, setData }) {
           {[{ id: "pendentes", label: "Pendentes" }, { id: "concluidos", label: "Concluídos" }].map(f => (
             <button key={f.id} onClick={() => setFiltroStatus(f.id)} style={{
               padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer",
-              background: filtroStatus === f.id ? G.surface : "transparent",
-              color: filtroStatus === f.id ? G.text : G.textDim,
-              fontSize: 13, fontWeight: 500,
-              
+              background: filtroStatus === f.id ? G.accent : "transparent",
+              color: filtroStatus === f.id ? "#fff" : G.textDim,
+              fontSize: 13, fontWeight: filtroStatus === f.id ? 700 : 500,
+              boxShadow: filtroStatus === f.id ? `0 2px 8px ${G.accent}55` : "none",
               transition: "all 0.15s",
             }}>
               {f.label}
