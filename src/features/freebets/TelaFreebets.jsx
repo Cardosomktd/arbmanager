@@ -157,11 +157,6 @@ export function TelaFreebets({ data, setData }) {
   const filtradas = ativas.filter(f =>
     getCasaNome(data.casas || [], f.casaId).toLowerCase().includes(filtro.toLowerCase())
   );
-  const alertas = ativas.filter(f => {
-    if (f.tipo === "acumulada") return false; // carteiras não expiram da mesma forma
-    const d = diasParaVencer(f.prazo);
-    return d !== null && d <= 3;
-  });
 
   // compat: itens antigos sem saldo assumem saldo = valor
   const getSaldo = f => f.saldo ?? f.valor ?? 0;
@@ -174,27 +169,6 @@ export function TelaFreebets({ data, setData }) {
       <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, color: G.text }}>
         Freebets & Bônus
       </div>
-
-      {/* Alertas de vencimento */}
-      {alertas.length > 0 && (
-        <div style={{ background: "#FBBF2411", border: "1px solid #FBBF2444", borderRadius: 8, padding: "10px 14px", marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: G.yellow, fontWeight: 700, marginBottom: 6 }}>⏰ VENCENDO EM BREVE</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {alertas.map(f => {
-              const dias = diasParaVencer(f.prazo);
-              return (
-                <div key={f.id} style={{ background: "#FBBF2411", border: "1px solid #FBBF2433", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
-                  <span style={{ color: G.text, fontWeight: 600 }}>{getCasaNome(data.casas || [], f.casaId)}</span>
-                  <span style={{ color: G.textDim, marginLeft: 4 }}>{fmt(f.valor)}</span>
-                  <span style={{ color: dias <= 0 ? G.red : G.yellow, fontWeight: 700, marginLeft: 6 }}>
-                    {dias <= 0 ? "HOJE" : dias === 1 ? "amanhã" : `${dias} dias`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>

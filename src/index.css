@@ -169,9 +169,52 @@ input:focus, select:focus, textarea:focus {
 
 /* ── Layout principal (desktop) ─────────────────────────────────────────────── */
 /* Header visível apenas no mobile; sidebar oculta no mobile */
-.app-header { display: none; }
-.app-main   { margin-left: 200px; }
-.bottom-nav { display: none; }
+.app-header    { display: none; }
+.app-main      { margin-left: 200px; }
+.bottom-nav    { display: none; }
+
+/* ── CardEvento — cabeçalho ──────────────────────────────────────────────────── */
+/* Desktop: linha única (seta + nome à esq., meta à dir.) */
+.evento-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── CardEvento — layout mobile ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Header vira coluna: linha 1 = nome, linha 2 = meta */
+  .evento-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Nome do evento: linha única com reticências */
+  .evento-nome {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Meta ocupa toda a largura: data à esq., proteção+status à dir., topo alinhado */
+  .evento-card-meta {
+    width: 100%;
+    margin-left: 0 !important;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start !important;
+  }
+
+  /* Botão 🛡 PROTEÇÃO: versão compacta no mobile — só o ícone, sem textos */
+  .evento-protecao-btn {
+    padding: 5px 8px !important;
+    gap: 0 !important;
+  }
+  .evento-protecao-texto {
+    display: none;
+  }
+}
 
 /* ── Mobile (≤ 768px) ───────────────────────────────────────────────────────── */
 @media (max-width: 768px) {

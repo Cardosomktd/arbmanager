@@ -36,60 +36,55 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
       background: expandido ? "#182033" : undefined,
     }}>
       {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
-      <div
-        style={{ padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-        onClick={() => setExpandido(v => !v)}
-      >
-        {/* Nome + data */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-          <span style={{ color: G.textDim, fontSize: 14, flexShrink: 0 }}>{expandido ? "▼" : "▶"}</span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2 }}>{evento.nome}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 12, color: G.textDim }}>{fmtDate(evento.data)}</span>
-              {(evento.protecoes || []).length > 0 && (
-                <span style={{ fontSize: 11, color: "#8B5CF6", background: "#8B5CF618", borderRadius: 4, padding: "1px 7px", fontWeight: 600 }}>
-                  🛡 Proteção
-                </span>
-              )}
+      {(() => {
+        const n = (evento.protecoes || []).length;
+        const sub = n === 0 ? "nenhuma" : n === 1 ? "1 ativa" : `${n} ativas`;
+        return (
+          <div
+            className="evento-card-header"
+            style={{ padding: "14px 16px", cursor: "pointer" }}
+            onClick={() => setExpandido(v => !v)}
+          >
+            {/* Linha 1: seta + nome */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+              <span style={{ color: G.textDim, fontSize: 14, flexShrink: 0 }}>{expandido ? "▼" : "▶"}</span>
+              <div className="evento-nome" style={{ fontWeight: 600, fontSize: 15, minWidth: 0, flex: 1 }}>{evento.nome}</div>
             </div>
-          </div>
-        </div>
 
-        {/* Ações rápidas + status + lucro */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, marginLeft: 12 }}>
-          {/* Botão de proteção — stopPropagation para não colapsar o card */}
-          {(() => {
-            const n = (evento.protecoes || []).length;
-            const sub = n === 0 ? "nenhuma" : n === 1 ? "1 ativa" : `${n} ativas`;
-            return (
-              <button
-                onClick={e => { e.stopPropagation(); onAddProtecao(evento.id); }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  background: "#8B5CF618", border: "1px solid #8B5CF644",
-                  borderRadius: 7, padding: "6px 12px",
-                  color: "#8B5CF6", cursor: "pointer", flexShrink: 0,
-                  
-                }}
-              >
-                <span style={{ fontSize: 22, lineHeight: 1, flexShrink: 0 }}>🛡</span>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, lineHeight: 1.2 }}>PROTEÇÃO</span>
-                  <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, lineHeight: 1.2 }}>{sub}</span>
+            {/* Linha 2 (meta): data + proteção + status + lucro */}
+            <div className="evento-card-meta" style={{ display: "flex", alignItems: "flex-start", gap: 8, flexShrink: 0, marginLeft: 24 }}>
+              <span style={{ fontSize: 12, color: G.textDim, whiteSpace: "nowrap" }}>{fmtDate(evento.data)}</span>
+
+              {/* Proteção + status sempre agrupados à direita */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexShrink: 0 }}>
+                <button
+                  className="evento-protecao-btn"
+                  onClick={e => { e.stopPropagation(); onAddProtecao(evento.id); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    background: "#8B5CF618", border: "1px solid #8B5CF644",
+                    borderRadius: 7, padding: "6px 12px",
+                    color: "#8B5CF6", cursor: "pointer", flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>🛡</span>
+                  <div className="evento-protecao-texto" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, lineHeight: 1.2 }}>PROTEÇÃO</span>
+                    <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, lineHeight: 1.2 }}>{sub}</span>
+                  </div>
+                </button>
+
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <Badge cor={statusCor}>{statusLabel}</Badge>
+                  <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 700, color: lucro >= 0 ? G.green : G.red, marginTop: 4 }}>
+                    {fmt(lucro)}
+                  </div>
                 </div>
-              </button>
-            );
-          })()}
-          {/* Status + lucro */}
-          <div style={{ textAlign: "right" }}>
-            <Badge cor={statusCor}>{statusLabel}</Badge>
-            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 700, color: lucro >= 0 ? G.green : G.red, marginTop: 4 }}>
-              {fmt(lucro)}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ── Conteúdo expandido ────────────────────────────────────────────── */}
       {expandido && (

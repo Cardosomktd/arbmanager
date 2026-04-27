@@ -7,78 +7,15 @@ import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { lucroCassino } from "../../utils/lucroCassino";
 import { lucroProtecao } from "../../utils/lucroProtecao";
 import { Card } from "../../components/ui/Card";
-import { ModalDetalhesMes }       from "./modals/ModalDetalhesMes";
-import { ModalDetalhesDias }      from "./modals/ModalDetalhesDias";
-import { ModalCalculadora }       from "./modals/ModalCalculadora";
-import { ModalSelecionarEvento }  from "./modals/ModalSelecionarEvento";
-import { ModalEvento }            from "../eventos/modals/ModalEvento";
-import { ModalOperacao }          from "../eventos/modals/ModalOperacao";
-import { uid }                    from "../../storage";
+import { ModalDetalhesMes }  from "./modals/ModalDetalhesMes";
+import { ModalDetalhesDias } from "./modals/ModalDetalhesDias";
 
-// modalCalc / setModalCalc são levantados para App.jsx para que a sidebar possa abrir a calculadora
-export function TelaDashboard({ data, setData, modalCalc, setModalCalc }) {
+// onOpenCalc: callback para abrir o ModalCalculadora global (gerenciado em App.jsx)
+export function TelaDashboard({ data, setData, onOpenCalc }) {
   const hoje = new Date();
-  const [mesSel,        setMesSel]        = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`);
+  const [mesSel,            setMesSel]            = useState(`${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`);
   const [modalDetalhes,     setModalDetalhes]     = useState(false);
   const [modalDetalhesDias, setModalDetalhesDias] = useState(false);
-
-  // ── Fluxo calculadora → operação ────────────────────────────────────────────
-  const [calcRascunho,    setCalcRascunho]    = useState(null);   // dados da calc
-  const [modalSel,        setModalSel]        = useState(false);  // selecionar evento
-  const [modalEventoCalc, setModalEventoCalc] = useState(false);  // criar novo evento
-  const [modalOpCalc,     setModalOpCalc]     = useState(false);  // abrir operação
-  const [eventoAlvoId,    setEventoAlvoId]    = useState(null);
-
-  function handleUsarNaOp(rascunho) {
-    setCalcRascunho(rascunho);
-    setModalCalc(false);
-    setModalSel(true);
-  }
-
-  function handleSelecionarEvento(ev) {
-    setEventoAlvoId(ev.id);
-    setModalSel(false);
-    setModalOpCalc(true);
-  }
-
-  function handleCriarNovoEvento() {
-    setModalSel(false);
-    setModalEventoCalc(true);
-  }
-
-  function salvarEventoCalc(ev) {
-    setData(d => {
-      const existe = d.eventos.find(e => e.id === ev.id);
-      return {
-        ...d,
-        eventos: existe
-          ? d.eventos.map(e => e.id === ev.id ? { ...e, ...ev } : e)
-          : [...d.eventos, ev],
-      };
-    });
-    setEventoAlvoId(ev.id);
-    setModalEventoCalc(false);
-    setModalOpCalc(true);
-  }
-
-  function salvarOpCalc(op) {
-    setData(d => ({
-      ...d,
-      eventos: d.eventos.map(ev => ev.id !== eventoAlvoId ? ev : {
-        ...ev,
-        operacoes: [...(ev.operacoes || []), op],
-      }),
-    }));
-    setCalcRascunho(null);
-    setEventoAlvoId(null);
-    setModalOpCalc(false);
-  }
-
-  function cancelarOpCalc() {
-    setCalcRascunho(null);
-    setEventoAlvoId(null);
-    setModalOpCalc(false);
-  }
   const [anoSel, mesMes] = mesSel.split("-").map(Number);
 
   function opDoMes(ev) {
@@ -159,22 +96,7 @@ export function TelaDashboard({ data, setData, modalCalc, setModalCalc }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div className="dash-title" style={{ color: G.text }}>Dashboard</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Card de acesso rápido à calculadora */}
-          <button onClick={() => setModalCalc(true)} style={{
-            display: "flex", alignItems: "center", gap: 6,
-            background: G.surface2, border: "1px solid rgba(255,255,255,0.10)",
-            borderRadius: 7, padding: "7px 14px", cursor: "pointer",
-            color: G.textDim, fontSize: 13, fontWeight: 600,
-            transition: "border-color 0.15s, color 0.15s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(34,211,238,0.35)"; e.currentTarget.style.color = G.accent; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = G.textDim; }}
-          >
-            <span style={{ fontSize: 15 }}>🧮</span>
-            Calculadora
-          </button>
-
-          <select value={mesSel} onChange={e => setMesSel(e.target.value)}
+<select value={mesSel} onChange={e => setMesSel(e.target.value)}
             style={{ background: G.surface2, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 7, padding: "7px 12px", color: G.text, fontSize: 13 }}>
             {mesesDisp.map(m => {
               const [y, mo] = m.split("-");
@@ -277,20 +199,22 @@ export function TelaDashboard({ data, setData, modalCalc, setModalCalc }) {
         </div>
       </Card>
 
-      {/* Alerta freebets vencendo */}
+      {/* Alerta freebets vencendo nas próximas 24h */}
       {(() => {
-        const hojeD = new Date(); hojeD.setHours(0, 0, 0, 0);
+        const agora = new Date();
+        const em24h = agora.getTime() + 24 * 60 * 60 * 1000;
         const fbs = (data.freebets || []).filter(f => !f.usada && f.prazo);
         const urgentes = fbs.filter(f => {
-          const diff = Math.round((new Date(f.prazo + "T12:00:00") - hojeD) / (1000 * 60 * 60 * 24));
-          return diff <= 3;
+          const hora  = f.vencimentoHora ? `${f.vencimentoHora}:00` : "23:59:59";
+          const vence = new Date(`${f.prazo}T${hora}`).getTime();
+          return vence >= agora.getTime() && vence <= em24h;
         });
         if (!urgentes.length) return null;
         return (
           <div style={{ background: "#FBBF2411", border: "1px solid #FBBF2444", borderRadius: 8, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 16 }}>⏰</span>
             <span style={{ fontSize: 13, color: G.yellow, fontWeight: 600 }}>
-              {urgentes.length} freebet{urgentes.length !== 1 ? "s" : ""} vencendo em breve!
+              {urgentes.length} freebet{urgentes.length !== 1 ? "s" : ""} vencendo nas próximas 24h!
             </span>
           </div>
         );
@@ -360,38 +284,6 @@ export function TelaDashboard({ data, setData, modalCalc, setModalCalc }) {
 
       <ModalDetalhesMes  open={modalDetalhes}     onClose={() => setModalDetalhes(false)}     data={data} mesSel={mesSel} />
       <ModalDetalhesDias open={modalDetalhesDias} onClose={() => setModalDetalhesDias(false)} data={data} mesSel={mesSel} />
-
-      <ModalCalculadora
-        open={modalCalc}
-        onClose={() => setModalCalc(false)}
-        onUsarNaOp={handleUsarNaOp}
-      />
-
-      <ModalSelecionarEvento
-        open={modalSel}
-        onClose={() => setModalSel(false)}
-        eventos={data.eventos || []}
-        onSelecionarEvento={handleSelecionarEvento}
-        onCriarNovoEvento={handleCriarNovoEvento}
-      />
-
-      <ModalEvento
-        open={modalEventoCalc}
-        onClose={() => setModalEventoCalc(false)}
-        onSalvar={salvarEventoCalc}
-        eventosList={data.eventos || []}
-      />
-
-      {eventoAlvoId && (
-        <ModalOperacao
-          open={modalOpCalc}
-          onClose={cancelarOpCalc}
-          onSalvar={salvarOpCalc}
-          casas={data.casas || []}
-          evento={(data.eventos || []).find(ev => ev.id === eventoAlvoId) ?? null}
-          rascunhoCalc={calcRascunho}
-        />
-      )}
 
       <div style={{ textAlign: "center", marginTop: 32, paddingBottom: 8 }}>
         <a
