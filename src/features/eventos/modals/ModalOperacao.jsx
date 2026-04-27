@@ -230,7 +230,52 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
       if (!e.odd)            { setErro(`Informe a odd da entrada ${i + 1}.`); return; }
       if (!e.valor)          { setErro(`Informe o valor da entrada ${i + 1}.`); return; }
 
-      // Valida valor a usar contra saldo disponível (estoque individual)
+      // Validações de freebet/bônus na extração
+      if (tipoOp === "extracao_freebet" && (e.tipo === "freebet" || e.tipo === "bonus")) {
+        const isFbType = e.tipo === "freebet";
+
+        // Detecta carteira acumulada (dispensa seleção explícita no dropdown)
+        const temAcumulada = isFbType
+          ? freebetsDisponiveis.some(f => f.tipo === "acumulada" && f.casaId === e.casa)
+          : bonusDisponiveis.some(b => b.tipo === "acumulada" && b.casaId === e.casa);
+
+        if (!temAcumulada) {
+          // Obrigatório: freebet cadastrada ou "não cadastrada" marcada
+          const temId     = isFbType ? !!e.freebetId  : !!e.bonusId;
+          const temManual = isFbType ? e.freebetManual : e.bonusManual;
+          if (!temId && !temManual) {
+            setErro(`Selecione uma freebet cadastrada ou marque "Freebet não cadastrada" na entrada ${i + 1}.`);
+            return;
+          }
+
+          // Valida saldo: o valor da entrada não pode exceder o saldo da freebet selecionada
+          if (temId) {
+            const item  = isFbType
+              ? freebetsDisponiveis.find(f => f.id === e.freebetId)
+              : bonusDisponiveis.find(b => b.id === e.bonusId);
+            const saldo = item ? (item.saldo ?? item.valor ?? 0) : 0;
+            if ((parseFloat(e.valor) || 0) > saldo + 0.001) {
+              setErro(`Valor da ${isFbType ? "freebet" : "bônus"} na entrada ${i + 1} excede o saldo disponível (${fmt(saldo)}).`);
+              return;
+            }
+          }
+        } else {
+          // Carteira acumulada: valida o valor digitado no ValorUsadoInput
+          const valorUsado = isFbType ? e.freebetValorUsado : e.bonusValorUsado;
+          if (valorUsado) {
+            const acum  = isFbType
+              ? freebetsDisponiveis.find(f => f.tipo === "acumulada" && f.casaId === e.casa)
+              : bonusDisponiveis.find(b => b.tipo === "acumulada" && b.casaId === e.casa);
+            const saldo = acum?.saldo ?? 0;
+            if (parseFloat(valorUsado) > saldo + 0.001) {
+              setErro(`Valor da ${isFbType ? "freebet" : "bônus"} na entrada ${i + 1} excede o saldo acumulado disponível (${fmt(saldo)}).`);
+              return;
+            }
+          }
+        }
+      }
+
+      // Valida saldo de freebet/bônus individual fora de extração (ex: duplo com freebet)
       if (e.freebetId && !e.freebetManual && e.freebetValorUsado) {
         const fb = freebetsDisponiveis.find(f => f.id === e.freebetId);
         const saldo = fb ? (fb.saldo ?? fb.valor ?? 0) : 0;
@@ -245,29 +290,6 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         if (parseFloat(e.bonusValorUsado) > saldo + 0.001) {
           setErro(`Valor do bônus na entrada ${i + 1} excede o saldo disponível (${fmt(saldo)}).`);
           return;
-        }
-      }
-      // Valida valor a usar contra saldo de carteira acumulada
-      if (tipoOp === "extracao_freebet") {
-        if (e.tipo === "freebet" && !e.freebetId && !e.freebetManual && e.freebetValorUsado) {
-          const acum = freebetsDisponiveis.find(f => f.tipo === "acumulada" && f.casaId === e.casa);
-          if (acum) {
-            const saldo = acum.saldo ?? 0;
-            if (parseFloat(e.freebetValorUsado) > saldo + 0.001) {
-              setErro(`Valor da freebet na entrada ${i + 1} excede o saldo acumulado disponível (${fmt(saldo)}).`);
-              return;
-            }
-          }
-        }
-        if (e.tipo === "bonus" && !e.bonusId && !e.bonusManual && e.bonusValorUsado) {
-          const acum = bonusDisponiveis.find(b => b.tipo === "acumulada" && b.casaId === e.casa);
-          if (acum) {
-            const saldo = acum.saldo ?? 0;
-            if (parseFloat(e.bonusValorUsado) > saldo + 0.001) {
-              setErro(`Valor do bônus na entrada ${i + 1} excede o saldo acumulado disponível (${fmt(saldo)}).`);
-              return;
-            }
-          }
         }
       }
     }
@@ -295,6 +317,16 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
       if (tipoFinal === "bonus" && !entry.bonusId && !entry.bonusManual) {
         const acum = bonusDisponiveis.find(b => b.tipo === "acumulada" && b.casaId === entry.casa);
         if (acum) entry = { ...entry, bonusId: acum.id };
+      }
+
+      // Freebet/bônus individual selecionada: valorUsado = valor da entrada (sem campo separado)
+      if (tipoFinal === "freebet" && entry.freebetId && !entry.freebetManual) {
+        const fb = freebetsDisponiveis.find(f => f.id === entry.freebetId);
+        if (fb?.tipo !== "acumulada") entry = { ...entry, freebetValorUsado: entry.valor };
+      }
+      if (tipoFinal === "bonus" && entry.bonusId && !entry.bonusManual) {
+        const bn = bonusDisponiveis.find(b => b.id === entry.bonusId);
+        if (bn?.tipo !== "acumulada") entry = { ...entry, bonusValorUsado: entry.valor };
       }
 
       return entry;
@@ -752,7 +784,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                                 temCasa={!!e.casa}
                                 placeholderSemCasa="Selecione a casa para listar opções"
                                 placeholder="— selecione a freebet a ser usada —"
-                                opcaoOutra="Outra"
+                                opcaoOutra="Freebet não cadastrada"
                                 formatarItem={f => {
                                   const s = f.saldo ?? f.valor ?? 0;
                                   const parcial = f.saldo != null && f.saldo < f.valor;
@@ -763,13 +795,6 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                                   return `Freebet ${saldoStr} (vence ${vence})`;
                                 }}
                               />
-                              {selectedFb && (
-                                <ValorUsadoInput
-                                  saldo={fbSaldo}
-                                  value={e.freebetValorUsado}
-                                  onChange={v => upd(i, "freebetValorUsado", v)}
-                                />
-                              )}
                             </>
                           )
                         ) : (
@@ -799,7 +824,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                                 temCasa={!!e.casa}
                                 placeholderSemCasa="Selecione a casa para listar opções"
                                 placeholder="— selecione o bônus a ser usado —"
-                                opcaoOutra="Outro"
+                                opcaoOutra="Bônus não cadastrado"
                                 formatarItem={b => {
                                   const s = b.saldo ?? b.valor ?? 0;
                                   const parcial = b.saldo != null && b.saldo < b.valor;
@@ -807,13 +832,6 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                                   return `Bônus ${saldoStr}${b.obs ? ` — ${b.obs}` : ""}`;
                                 }}
                               />
-                              {selectedBn && (
-                                <ValorUsadoInput
-                                  saldo={bnSaldo}
-                                  value={e.bonusValorUsado}
-                                  onChange={v => upd(i, "bonusValorUsado", v)}
-                                />
-                              )}
                             </>
                           )
                         )}
