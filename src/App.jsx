@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { G } from "./constants/colors";
-import wordmarkUrl from "./assets/EDGEARB.svg";
+import wordmarkUrl    from "./assets/EDGEARB.svg";
+import iconDashboard    from "./assets/icons/Dashboard.svg";
+import iconOperacoes    from "./assets/icons/Operações.svg";
+import iconFreebets     from "./assets/icons/Freebets.svg";
+import iconBanca        from "./assets/icons/Banca.svg";
+import iconCalculadora  from "./assets/icons/Calculadora.svg";
 import { supabase } from "./lib/supabase";
 import { useAppData } from "./hooks/useAppData";
 import { LoginPage } from "./features/auth/LoginPage";
@@ -15,20 +20,25 @@ import { ModalOperacao }        from "./features/eventos/modals/ModalOperacao";
 
 // ── Navegação ─────────────────────────────────────────────────────────────────
 // Bottom nav (mobile — 4 abas principais)
+const NAV_ICON_SIZE = 22;
+const navIcon = (src, alt) => (
+  <img src={src} alt={alt} width={NAV_ICON_SIZE} height={NAV_ICON_SIZE} style={{ display: "block", flexShrink: 0 }} />
+);
+
 const ABAS = [
-  { id: "dashboard", label: "Dashboard",  icon: "📊" },
-  { id: "eventos",   label: "Operações",  icon: "🏟️" },
-  { id: "freebets",  label: "Freebets",   icon: "🎁" },
-  { id: "banca",     label: "Banca",      icon: "🏦" },
+  { id: "dashboard", label: "Dashboard", icon: () => navIcon(iconDashboard, "Dashboard") },
+  { id: "eventos",   label: "Operações", icon: () => navIcon(iconOperacoes, "Operações") },
+  { id: "freebets",  label: "Freebets",  icon: () => navIcon(iconFreebets,  "Freebets")  },
+  { id: "banca",     label: "Banca",     icon: () => navIcon(iconBanca,     "Banca")     },
 ];
 
 // Sidebar (desktop — inclui Calculadora como ação de modal)
 const SIDEBAR_ITEMS = [
-  { id: "dashboard", label: "Dashboard",   icon: "📊" },
-  { id: "eventos",   label: "Operações",   icon: "🏟️" },
-  { id: "freebets",  label: "Freebets",    icon: "🎁" },
-  { id: "banca",     label: "Banca",       icon: "🏦" },
-  { id: "calc",      label: "Calculadora", icon: "🧮", isModal: true },
+  { id: "dashboard", label: "Dashboard",   icon: () => navIcon(iconDashboard, "Dashboard") },
+  { id: "eventos",   label: "Operações",   icon: () => navIcon(iconOperacoes, "Operações") },
+  { id: "freebets",  label: "Freebets",    icon: () => navIcon(iconFreebets,  "Freebets")  },
+  { id: "banca",     label: "Banca",       icon: () => navIcon(iconBanca,     "Banca")     },
+  { id: "calc",      label: "Calculadora", icon: iconCalculadora, isModal: true },
 ];
 
 // ── App root ──────────────────────────────────────────────────────────────────
@@ -139,8 +149,14 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
         backdropFilter: "blur(12px)",
       }}>
         <div className="app-header-inner">
-          <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
             <img src={wordmarkUrl} alt="EdgeArb" height={14} style={{ display: "block" }} />
+            <button
+              onClick={openCalc}
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: 0 }}
+            >
+              <img src={iconCalculadora} alt="Calculadora" width={26} height={26} style={{ display: "block" }} />
+            </button>
           </div>
           <nav className="app-header-nav" style={{ display: "flex", gap: 2 }}>
             {ABAS.map(a => (
@@ -262,18 +278,38 @@ function Sidebar({ aba, setAba, session, onLogout, error, onOpenCalc }) {
   return (
     <aside className="app-sidebar">
 
-      <div style={{ padding: "22px 20px 20px", borderBottom: `1px solid ${G.border}`, flexShrink: 0 }}>
+      <div style={{ padding: "22px 20px 20px", flexShrink: 0 }}>
         <img src={wordmarkUrl} alt="EdgeArb" height={14} style={{ display: "block" }} />
       </div>
 
       <nav style={{ flex: 1, padding: "8px 0" }}>
         {SIDEBAR_ITEMS.map(item => {
-          const ativo = !item.isModal && aba === item.id;
+          if (item.isModal) {
+            return (
+              <button
+                key={item.id}
+                className="sidebar-nav-btn"
+                onClick={onOpenCalc}
+                style={{
+                  width: "100%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "14px 20px",
+                  background: "transparent", border: "none",
+                  borderTop: "none",
+                  cursor: "pointer",
+                  transition: "background 0.15s",
+                }}
+              >
+                <img src={item.icon} alt="Calculadora" width={36} height={36} style={{ display: "block" }} />
+              </button>
+            );
+          }
+          const ativo = aba === item.id;
           return (
             <button
               key={item.id}
               className="sidebar-nav-btn"
-              onClick={() => item.isModal ? onOpenCalc() : setAba(item.id)}
+              onClick={() => setAba(item.id)}
               style={{
                 width: "100%",
                 display: "flex", alignItems: "center", gap: 10,
@@ -288,14 +324,14 @@ function Sidebar({ aba, setAba, session, onLogout, error, onOpenCalc }) {
                 fontFamily: "'Inter', sans-serif", letterSpacing: 0.1,
               }}
             >
-              <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ lineHeight: 1, flexShrink: 0 }}>{item.icon()}</span>
               <span>{item.label}</span>
             </button>
           );
         })}
       </nav>
 
-      <div style={{ padding: "16px 20px", borderTop: `1px solid ${G.border}`, flexShrink: 0 }}>
+      <div style={{ padding: "16px 20px", flexShrink: 0 }}>
         {error && <div style={{ fontSize: 11, color: G.red, marginBottom: 8 }}>⚠️ Erro ao salvar</div>}
         <div style={{
           fontSize: 11, color: G.textMuted, marginBottom: 10,
@@ -346,7 +382,7 @@ function BottomNav({ aba, setAba }) {
             transition: "color 0.15s, border-color 0.15s",
             fontFamily: "'Inter', sans-serif", letterSpacing: 0.3,
           }}>
-            <span style={{ fontSize: 22, lineHeight: 1 }}>{a.icon}</span>
+            <span style={{ lineHeight: 1 }}>{a.icon()}</span>
             <span>{a.label}</span>
           </button>
         );
