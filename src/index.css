@@ -181,6 +181,11 @@ input:focus, select:focus, textarea:focus {
   justify-content: space-between;
 }
 
+/* Data na meta row — oculta no desktop, visível no mobile */
+.evento-card-data    { display: none; }
+/* Data abaixo do nome — visível no desktop, oculta no mobile */
+.evento-data-desktop { display: block; }
+
 /* ── CardEvento — layout mobile ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   /* Header vira coluna: linha 1 = nome, linha 2 = meta */
@@ -204,6 +209,21 @@ input:focus, select:focus, textarea:focus {
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start !important;
+  }
+
+  /* Data abaixo do nome: oculta no mobile (fica na meta row) */
+  .evento-data-desktop { display: none; }
+
+  /* Data/hora na meta row: visível, empilhada, indentada com o nome */
+  .evento-card-data {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding-left: 24px;
+  }
+  .evento-card-hora {
+    font-size: 11px;
+    color: #9CA3AF;
   }
 
   /* Botão 🛡 PROTEÇÃO: versão compacta no mobile — só o ícone, sem textos */

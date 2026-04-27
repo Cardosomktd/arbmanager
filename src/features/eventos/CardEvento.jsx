@@ -45,15 +45,30 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
             style={{ padding: "14px 16px", cursor: "pointer" }}
             onClick={() => setExpandido(v => !v)}
           >
-            {/* Linha 1: seta + nome */}
+            {/* Linha 1: seta + nome + data (desktop: data abaixo do nome) */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
               <span style={{ color: G.textDim, fontSize: 14, flexShrink: 0 }}>{expandido ? "▼" : "▶"}</span>
-              <div className="evento-nome" style={{ fontWeight: 600, fontSize: 15, minWidth: 0, flex: 1 }}>{evento.nome}</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="evento-nome" style={{ fontWeight: 600, fontSize: 15 }}>{evento.nome}</div>
+                {/* Data abaixo do nome — visível apenas no desktop */}
+                <div className="evento-data-desktop" style={{ fontSize: 12, color: G.textDim, marginTop: 2 }}>
+                  {fmtDate(evento.data)}
+                </div>
+              </div>
             </div>
 
-            {/* Linha 2 (meta): data + proteção + status + lucro */}
+            {/* Linha 2 (meta): data (mobile) + proteção + status + lucro */}
             <div className="evento-card-meta" style={{ display: "flex", alignItems: "flex-start", gap: 8, flexShrink: 0, marginLeft: 24 }}>
-              <span style={{ fontSize: 12, color: G.textDim, whiteSpace: "nowrap" }}>{fmtDate(evento.data)}</span>
+              {/* Data/hora — visível apenas no mobile */}
+              {(() => {
+                const parts = fmtDate(evento.data).split(" ");
+                return (
+                  <div className="evento-card-data" style={{ flexShrink: 0 }}>
+                    <span style={{ fontSize: 12, color: G.textDim }}>{parts[0]}</span>
+                    {parts[1] && <span className="evento-card-hora">{parts[1]}</span>}
+                  </div>
+                );
+              })()}
 
               {/* Proteção + status sempre agrupados à direita */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexShrink: 0 }}>
