@@ -5,11 +5,14 @@ import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
 import { fmt } from "../../../utils/format";
+import { CasaSelect } from "../../../components/ui/CasaSelect";
+import iconCassino  from "../../../assets/icons/Cassino.svg";
+import iconFreebets from "../../../assets/icons/Freebets.svg";
 
 // Tipos do novo fluxo
 const TIPOS = [
   { value: "dinheiro_real", label: "💵 Dinheiro real" },
-  { value: "bonus",         label: "🎰 Bônus"         },
+  { value: "bonus",         label: <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><img src={iconFreebets} alt="" width={22} height={22} style={{ display: "block" }} />Bônus</span> },
 ];
 
 export function ModalCassino({ open, onClose, onSalvar, casas }) {
@@ -92,7 +95,7 @@ export function ModalCassino({ open, onClose, onSalvar, casas }) {
   const casasAtivas = casas.filter(c => c.ativa);
 
   return (
-    <Modal open={open} onClose={onClose} title="🎲 Cassino" width={460}>
+    <Modal open={open} onClose={onClose} title={<span style={{ display: "flex", alignItems: "center", gap: 8 }}><img src={iconCassino} alt="" width={22} height={22} style={{ display: "block" }} />CASSINO</span>} width={460}>
 
       {/* ── Erro ─────────────────────────────────────────────────────────────── */}
       {erro && (
@@ -102,6 +105,9 @@ export function ModalCassino({ open, onClose, onSalvar, casas }) {
       )}
 
       {/* ── Seletor de tipo (sempre visível) ─────────────────────────────────── */}
+      <div style={{ fontSize: 13, color: G.textDim, marginBottom: 10, fontWeight: 500 }}>
+        O que foi usado na jogatina?
+      </div>
       <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 8, padding: 3, marginBottom: tipo ? 20 : 0 }}>
         {TIPOS.map(t => {
           const ativo = tipo === t.value;
@@ -130,13 +136,7 @@ export function ModalCassino({ open, onClose, onSalvar, casas }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Input label="Data" value={data} onChange={setData} type="date" required />
-            <Input
-              label="Casa"
-              value={casa}
-              onChange={setCasa}
-              options={casasAtivas.map(c => ({ value: c.id, label: c.nome }))}
-              required
-            />
+            <CasaSelect casas={casasAtivas} value={casa} onChange={setCasa} required />
           </div>
 
           <Input

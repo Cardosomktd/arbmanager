@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
+import iconBingo   from "../../assets/icons/Bingo.svg";
+import iconCassino from "../../assets/icons/Cassino.svg";
 import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { statusEvento } from "../../utils/status";
@@ -231,10 +233,17 @@ export function TelaEventos({ data, setData }) {
         <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 28, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: G.text }}>
           Lançamentos
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn variant="ghost" onClick={() => setModalAvulsa(true)}>🎰 Bingo</Btn>
-          <Btn variant="ghost" onClick={() => setModalCassino(true)}>🎲 Cassino</Btn>
-          <Btn onClick={() => setModalSel(true)}>+ Nova Operação</Btn>
+        <div style={{ display: "flex", alignItems: "stretch", gap: 8, height: 42 }}>
+          <Btn variant="ghost" onClick={() => setModalAvulsa(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 12px", height: "100%" }}>
+            <img src={iconBingo} alt="" width={18} height={18} style={{ display: "block", flexShrink: 0 }} />
+            Bingo
+          </Btn>
+          <img
+            src={iconCassino} alt="Cassino"
+            onClick={() => setModalCassino(true)}
+            style={{ display: "block", height: "100%", width: "auto", cursor: "pointer" }}
+          />
+          <Btn onClick={() => setModalSel(true)} style={{ padding: "0 14px", height: "100%" }}>+ Nova Operação</Btn>
         </div>
       </div>
 

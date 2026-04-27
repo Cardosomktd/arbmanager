@@ -292,15 +292,21 @@ function Sidebar({ aba, setAba, session, onLogout, error, onOpenCalc }) {
                 onClick={onOpenCalc}
                 style={{
                   width: "100%",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  padding: "14px 20px",
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 20px",
                   background: "transparent", border: "none",
-                  borderTop: "none",
-                  cursor: "pointer",
-                  transition: "background 0.15s",
+                  borderLeft: "3px solid transparent",
+                  color: G.textDim,
+                  fontSize: 13, fontWeight: 400,
+                  cursor: "pointer", textAlign: "left",
+                  transition: "background 0.15s, color 0.15s",
+                  fontFamily: "'Inter', sans-serif", letterSpacing: 0.1,
                 }}
               >
-                <img src={item.icon} alt="Calculadora" width={48} height={48} style={{ display: "block" }} />
+                <span style={{ lineHeight: 1, flexShrink: 0 }}>
+                  <img src={item.icon} alt="Calculadora" width={22} height={22} style={{ display: "block" }} />
+                </span>
+                <span>{item.label}</span>
               </button>
             );
           }

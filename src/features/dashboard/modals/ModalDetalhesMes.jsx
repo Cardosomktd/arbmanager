@@ -8,6 +8,7 @@ import { lucroProtecao } from "../../../utils/lucroProtecao";
 import { statusOp } from "../../../utils/status";
 import { resolveCategoria, CATEGORIAS } from "../../../utils/categoriaOp";
 import { Modal } from "../../../components/ui/Modal";
+import { getFreebets } from "../../../utils/freebets";
 
 // ── Helpers de cálculo ────────────────────────────────────────────────────────
 
@@ -294,8 +295,16 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   const todosOps   = [...opsSimples, ...opsParaFB, ...opsExtFB, ...opsDuplo];
   const lucroAtual = r2(sum(todosOps, ({ op }) => lucroEfetivoOp(op)) + lucroProtecoes + lucroAvulsas + lucroCassinos);
 
-  // Freebets disponíveis: valor nominal das freebets cujas condições foram atingidas
-  const fbDisponivel    = fbNominalReal;
+  // Freebets disponíveis: mesma regra da aba Freebets
+  // (saldo atual de itens não usados, inclusive carteira acumulada)
+  const _hoje = new Date(); _hoje.setHours(0, 0, 0, 0);
+  const _todasFb = getFreebets(data).map(f => ({ ...f, _isBonus: false }));
+  const _todasBn = (data.bonus || []).map(b => ({ ...b, _isBonus: true }));
+  const _ativas  = [..._todasFb, ..._todasBn].filter(f => {
+    if (f.tipo === "acumulada") return (f.saldo ?? f.valor ?? 0) > 0;
+    return !f.usada && (f.saldo ?? f.valor ?? 0) > 0 && (f.prazo ? new Date(f.prazo) >= _hoje : true);
+  });
+  const fbDisponivel    = r2(_ativas.reduce((s, f) => s + (f.saldo ?? f.valor ?? 0), 0));
   const fbLucroEstimado = r2(fbDisponivel * 0.65);
 
   // Total previsto: lucro atual + lucro estimado das freebets disponíveis

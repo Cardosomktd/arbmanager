@@ -4,6 +4,8 @@ import { uid } from "../../../storage";
 import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
+import { CasaSelect } from "../../../components/ui/CasaSelect";
+import iconBingo from "../../../assets/icons/Bingo.svg";
 
 export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
   const [data,      setData]      = useState("");
@@ -48,7 +50,7 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
   const casasAtivas = casas.filter(c => c.ativa);
 
   return (
-    <Modal open={open} onClose={onClose} title="🎰 Bingo" width={440}>
+    <Modal open={open} onClose={onClose} title={<span style={{ display: "flex", alignItems: "center", gap: 8 }}><img src={iconBingo} alt="" width={22} height={22} style={{ display: "block" }} />BINGO</span>} width={440}>
       {erro && (
         <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
           {erro}
@@ -56,19 +58,14 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
       )}
 
       <div style={{ background: "#8B5CF60d", border: "1px solid #8B5CF633", borderRadius: 8, padding: "8px 12px", marginBottom: 16, fontSize: 12, color: "#A78BFA" }}>
-        🎲 Cadastre aqui a sua múltipla.
+        <img src={iconBingo} alt="" width={14} height={14} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 6 }} />
+        Cadastre aqui a sua múltipla.
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <Input label="Data" value={data} onChange={setData} type="date" required placeholder="Informe a data do último evento da múltipla" />
 
-        <Input
-          label="Casa"
-          value={casa}
-          onChange={setCasa}
-          options={casasAtivas.map(c => ({ value: c.id, label: c.nome }))}
-          required
-        />
+        <CasaSelect casas={casasAtivas} value={casa} onChange={setCasa} required />
 
         <Input
           label="Descrição (opcional)"

@@ -155,7 +155,7 @@ input:focus, select:focus, textarea:focus {
   left: 0; top: 0; bottom: 0;
   width: 200px;
   background: #0F172A;
-  border-right: 1px solid #1E2433;
+  border-right: none;
   display: flex;
   flex-direction: column;
   z-index: 50;
