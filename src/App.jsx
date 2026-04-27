@@ -300,7 +300,7 @@ function Sidebar({ aba, setAba, session, onLogout, error, onOpenCalc }) {
                   transition: "background 0.15s",
                 }}
               >
-                <img src={item.icon} alt="Calculadora" width={36} height={36} style={{ display: "block" }} />
+                <img src={item.icon} alt="Calculadora" width={48} height={48} style={{ display: "block" }} />
               </button>
             );
           }
