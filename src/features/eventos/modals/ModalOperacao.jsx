@@ -91,7 +91,7 @@ function ValorUsadoInput({ saldo, value, onChange }) {
 // ── Select de estoque (freebet ou bônus) filtrado por casa ───────────────────
 // Recebe os itens já filtrados pela casa da entrada.
 // "Outra"/"Outro" é sempre a última opção — não dá baixa no estoque.
-function EstoqueSelect({ valor, onChange, itens, temCasa, placeholderSemCasa, placeholder, opcaoOutra, formatarItem }) {
+function EstoqueSelect({ valor, onChange, itens, temCasa, placeholderSemCasa, placeholder, opcaoOutra, valorOutra, formatarItem }) {
   const SELECT_STYLE = {
     width: "100%", boxSizing: "border-box",
     background: G.surface2, border: `1px solid #34D39944`,
@@ -109,7 +109,7 @@ function EstoqueSelect({ valor, onChange, itens, temCasa, placeholderSemCasa, pl
       {temCasa && itens.length === 0 && (
         <option value="" disabled>Nenhuma disponível para esta casa</option>
       )}
-      <option value={opcaoOutra === "Outra" ? "__outra__" : "__outro__"}>{opcaoOutra}</option>
+      <option value={valorOutra}>{opcaoOutra}</option>
     </select>
   );
 }
@@ -785,6 +785,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                                 placeholderSemCasa="Selecione a casa para listar opções"
                                 placeholder="— selecione a freebet a ser usada —"
                                 opcaoOutra="Freebet não cadastrada"
+                                valorOutra="__outra__"
                                 formatarItem={f => {
                                   const s = f.saldo ?? f.valor ?? 0;
                                   const parcial = f.saldo != null && f.saldo < f.valor;
@@ -825,6 +826,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                                 placeholderSemCasa="Selecione a casa para listar opções"
                                 placeholder="— selecione o bônus a ser usado —"
                                 opcaoOutra="Bônus não cadastrado"
+                                valorOutra="__outro__"
                                 formatarItem={b => {
                                   const s = b.saldo ?? b.valor ?? 0;
                                   const parcial = b.saldo != null && b.saldo < b.valor;
