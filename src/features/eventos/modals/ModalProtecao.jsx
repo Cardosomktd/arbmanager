@@ -4,6 +4,7 @@ import { uid } from "../../../storage";
 import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
+import { CasaSelect } from "../../../components/ui/CasaSelect";
 
 export function ModalProtecao({ open, onClose, onSalvar, casas, evento }) {
   const [casa, setCasa] = useState("");
@@ -38,7 +39,7 @@ export function ModalProtecao({ open, onClose, onSalvar, casas, evento }) {
         Entrada avulsa de proteção — cobre o lucro de todas as operações do evento somadas.
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <Input label="Casa" value={casa} onChange={setCasa} options={casasAtivas.map(c => ({ value: c.id, label: c.nome }))} required />
+        <CasaSelect casas={casasAtivas} value={casa} onChange={setCasa} required />
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>
             Resultado <span style={{ color: G.red }}>*</span>

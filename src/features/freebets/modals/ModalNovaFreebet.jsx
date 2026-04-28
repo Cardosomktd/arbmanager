@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { G } from "../../../constants/colors";
+import { G, GRAD } from "../../../constants/colors";
 import { uid } from "../../../storage";
 import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
+import { CasaSelect } from "../../../components/ui/CasaSelect";
+import iconFreebets from "../../../assets/icons/Freebets.svg";
 
 export function ModalNovaFreebet({ open, onClose, onSalvar, casas }) {
   const [subTipo,        setSubTipo]        = useState("freebet"); // "freebet" | "bonus"
@@ -40,7 +42,12 @@ export function ModalNovaFreebet({ open, onClose, onSalvar, casas }) {
     onClose();
   }
 
-  const titulo = subTipo === "bonus" ? "🎰 Novo Bônus" : "🎁 Nova Freebet";
+  const titulo = (
+    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <img src={iconFreebets} width={26} height={26} />
+      {subTipo === "bonus" ? "NOVO BÔNUS" : "NOVA FREEBET"}
+    </span>
+  );
 
   return (
     <Modal open={open} onClose={onClose} title={titulo} width={420}>
@@ -54,21 +61,33 @@ export function ModalNovaFreebet({ open, onClose, onSalvar, casas }) {
         {/* Tipo: Freebet | Bônus */}
         <div>
           <div style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>Tipo</div>
-          <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 8, padding: 3 }}>
-            {[{ value: "freebet", label: "🎁 Freebet" }, { value: "bonus", label: "🎰 Bônus" }].map(t => (
-              <button key={t.value} onClick={() => setSubTipo(t.value)} style={{
-                flex: 1, padding: "6px 12px", borderRadius: 6, border: "none", cursor: "pointer",
-                background: subTipo === t.value ? G.surface : "transparent",
-                color: subTipo === t.value ? G.text : G.textDim,
-                fontSize: 13, fontWeight: 600, transition: "all 0.15s",
-              }}>
-                {t.label}
-              </button>
-            ))}
+          <div style={{ display: "flex", gap: 6 }}>
+            {[
+              { value: "freebet", label: "Freebet" },
+              { value: "bonus",   label: "Bônus"   },
+            ].map(t => {
+              const ativo = subTipo === t.value;
+              return (
+                <button key={t.value} onClick={() => setSubTipo(t.value)} style={{
+                  flex: 1, padding: "9px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                  background: ativo ? GRAD : G.surface2,
+                  color: ativo ? "#fff" : G.textDim,
+                  fontSize: 13, fontWeight: 700,
+                  boxShadow: ativo ? "0 2px 8px #7C3AED44" : "none",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                  transition: "all 0.15s",
+                }}>
+                  <img src={iconFreebets} width={16} height={16}
+                    style={{ opacity: ativo ? 1 : 0.4, filter: ativo ? "brightness(10)" : "none" }}
+                  />
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <Input label="Casa" value={casaId} onChange={setCasaId} options={casas.filter(c => c.ativa).map(c => ({ value: c.id, label: c.nome }))} required />
+        <CasaSelect casas={casas.filter(c => c.ativa)} value={casaId} onChange={setCasaId} required />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Input label="Valor (R$)" value={valor} onChange={setValor} type="number" placeholder="0,00" required />
           <Input label="Prazo de vencimento" value={prazo} onChange={setPrazo} type="date" />

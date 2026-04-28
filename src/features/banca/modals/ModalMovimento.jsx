@@ -4,6 +4,7 @@ import { uid } from "../../../storage";
 import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
+import { CasaSelect } from "../../../components/ui/CasaSelect";
 
 export function ModalMovimento({ open, onClose, onSalvar, casas }) {
   const [casaId, setCasaId] = useState("");
@@ -31,7 +32,7 @@ export function ModalMovimento({ open, onClose, onSalvar, casas }) {
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <Input label="Casa" value={casaId} onChange={setCasaId} options={casas.filter(c => c.ativa).map(c => ({ value: c.id, label: c.nome }))} required />
+        <CasaSelect casas={casas.filter(c => c.ativa)} value={casaId} onChange={setCasaId} required />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>Tipo</label>
