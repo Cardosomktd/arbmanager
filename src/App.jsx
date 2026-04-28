@@ -8,7 +8,7 @@ import iconBanca        from "./assets/icons/Banca.svg";
 import iconCalculadora  from "./assets/icons/Calculadora.svg";
 import { supabase } from "./lib/supabase";
 import { useAppData } from "./hooks/useAppData";
-import { LoginPage } from "./features/auth/LoginPage";
+import { LoginPage, ResetSenhaPage } from "./features/auth/LoginPage";
 import { TelaDashboard }        from "./features/dashboard/TelaDashboard";
 import { TelaEventos }          from "./features/eventos/TelaEventos";
 import { TelaFreebets }         from "./features/freebets/TelaFreebets";
@@ -43,17 +43,26 @@ const SIDEBAR_ITEMS = [
 
 // ── App root ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const [session,     setSession]     = useState(null);
-  const [loadingAuth, setLoadingAuth] = useState(true);
-  const [aba,         setAba]         = useState("dashboard");
+  const [session,      setSession]      = useState(null);
+  const [loadingAuth,  setLoadingAuth]  = useState(true);
+  const [aba,          setAba]          = useState("dashboard");
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoadingAuth(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setSession(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // Usuário chegou via link de recuperação — interceptar antes de entrar no app
+        setSession(session);
+        setRecoveryMode(true);
+      } else {
+        setSession(session);
+        // USER_UPDATED: senha trocada com sucesso — sair do modo de recuperação
+        if (event === "USER_UPDATED") setRecoveryMode(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -61,7 +70,11 @@ export default function App() {
   async function logout() { await supabase.auth.signOut(); }
 
   if (loadingAuth) return <SplashScreen texto="Verificando sessão..." />;
-  if (!session)    return <LoginPage />;
+
+  // Fluxo de recuperação de senha — sobrepõe qualquer outra tela
+  if (recoveryMode)  return <ResetSenhaPage onSuccess={() => setRecoveryMode(false)} />;
+
+  if (!session)      return <LoginPage />;
 
   return <AppAutenticado aba={aba} setAba={setAba} session={session} onLogout={logout} />;
 }
