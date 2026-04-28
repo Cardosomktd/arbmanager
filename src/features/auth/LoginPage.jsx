@@ -5,13 +5,14 @@ import ebLogoUrl   from "../../assets/EB.svg";
 import wordmarkUrl from "../../assets/EDGEARB.svg";
 
 export function LoginPage() {
-  const [modo,         setModo]         = useState("senha"); // "senha" | "magic"
-  const [isSignUp,     setIsSignUp]     = useState(false);
-  const [email,        setEmail]        = useState("");
-  const [senha,        setSenha]        = useState("");
-  const [loading,      setLoading]      = useState(false);
-  const [erro,         setErro]         = useState("");
-  const [magicEnviado, setMagicEnviado] = useState(false);
+  const [modo,              setModo]              = useState("senha"); // "senha" | "magic"
+  const [isSignUp,          setIsSignUp]          = useState(false);
+  const [email,             setEmail]             = useState("");
+  const [senha,             setSenha]             = useState("");
+  const [loading,           setLoading]           = useState(false);
+  const [erro,              setErro]              = useState("");
+  const [magicEnviado,      setMagicEnviado]      = useState(false);
+  const [aguardandoConfirm, setAguardandoConfirm] = useState(false);
 
   // ── Email + senha ────────────────────────────────────────
   async function entrarComSenha(e) {
@@ -19,13 +20,26 @@ export function LoginPage() {
     if (!email.trim() || !senha) { setErro("Preencha email e senha."); return; }
     setLoading(true); setErro("");
 
-    const { error } = isSignUp
-      ? await supabase.auth.signUp({ email: email.trim(), password: senha })
-      : await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
-
-    setLoading(false);
-    if (error) setErro(traduzirErro(error.message));
-    // sucesso: onAuthStateChange no App.jsx detecta a sessão automaticamente
+    if (isSignUp) {
+      const { data, error } = await supabase.auth.signUp({ email: email.trim(), password: senha });
+      setLoading(false);
+      if (error) { setErro(traduzirErro(error.message)); return; }
+      // Quando "Confirm email" está ativo no Supabase, session vem nula após signUp
+      // identities vazio indica email já cadastrado (Supabase retorna 200 mas sem criar)
+      if (!data.session) {
+        if (data.user?.identities?.length === 0) {
+          setErro("Este email já está cadastrado. Faça login ou recupere sua senha.");
+        } else {
+          setAguardandoConfirm(true);
+        }
+      }
+      // se session vier preenchida (confirm desativado no Supabase), onAuthStateChange cuida do resto
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
+      setLoading(false);
+      if (error) setErro(traduzirErro(error.message));
+      // sucesso: onAuthStateChange no App.jsx detecta a sessão automaticamente
+    }
   }
 
   // ── Magic link ───────────────────────────────────────────
@@ -48,6 +62,7 @@ export function LoginPage() {
     setModo(novo);
     setErro("");
     setMagicEnviado(false);
+    setAguardandoConfirm(false);
   }
 
   return (
@@ -92,8 +107,33 @@ export function LoginPage() {
             ))}
           </div>
 
+          {/* ── Cadastro realizado — aguardando confirmação de email ── */}
+          {modo === "senha" && aguardandoConfirm && (
+            <div style={{ textAlign: "center", padding: "8px 0" }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>📬</div>
+              <div style={{ fontWeight: 700, color: G.text, marginBottom: 8, fontSize: 15 }}>
+                Confirme seu email
+              </div>
+              <div style={{ fontSize: 13, color: G.textDim, lineHeight: 1.7, marginBottom: 16 }}>
+                Cadastro realizado! Enviamos um link de confirmação para{" "}
+                <strong style={{ color: G.text }}>{email}</strong>.
+                <br />
+                Verifique sua caixa de entrada e spam.
+              </div>
+              <div style={{ fontSize: 12, color: G.textMuted, marginBottom: 16 }}>
+                Após confirmar, volte aqui e faça login normalmente.
+              </div>
+              <button
+                onClick={() => { setAguardandoConfirm(false); setIsSignUp(false); setSenha(""); setErro(""); }}
+                style={{ background: "none", border: "none", color: G.accent, fontSize: 13, cursor: "pointer" }}
+              >
+                Ir para o login
+              </button>
+            </div>
+          )}
+
           {/* ── Formulário: email + senha ── */}
-          {modo === "senha" && (
+          {modo === "senha" && !aguardandoConfirm && (
             <form onSubmit={entrarComSenha} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <Campo label="Email">
                 <input
@@ -305,7 +345,7 @@ function inputSt() {
 
 function traduzirErro(msg) {
   if (msg.includes("Invalid login credentials")) return "Email ou senha incorretos.";
-  if (msg.includes("Email not confirmed"))       return "Confirme seu email antes de entrar.";
+  if (msg.includes("Email not confirmed"))       return "Você precisa confirmar seu email antes de acessar. Verifique sua caixa de entrada e spam.";
   if (msg.includes("User already registered"))   return "Email já cadastrado. Use 'Entrar' em vez de 'Criar conta'.";
   if (msg.includes("Password should"))           return "A senha deve ter pelo menos 6 caracteres.";
   if (msg.includes("rate limit") || msg.includes("over_email_send_rate_limit"))
