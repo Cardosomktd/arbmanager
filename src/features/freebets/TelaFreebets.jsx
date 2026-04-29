@@ -220,8 +220,11 @@ export function TelaFreebets({ data, setData }) {
                   border: `1px solid ${urgente ? "#FBBF2444" : isAcumulada ? "#22D3EE33" : G.border}`,
                   padding: "12px 16px",
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                    <div>
+                  {/* ── Layout: esquerda cresce, direita fixa ── */}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+
+                    {/* ESQUERDA: ocupa espaço disponível, nunca empurra a direita */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                         <span style={{ fontWeight: 700, fontSize: 14 }}>{getCasaNome(data.casas || [], f.casaId)}</span>
                         {f._isBonus   && <Badge cor="purple">🎰 Bônus</Badge>}
@@ -229,7 +232,13 @@ export function TelaFreebets({ data, setData }) {
                         {f.tipo === "gerada" && <Badge cor="blue">Auto</Badge>}
                         {urgente      && <Badge cor="yellow">{dias <= 0 ? "Vence HOJE" : `${dias}d`}</Badge>}
                       </div>
-                      {f.obs && <div style={{ fontSize: 11, color: G.textDim, marginBottom: 4 }}>{f.obs}</div>}
+
+                      {/* Obs / "Gerada pela operação: ..." — uma linha com reticências */}
+                      {f.obs && (
+                        <div style={{ fontSize: 11, color: G.textDim, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {f.obs}
+                        </div>
+                      )}
 
                       {/* Prazo — exibição e edição inline */}
                       {editPrazoId === f.id ? (
@@ -255,14 +264,16 @@ export function TelaFreebets({ data, setData }) {
                             </>
                           ) : (
                             <button onClick={() => abrirEditPrazo(f)}
-                              style={{ background: "none", border: `1px dashed ${G.border}`, borderRadius: 4, cursor: "pointer", padding: "2px 8px", fontSize: 11, color: G.textMuted }}>
+                              style={{ background: "none", border: `1px dashed ${G.border}`, borderRadius: 4, cursor: "pointer", padding: "2px 8px", fontSize: 11, color: G.textMuted, whiteSpace: "nowrap" }}>
                               + Adicionar vencimento
                             </button>
                           )}
                         </div>
                       )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+
+                    {/* DIREITA: largura fixa, nunca quebra linha */}
+                    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 22, fontWeight: 800, color: G.accent }}>{fmt(saldo)}</div>
                         {parcial && (
@@ -270,14 +281,15 @@ export function TelaFreebets({ data, setData }) {
                         )}
                         {isAcumulada
                           ? <div style={{ fontSize: 11, color: G.textDim }}>saldo atual</div>
-                          : <div style={{ fontSize: 11, color: G.green }}>≈ {fmt(estimado)} esperado</div>
+                          : <div style={{ fontSize: 11, color: G.green, whiteSpace: "nowrap" }}>≈ {fmt(estimado)} esperado</div>
                         }
                       </div>
                       <div style={{ display: "flex", gap: 6, flexDirection: "column" }}>
-                        {!isAcumulada && <Btn size="sm" variant="success" onClick={() => marcarUsada(f.id)}>✓ Usar</Btn>}
+                        {!isAcumulada && <Btn size="sm" variant="success" onClick={() => marcarUsada(f.id)} style={{ whiteSpace: "nowrap" }}>✓ Usar</Btn>}
                         {f.tipo !== "gerada" && <Btn size="sm" variant="danger" onClick={() => excluirFreebet(f.id)}>🗑️</Btn>}
                       </div>
                     </div>
+
                   </div>
                 </Card>
               );

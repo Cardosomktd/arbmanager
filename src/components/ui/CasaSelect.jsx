@@ -5,6 +5,11 @@ import { G } from "../../constants/colors";
  * Seletor de casa com busca por digitação.
  * Filtra a lista conforme o usuário digita e pré-seleciona o primeiro resultado.
  * Compatível com teclado: ↑↓ navega, Enter/Tab confirma, Esc fecha.
+ *
+ * Quando uma casa tem titular cadastrado, exibe-o junto ao nome:
+ *   - No dropdown: nome em destaque + titular menor e apagado
+ *   - No campo selecionado: "Nome · Titular"
+ *   - Na busca: pesquisa em nome E titular
  */
 export function CasaSelect({ casas, value, onChange, required }) {
   const [busca,          setBusca]          = useState("");
@@ -14,9 +19,24 @@ export function CasaSelect({ casas, value, onChange, required }) {
   const inputRef = useRef(null);
   const listRef  = useRef(null);
 
-  const nomeSelecionado = value ? (casas.find(c => c.id === value)?.nome || "") : "";
+  const casaSelecionada = value ? casas.find(c => c.id === value) : null;
+
+  // Texto exibido no input quando fechado: "Nome · Titular" ou só "Nome"
+  const labelSelecionado = casaSelecionada
+    ? casaSelecionada.titular
+      ? `${casaSelecionada.nome} · ${casaSelecionada.titular}`
+      : casaSelecionada.nome
+    : "";
+
+  // Filtra por nome E titular
   const filtradas = busca.trim()
-    ? casas.filter(c => c.nome.toLowerCase().includes(busca.toLowerCase()))
+    ? casas.filter(c => {
+        const q = busca.toLowerCase();
+        return (
+          c.nome.toLowerCase().includes(q) ||
+          (c.titular && c.titular.toLowerCase().includes(q))
+        );
+      })
     : casas;
 
   // Reset highlight ao primeiro item sempre que a lista muda
@@ -96,8 +116,8 @@ export function CasaSelect({ casas, value, onChange, required }) {
       <div ref={wrapRef} style={{ position: "relative" }}>
         <input
           ref={inputRef}
-          value={aberto ? busca : nomeSelecionado}
-          placeholder={value ? nomeSelecionado : "— selecionar —"}
+          value={aberto ? busca : labelSelecionado}
+          placeholder={value ? labelSelecionado : "— selecionar —"}
           onFocus={() => { setAberto(true); setBusca(""); }}
           onChange={e => setBusca(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -125,14 +145,23 @@ export function CasaSelect({ casas, value, onChange, required }) {
                   onMouseDown={() => selecionar(c.id)}
                   onMouseEnter={() => setHighlightedIdx(idx)}
                   style={{
-                    padding: "9px 12px", fontSize: 13, cursor: "pointer",
-                    color: isSelected ? G.accent : G.text,
-                    fontWeight: isSelected ? 700 : 400,
+                    padding: "8px 12px", cursor: "pointer",
                     background: isHighlighted ? G.surface3 : "transparent",
                     transition: "background 0.1s",
                   }}
                 >
-                  {c.nome}
+                  <div style={{
+                    fontSize: 13,
+                    color: isSelected ? G.accent : G.text,
+                    fontWeight: isSelected ? 700 : 400,
+                  }}>
+                    {c.nome}
+                  </div>
+                  {c.titular && (
+                    <div style={{ fontSize: 11, color: G.textMuted, marginTop: 1 }}>
+                      {c.titular}
+                    </div>
+                  )}
                 </div>
               );
             })}

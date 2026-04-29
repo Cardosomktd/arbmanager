@@ -57,7 +57,23 @@ export function TelaCasas({ data, setData }) {
   const arquivadas = (data.casas || []).filter(c => !c.ativa);
   const alertas    = ativas.filter(c => temDepPendente(c));
   const saldoTotal = ativas.reduce((s, c) => s + Math.max(0, calcSaldoCasa(c, data)), 0);
-  const casasFiltradas = ativas.filter(c => c.nome.toLowerCase().includes(filtro.toLowerCase()));
+  const casasFiltradas = ativas
+    .filter(c => c.nome.toLowerCase().includes(filtro.toLowerCase()))
+    .map(c => ({ c, saldo: calcSaldoCasa(c, data) }))
+    .sort((a, b) => {
+      const sa = a.saldo, sb = b.saldo;
+      // 1. Positivos antes de negativos, negativos antes de zeros
+      const grpA = sa > 0 ? 0 : sa < 0 ? 1 : 2;
+      const grpB = sb > 0 ? 0 : sb < 0 ? 1 : 2;
+      if (grpA !== grpB) return grpA - grpB;
+      // 2. Dentro do grupo positivo: maior saldo primeiro (desc)
+      if (grpA === 0) return sb - sa;
+      // 3. Dentro do grupo negativo: mais negativo primeiro (asc: -500 antes de -100)
+      if (grpA === 1) return sa - sb;
+      // 4. Dentro do grupo zero: alfabético
+      return a.c.nome.localeCompare(b.c.nome, "pt-BR");
+    })
+    .map(({ c }) => c);
 
   return (
     <div style={{ maxWidth: 780, margin: "0 auto" }}>
