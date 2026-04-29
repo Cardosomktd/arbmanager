@@ -50,6 +50,60 @@ function chaveResultado(e) {
   return chave;
 }
 
+/**
+ * Mapeia resultado principal → retorno efetivo, aplicando a regra correta de
+ * agrupamento para entradas com múltipla.
+ *
+ * Regras:
+ * - Simples (isAgrupavel):  agrupadas por resultado principal — retornos somados.
+ * - Múltiplas (!isAgrupavel): agrupadas por (principal + secundário).
+ *   Para cada resultado principal, considera apenas o MENOR grupo de múltipla.
+ *
+ * Exemplo:
+ *   Entrada 1: Flamengo + Empate = 100   →  grupo "flamengo|empate" = 100
+ *   Entrada 2: Flamengo + Empate = 80    →  grupo "flamengo|empate" = 180
+ *   Entrada 3: Flamengo + Vasco  = 70    →  grupo "flamengo|vasco"  =  70
+ *   min dos grupos de "flamengo" = 70  →  retorno efetivo para Flamengo = 70
+ *
+ * Retorna: Map<chaveResultado, retornoEfetivo>
+ */
+export function retornosPorResultado(entries) {
+  const simples   = entries.filter(isAgrupavel);
+  const multiplas = entries.filter(e => !isAgrupavel(e));
+
+  // 1. Simples: somar por resultado principal
+  const simplePorPri = new Map();
+  for (const e of simples) {
+    const k = chaveResultado(e);
+    simplePorPri.set(k, (simplePorPri.get(k) ?? 0) + calcRetorno(e));
+  }
+
+  // 2. Múltiplas: somar por grupo composto (principal|secundário)
+  const gruposM = new Map();
+  for (const e of multiplas) {
+    const pri = chaveResultado(e);
+    const sec = (e.multiplaDesc || "").trim().toLowerCase();
+    const k   = `${pri}|${sec}`;
+    gruposM.set(k, (gruposM.get(k) ?? 0) + calcRetorno(e));
+  }
+
+  // 3. Para cada resultado principal, manter apenas o MENOR grupo de múltipla
+  const minMulPorPri = new Map();
+  for (const [k, soma] of gruposM) {
+    const pri = k.split("|")[0];
+    const cur = minMulPorPri.get(pri);
+    minMulPorPri.set(pri, cur === undefined ? soma : Math.min(cur, soma));
+  }
+
+  // 4. Combinar: simples + min(múltiplas) por resultado principal
+  const todasChaves = new Set([...simplePorPri.keys(), ...minMulPorPri.keys()]);
+  const mapa = new Map();
+  for (const k of todasChaves) {
+    mapa.set(k, (simplePorPri.get(k) ?? 0) + (minMulPorPri.get(k) ?? 0));
+  }
+  return mapa;
+}
+
 // Retorna true se a condição de geração de benefício (freebet ou cashback) foi atingida.
 function condicaoAtingida(op) {
   if (!op.geraFreebet) return false;
@@ -83,24 +137,10 @@ export function calcLucroMinOp(op) {
       .filter(e => e.tipo === "normal")
       .reduce((s, e) => s + (parseFloat(e.valor) || 0), 0);
 
-    // Separa entradas agrupáveis das independentes
-    const agrupavel   = ents.filter(isAgrupavel);
-    const independente = ents.filter(e => !isAgrupavel(e));
-
-    // Agrupa as agrupáveis por resultado normalizado
-    const grupos = new Map();
-    for (const e of agrupavel) {
-      const chave = chaveResultado(e);
-      if (!grupos.has(chave)) grupos.set(chave, []);
-      grupos.get(chave).push(e);
-    }
-
-    // Retorno de cada grupo = soma dos retornos individuais de suas entradas
-    // Retorno de cada independente = retorno individual normal
-    const retornos = [
-      ...[...grupos.values()].map(g => g.reduce((s, e) => s + calcRetorno(e), 0)),
-      ...independente.map(e => calcRetorno(e)),
-    ];
+    // Usa agrupamento unificado: simples por resultado principal,
+    // múltiplas por (principal+secundário) — tomando o menor grupo por principal.
+    const mapa    = retornosPorResultado(ents);
+    const retornos = [...mapa.values()];
 
     const minRet = retornos.length ? Math.min(...retornos) : 0;
     return minRet - totalNormal + cashback;

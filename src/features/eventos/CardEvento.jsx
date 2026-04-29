@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
 import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
-import { lucroEfetivoOp, calcRetorno } from "../../utils/calculos";
+import { lucroEfetivoOp, calcRetorno, retornosPorResultado } from "../../utils/calculos";
 import { lucroProtecao } from "../../utils/lucroProtecao";
 import { statusEvento, statusOp } from "../../utils/status";
 import { Badge } from "../../components/ui/Badge";
@@ -106,28 +106,31 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
         <div style={{ borderTop: `1px solid ${G.border}`, padding: "12px 16px" }}>
 
           {/* Painel PA */}
-          {entradasPA.length > 0 && (
-            <div style={{ background: "#22D3EE0a", border: "1px solid #22D3EE22", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: G.accent, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>PAGAMENTO ANTECIPADO</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                {[{ label: evento.mandante, key: evento.mandante }, { label: evento.visitante, key: evento.visitante }]
-                  .filter(t => t.key)
-                  .map(({ label, key }) => {
-                    const retorno = entradasPA
-                      .filter(e => (e.entradaDisplay || e.entrada) === key)
-                      .reduce((s, e) => s + calcRetorno(e), 0);
-                    return (
-                      <div key={key} style={{ fontSize: 13 }}>
-                        <span style={{ color: G.textDim }}>{label}:</span>
-                        <span style={{ color: retorno > 0 ? G.accent : G.textMuted, fontWeight: 700, marginLeft: 4, fontFamily: "'Barlow Condensed'", fontSize: 15 }}>
-                          {fmt(retorno)}
-                        </span>
-                      </div>
-                    );
-                  })}
+          {entradasPA.length > 0 && (() => {
+            // Agrupamento unificado: simples somam por principal,
+            // múltiplas agrupam por (principal+secundário) — menor grupo por principal.
+            const mapaPA = retornosPorResultado(entradasPA);
+            return (
+              <div style={{ background: "#22D3EE0a", border: "1px solid #22D3EE22", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: G.accent, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>PAGAMENTO ANTECIPADO</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                  {[{ label: evento.mandante, key: evento.mandante }, { label: evento.visitante, key: evento.visitante }]
+                    .filter(t => t.key)
+                    .map(({ label, key }) => {
+                      const retorno = mapaPA.get(key.trim().toLowerCase()) ?? 0;
+                      return (
+                        <div key={key} style={{ fontSize: 13 }}>
+                          <span style={{ color: G.textDim }}>{label}:</span>
+                          <span style={{ color: retorno > 0 ? G.accent : G.textMuted, fontWeight: 700, marginLeft: 4, fontFamily: "'Barlow Condensed'", fontSize: 15 }}>
+                            {fmt(retorno)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Proteções */}
           {(evento.protecoes || []).length > 0 && (
