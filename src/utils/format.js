@@ -7,12 +7,13 @@ export function fmtNum(v) {
   return (Number(v) || 0).toFixed(2).replace(".", ",");
 }
 
-// Formata odd apenas para exibição — sempre 2 casas decimais.
-// Exemplos: 4 → "4.00", 1.5 → "1.50", 1.8519 → "1.85", 10 → "10.00"
+// Formata odd apenas para exibição — trunca (não arredonda) para no máximo 2 casas decimais,
+// sem zeros desnecessários.
+// Exemplos: 3 → "3", 3.5 → "3.5", 3.456 → "3.45", 1.899 → "1.89"
 // NÃO usar para persistência/cálculo — apenas em JSX display.
 export function fmtOdd(v) {
   const n = parseFloat(v) || 0;
-  return n.toFixed(2);
+  return parseFloat((Math.floor(n * 100) / 100).toFixed(2)).toString();
 }
 
 export function fmtDate(dt) {
