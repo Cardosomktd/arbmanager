@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { G } from "../../../constants/colors";
 import { fmtDate } from "../../../utils/format";
 import { statusEvento } from "../../../utils/status";
@@ -22,7 +22,15 @@ export function ModalSelecionarEvento({ open, onClose, eventos, onSelecionarEven
   const [busca,        setBusca]        = useState("");
   const [filtroStatus, setFiltroStatus] = useState("pendentes");
 
-  // Separa por status, ordena por data
+  // Reseta para Pendentes e limpa busca toda vez que o modal é aberto
+  useEffect(() => {
+    if (open) {
+      setFiltroStatus("pendentes");
+      setBusca("");
+    }
+  }, [open]);
+
+  // Separa por status
   const pendentes  = (eventos || []).filter(ev => statusEvento(ev) !== "finalizado");
   const concluidos = (eventos || []).filter(ev => statusEvento(ev) === "finalizado");
 
@@ -32,7 +40,12 @@ export function ModalSelecionarEvento({ open, onClose, eventos, onSelecionarEven
     ? lista.filter(ev => ev.nome.toLowerCase().includes(busca.trim().toLowerCase()))
     : lista;
 
-  const filtradosOrdenados = [...filtrados].sort((a, b) => new Date(a.data) - new Date(b.data));
+  // Pendentes: mais próximos primeiro (asc). Concluídos: mais recentes primeiro (desc).
+  const filtradosOrdenados = [...filtrados].sort((a, b) =>
+    filtroStatus === "concluidos"
+      ? new Date(b.data) - new Date(a.data)
+      : new Date(a.data) - new Date(b.data)
+  );
 
   function handleSelecionar(ev) {
     setBusca("");
