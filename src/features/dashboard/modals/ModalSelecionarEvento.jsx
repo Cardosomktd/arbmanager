@@ -5,20 +5,34 @@ import { statusEvento } from "../../../utils/status";
 import { Modal } from "../../../components/ui/Modal";
 import { Btn } from "../../../components/ui/Btn";
 
-const ST_COR   = { vazio: G.textMuted, pendente: G.yellow, andamento: G.accent };
-const ST_LABEL = { vazio: "Vazio", pendente: "Pendente", andamento: "Em andamento" };
+const ST_COR = {
+  vazio:      G.textMuted,
+  pendente:   G.yellow,
+  andamento:  G.accent,
+  finalizado: G.green,
+};
+const ST_LABEL = {
+  vazio:      "Vazio",
+  pendente:   "Pendente",
+  andamento:  "Em andamento",
+  finalizado: "Concluído",
+};
 
 export function ModalSelecionarEvento({ open, onClose, eventos, onSelecionarEvento, onCriarNovoEvento }) {
-  const [busca, setBusca] = useState("");
+  const [busca,        setBusca]        = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("pendentes");
 
-  // Apenas eventos não-finalizados, ordenados por data ascendente (mais próximos primeiro)
-  const pendentes = (eventos || [])
-    .filter(ev => statusEvento(ev) !== "finalizado")
-    .sort((a, b) => new Date(a.data) - new Date(b.data));
+  // Separa por status, ordena por data
+  const pendentes  = (eventos || []).filter(ev => statusEvento(ev) !== "finalizado");
+  const concluidos = (eventos || []).filter(ev => statusEvento(ev) === "finalizado");
+
+  const lista = filtroStatus === "pendentes" ? pendentes : concluidos;
 
   const filtrados = busca.trim()
-    ? pendentes.filter(ev => ev.nome.toLowerCase().includes(busca.trim().toLowerCase()))
-    : pendentes;
+    ? lista.filter(ev => ev.nome.toLowerCase().includes(busca.trim().toLowerCase()))
+    : lista;
+
+  const filtradosOrdenados = [...filtrados].sort((a, b) => new Date(a.data) - new Date(b.data));
 
   function handleSelecionar(ev) {
     setBusca("");
@@ -35,8 +49,35 @@ export function ModalSelecionarEvento({ open, onClose, eventos, onSelecionarEven
     onClose();
   }
 
+  function mudarFiltro(id) {
+    setFiltroStatus(id);
+    setBusca("");
+  }
+
+  const msgVazia = busca.trim()
+    ? "Nenhum evento encontrado."
+    : filtroStatus === "pendentes"
+      ? "Nenhum evento pendente cadastrado."
+      : "Nenhum evento concluído.";
+
   return (
     <Modal open={open} onClose={handleClose} title="Selecionar Evento" width={460}>
+
+      {/* Toggle Pendentes / Concluídos */}
+      <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 8, padding: 3, marginBottom: 12 }}>
+        {[{ id: "pendentes", label: "Pendentes" }, { id: "concluidos", label: "Concluídos" }].map(f => (
+          <button key={f.id} onClick={() => mudarFiltro(f.id)} style={{
+            flex: 1, padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer",
+            background: filtroStatus === f.id ? G.accent : "transparent",
+            color:      filtroStatus === f.id ? "#fff"    : G.textDim,
+            fontSize: 13, fontWeight: filtroStatus === f.id ? 700 : 500,
+            boxShadow: filtroStatus === f.id ? `0 2px 8px ${G.accent}55` : "none",
+            transition: "all 0.15s",
+          }}>
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {/* Campo de busca */}
       <input
@@ -56,14 +97,14 @@ export function ModalSelecionarEvento({ open, onClose, eventos, onSelecionarEven
       {/* Lista de eventos */}
       <div style={{
         display: "flex", flexDirection: "column", gap: 6,
-        maxHeight: 340, overflowY: "auto",
+        maxHeight: 320, overflowY: "auto",
         marginBottom: 14,
       }}>
-        {filtrados.length === 0 ? (
+        {filtradosOrdenados.length === 0 ? (
           <div style={{ fontSize: 13, color: G.textMuted, textAlign: "center", padding: "24px 0" }}>
-            {busca.trim() ? "Nenhum evento encontrado." : "Nenhum evento pendente cadastrado."}
+            {msgVazia}
           </div>
-        ) : filtrados.map(ev => {
+        ) : filtradosOrdenados.map(ev => {
           const st  = statusEvento(ev);
           const cor = ST_COR[st]   ?? G.textMuted;
           const lbl = ST_LABEL[st] ?? st;

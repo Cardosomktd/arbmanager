@@ -118,10 +118,16 @@ export function TelaEventos({ data, setData }) {
     });
   }
   function excluirOp(eventoId, opId) {
-    if (confirm("Excluir esta operação?"))
+    const ev  = (data.eventos || []).find(e => e.id === eventoId);
+    const op  = (ev?.operacoes || []).find(o => o.id === opId);
+    const concluida = (op?.entradas || []).every(e => e.situacao !== "pendente") && (op?.entradas || []).length > 0;
+    const msg = concluida
+      ? "Excluir esta operação concluída?\n\nO lucro e as freebets geradas por ela serão removidos do evento."
+      : "Excluir esta operação?";
+    if (confirm(msg))
       setData(d => ({
         ...d,
-        eventos: d.eventos.map(ev => ev.id !== eventoId ? ev : { ...ev, operacoes: ev.operacoes.filter(o => o.id !== opId) }),
+        eventos: d.eventos.map(e => e.id !== eventoId ? e : { ...e, operacoes: e.operacoes.filter(o => o.id !== opId) }),
       }));
   }
   function concluirOp(eventoId, opId, entradasFinal) {

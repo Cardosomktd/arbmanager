@@ -115,6 +115,9 @@ export function CardOperacao({ op, casas, onEditar, onExcluir, onConcluir }) {
             {st === "finalizada" && onConcluir && (
               <Btn size="sm" variant="ghost" onClick={onConcluir}>✏️ Resultado</Btn>
             )}
+            {st === "finalizada" && (
+              <Btn size="sm" variant="danger" onClick={onExcluir}>🗑️</Btn>
+            )}
           </div>
         </div>
       </div>
