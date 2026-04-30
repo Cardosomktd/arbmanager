@@ -892,7 +892,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                         {entradasElegiveis.map(e => {
                           const nomeCasa = getCasaNome(casasAtivas, e.casa);
                           const desc     = e.entrada === "outro" ? (e.entradaCustom || "?") : e.entrada;
-                          const odd      = e.odd ? ` @${e.odd}` : "";
+                          const odd      = e.odd ? ` @${fmtOdd(e.odd)}` : "";
                           const valor    = e.valor ? ` · R$${e.valor}` : "";
                           return (
                             <option key={e.id} value={e.id}>
