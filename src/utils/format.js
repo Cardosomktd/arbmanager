@@ -12,7 +12,7 @@ export function fmtNum(v) {
 // Exemplos: 3 → "3", 3.5 → "3.5", 3.456 → "3.45", 1.899 → "1.89"
 // NÃO usar para persistência/cálculo — apenas em JSX display.
 export function fmtOdd(v) {
-  const n = parseFloat(v) || 0;
+  const n = parseFloat(String(v || "").replace(",", ".")) || 0;
   return parseFloat((Math.floor(n * 100) / 100).toFixed(2)).toString();
 }
 
