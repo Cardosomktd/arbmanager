@@ -73,6 +73,37 @@ export function TelaEventos({ data, setData }) {
       const freebetsAutoUsadas = [...(d.freebetsAutoUsadas || [])];
 
       for (const e of (op.entradas || [])) {
+        // ── Multi-freebet (freebetIds array) ──────────────────────────────────
+        if ((e.freebetIds || []).length > 0) {
+          const ids = e.freebetIds;
+
+          // ① Auto-geradas (de procedimento_freebet): apenas marca como usadas
+          //    Não existem em d.freebets — baixa de saldo não se aplica
+          for (const fid of ids) {
+            if (String(fid).startsWith("auto_")) freebetsAutoUsadas.push(fid);
+          }
+
+          // ② Manuais: consumo sequencial até cobrir o valor da entrada
+          const manualIds = ids.filter(fid => !String(fid).startsWith("auto_"));
+          if (manualIds.length > 0) {
+            let restante = parseFloat(e.valor) || 0;
+            for (const fid of manualIds) {
+              freebets = freebets.map(f => {
+                if (f.id !== fid) return f;
+                const saldoAtual = f.saldo ?? f.valor ?? 0;
+                const usado     = Math.min(saldoAtual, restante);
+                restante -= usado;
+                const novoSaldo = saldoAtual - usado;
+                return { ...f, saldo: novoSaldo, usada: f.tipo === "acumulada" ? false : novoSaldo <= 0 };
+              });
+            }
+          }
+          // ③ "Freebet não cadastrada": cobre o restante sem baixa no estoque
+
+          continue; // já tratado — não cai no bloco legado abaixo
+        }
+
+        // ── Legado single freebetId (incl. acumulada injetada) ────────────────
         if (!e.freebetId || e.freebetManual) continue;
         if (e.freebetId.startsWith("auto_")) {
           // Freebet automática: marca como usada integralmente (sem saldo parcial)

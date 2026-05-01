@@ -51,7 +51,8 @@ function entradaVazia() {
   return {
     id: uid(), casa: "", entrada: "", entradaCustom: "", multipla: false, multiplaDesc: "",
     odd: "", valor: "", comissao: "", tipo: "normal", situacao: "pendente", pa: false,
-    freebetId: null, freebetManual: false, freebetValorUsado: "",  // link freebet
+    freebetIds: [], usarFreeNaoCadastrada: false,          // multi-freebet (extracao_freebet)
+    freebetId: null, freebetManual: false, freebetValorUsado: "",  // link freebet (legado/acumulada)
     bonusId:   null, bonusManual:   false, bonusValorUsado:   "",  // link bônus
   };
 }
@@ -131,7 +132,16 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
     if (editOp) {
       // resolveCategoria garante retrocompatibilidade com ops legado
       setTipoOp(resolveCategoria(editOp));
-      setEntradas(editOp.entradas || [entradaVazia()]);
+      // Migra entradas legadas: freebetId (single) → freebetIds (multi), exceto acumulada
+      setEntradas((editOp.entradas || [entradaVazia()]).map(e => {
+        const fbAcum = e.freebetId &&
+          freebetsDisponiveis.find(f => f.id === e.freebetId && f.tipo === "acumulada");
+        return {
+          ...e,
+          freebetIds: e.freebetIds ?? (!fbAcum && e.freebetId && !e.freebetManual ? [e.freebetId] : []),
+          usarFreeNaoCadastrada: e.usarFreeNaoCadastrada ?? (e.freebetManual || false),
+        };
+      }));
       setNumEntradas(editOp.entradas?.length || 1);
       if (editOp.geraFreebet) {
         setFbValor(String(editOp.geraFreebet.valor || ""));
@@ -240,23 +250,40 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
           : bonusDisponiveis.some(b => b.tipo === "acumulada" && b.casaId === e.casa);
 
         if (!temAcumulada) {
-          // Obrigatório: freebet cadastrada ou "não cadastrada" marcada
-          const temId     = isFbType ? !!e.freebetId  : !!e.bonusId;
-          const temManual = isFbType ? e.freebetManual : e.bonusManual;
-          if (!temId && !temManual) {
-            setErro(`Selecione uma freebet cadastrada ou marque "Freebet não cadastrada" na entrada ${i + 1}.`);
-            return;
-          }
-
-          // Valida saldo: o valor da entrada não pode exceder o saldo da freebet selecionada
-          if (temId) {
-            const item  = isFbType
-              ? freebetsDisponiveis.find(f => f.id === e.freebetId)
-              : bonusDisponiveis.find(b => b.id === e.bonusId);
-            const saldo = item ? (item.saldo ?? item.valor ?? 0) : 0;
-            if ((parseFloat(e.valor) || 0) > saldo + 0.001) {
-              setErro(`Valor da ${isFbType ? "freebet" : "bônus"} na entrada ${i + 1} excede o saldo disponível (${fmt(saldo)}).`);
+          if (isFbType) {
+            // Multi-freebet: freebetIds[] + usarFreeNaoCadastrada
+            const temIds    = (e.freebetIds || []).length > 0;
+            const temManual = e.usarFreeNaoCadastrada || false;
+            if (!temIds && !temManual) {
+              setErro(`Selecione ao menos uma freebet ou marque "Freebet não cadastrada" na entrada ${i + 1}.`);
               return;
+            }
+            // Se não usa "não cadastrada", a soma dos saldos deve cobrir o valor da entrada
+            if (!temManual && temIds) {
+              const sumSaldos = (e.freebetIds || []).reduce((acc, fid) => {
+                const f = freebetsDisponiveis.find(fb => fb.id === fid);
+                return acc + (f ? (f.saldo ?? f.valor ?? 0) : 0);
+              }, 0);
+              if ((parseFloat(e.valor) || 0) > sumSaldos + 0.001) {
+                setErro(`Saldo das freebets selecionadas (${fmt(sumSaldos)}) é insuficiente para a entrada ${i + 1} (${fmt(parseFloat(e.valor) || 0)}). Marque "Freebet não cadastrada" para cobrir a diferença.`);
+                return;
+              }
+            }
+          } else {
+            // Bônus: usa campos legados single
+            const temId     = !!e.bonusId;
+            const temManual = e.bonusManual;
+            if (!temId && !temManual) {
+              setErro(`Selecione um bônus cadastrado ou marque "Bônus não cadastrado" na entrada ${i + 1}.`);
+              return;
+            }
+            if (temId) {
+              const item  = bonusDisponiveis.find(b => b.id === e.bonusId);
+              const saldo = item ? (item.saldo ?? item.valor ?? 0) : 0;
+              if ((parseFloat(e.valor) || 0) > saldo + 0.001) {
+                setErro(`Valor do bônus na entrada ${i + 1} excede o saldo disponível (${fmt(saldo)}).`);
+                return;
+              }
             }
           }
         } else {
@@ -309,20 +336,31 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         entradaDisplay: e.entrada === "outro" ? (e.entradaCustom || "?") : e.entrada,
       };
 
-      // Injeta ID da carteira acumulada para o baixa em TelaEventos (modo carteira não tem dropdown)
-      if (tipoFinal === "freebet" && !entry.freebetId && !entry.freebetManual) {
-        const acum = freebetsDisponiveis.find(f => f.tipo === "acumulada" && f.casaId === entry.casa);
-        if (acum) entry = { ...entry, freebetId: acum.id };
+      // ── Freebet: resolve modo de baixa ───────────────────────────────────
+      if (tipoFinal === "freebet") {
+        const hasMulti = (entry.freebetIds || []).length > 0;
+        if (hasMulti) {
+          // Multi-freebet: limpa legado freebetId; propaga usarFreeNaoCadastrada → freebetManual
+          entry = { ...entry, freebetId: null, freebetManual: entry.usarFreeNaoCadastrada || false };
+        } else if (entry.usarFreeNaoCadastrada) {
+          // Somente "não cadastrada": nenhum ID para dar baixa
+          entry = { ...entry, freebetManual: true };
+        } else if (!entry.freebetId) {
+          // Carteira acumulada: injeta o ID para o baixa em TelaEventos
+          const acum = freebetsDisponiveis.find(f => f.tipo === "acumulada" && f.casaId === entry.casa);
+          if (acum) entry = { ...entry, freebetId: acum.id };
+        }
+        // Legado single (acumulada já injetada): valorUsado = valor da entrada
+        if (entry.freebetId && !entry.freebetManual) {
+          const fb = freebetsDisponiveis.find(f => f.id === entry.freebetId);
+          if (fb?.tipo !== "acumulada") entry = { ...entry, freebetValorUsado: entry.valor };
+        }
       }
+
+      // ── Bônus: resolve modo de baixa (legado single, sem multi) ──────────
       if (tipoFinal === "bonus" && !entry.bonusId && !entry.bonusManual) {
         const acum = bonusDisponiveis.find(b => b.tipo === "acumulada" && b.casaId === entry.casa);
         if (acum) entry = { ...entry, bonusId: acum.id };
-      }
-
-      // Freebet/bônus individual selecionada: valorUsado = valor da entrada (sem campo separado)
-      if (tipoFinal === "freebet" && entry.freebetId && !entry.freebetManual) {
-        const fb = freebetsDisponiveis.find(f => f.id === entry.freebetId);
-        if (fb?.tipo !== "acumulada") entry = { ...entry, freebetValorUsado: entry.valor };
       }
       if (tipoFinal === "bonus" && entry.bonusId && !entry.bonusManual) {
         const bn = bonusDisponiveis.find(b => b.id === entry.bonusId);
@@ -498,6 +536,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                     <CasaSelect casas={casasAtivas} value={e.casa}
                       onChange={v => updMulti(i, {
                         casa: v,
+                        freebetIds: [], usarFreeNaoCadastrada: false,
                         freebetId: null, freebetManual: false, freebetValorUsado: "",
                         bonusId:   null, bonusManual:   false, bonusValorUsado:   "",
                       })} required />
@@ -646,6 +685,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                           <input type="checkbox" checked={isFb}
                             onChange={ev => updMulti(i, {
                               tipo: ev.target.checked ? "freebet" : "normal",
+                              freebetIds: [], usarFreeNaoCadastrada: false,
                               freebetId: null, freebetManual: false, freebetValorUsado: "",
                               bonusId:   null, bonusManual:   false, bonusValorUsado:   "",
                             })}
@@ -748,6 +788,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                           value={e.tipo}
                           onChange={ev => updMulti(i, {
                             tipo: ev.target.value,
+                            freebetIds: [], usarFreeNaoCadastrada: false,
                             freebetId: null, freebetManual: false, freebetValorUsado: "",
                             bonusId:   null, bonusManual:   false, bonusValorUsado:   "",
                           })}
@@ -772,30 +813,70 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                               />
                             </>
                           ) : (
-                            // ── Modo normal: dropdown de estoque ─────────────────────────────
+                            // ── Modo normal: checkboxes de freebets disponíveis ──────────────
                             <>
-                              <EstoqueSelect
-                                valor={e.freebetManual ? "__outra__" : (e.freebetId ?? "")}
-                                onChange={v => updMulti(i, v === "__outra__"
-                                  ? { freebetId: null, freebetManual: true,  freebetValorUsado: "" }
-                                  : { freebetId: v || null, freebetManual: false, freebetValorUsado: "" }
-                                )}
-                                itens={freebetsDisponiveis.filter(f => f.casaId === e.casa && f.tipo !== "acumulada")}
-                                temCasa={!!e.casa}
-                                placeholderSemCasa="Selecione a casa para listar opções"
-                                placeholder="— selecione a freebet a ser usada —"
-                                opcaoOutra="Freebet não cadastrada"
-                                valorOutra="__outra__"
-                                formatarItem={f => {
-                                  const s = f.saldo ?? f.valor ?? 0;
-                                  const parcial = f.saldo != null && f.saldo < f.valor;
-                                  const saldoStr = parcial ? `${fmt(s)} de ${fmt(f.valor)}` : fmt(s);
-                                  if (!f.prazo) return `Freebet ${saldoStr}`;
-                                  const d = new Date(f.prazo + "T12:00:00").toLocaleDateString("pt-BR");
-                                  const vence = f.vencimentoHora ? `${d} às ${f.vencimentoHora}` : d;
-                                  return `Freebet ${saldoStr} (vence ${vence})`;
-                                }}
-                              />
+                              {!e.casa ? (
+                                <div style={{ fontSize: 12, color: G.textMuted, padding: "2px 0" }}>
+                                  Selecione a casa para listar freebets.
+                                </div>
+                              ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                                  {(() => {
+                                    const fbsDaCasa = freebetsDisponiveis.filter(
+                                      f => f.casaId === e.casa && f.tipo !== "acumulada"
+                                    );
+                                    return (
+                                      <>
+                                        {fbsDaCasa.length === 0 && (
+                                          <div style={{ fontSize: 12, color: G.textMuted }}>
+                                            Nenhuma freebet disponível para esta casa.
+                                          </div>
+                                        )}
+                                        {fbsDaCasa.map(f => {
+                                          const s = f.saldo ?? f.valor ?? 0;
+                                          const parcial = f.saldo != null && f.saldo < f.valor;
+                                          const saldoStr = parcial ? `${fmt(s)} de ${fmt(f.valor)}` : fmt(s);
+                                          let label = `Freebet ${saldoStr}`;
+                                          if (f.prazo) {
+                                            const dp = new Date(f.prazo + "T12:00:00").toLocaleDateString("pt-BR");
+                                            const vence = f.vencimentoHora ? `${dp} às ${f.vencimentoHora}` : dp;
+                                            label = `Freebet ${saldoStr} (vence ${vence})`;
+                                          }
+                                          const checked = (e.freebetIds || []).includes(f.id);
+                                          return (
+                                            <label key={f.id} style={{
+                                              display: "flex", alignItems: "center", gap: 6,
+                                              cursor: "pointer", fontSize: 12,
+                                              color: checked ? G.green : G.textDim,
+                                            }}>
+                                              <input type="checkbox" checked={checked}
+                                                onChange={ev => {
+                                                  const ids = e.freebetIds || [];
+                                                  upd(i, "freebetIds", ev.target.checked
+                                                    ? [...ids, f.id]
+                                                    : ids.filter(id => id !== f.id));
+                                                }}
+                                                style={{ accentColor: G.green, width: 13, height: 13 }} />
+                                              {label}
+                                            </label>
+                                          );
+                                        })}
+                                        <label style={{
+                                          display: "flex", alignItems: "center", gap: 6,
+                                          cursor: "pointer", fontSize: 12, marginTop: fbsDaCasa.length > 0 ? 2 : 0,
+                                          color: e.usarFreeNaoCadastrada ? G.yellow : G.textDim,
+                                        }}>
+                                          <input type="checkbox"
+                                            checked={e.usarFreeNaoCadastrada || false}
+                                            onChange={ev => upd(i, "usarFreeNaoCadastrada", ev.target.checked)}
+                                            style={{ accentColor: G.yellow, width: 13, height: 13 }} />
+                                          Freebet não cadastrada
+                                        </label>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                              )}
                             </>
                           )
                         ) : (
