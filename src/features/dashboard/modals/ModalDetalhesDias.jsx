@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { G } from "../../../constants/colors";
-import { fmt, fmtOdd, getCasaNome } from "../../../utils/format";
+import { fmt, fmtOdd, getCasaNome, parseDateLocal } from "../../../utils/format";
 import { lucroEfetivoOp } from "../../../utils/calculos";
 import { lucroAvulsa } from "../../../utils/lucroAvulsa";
 import { lucroCassino } from "../../../utils/lucroCassino";
@@ -181,26 +181,20 @@ export function ModalDetalhesDias({ open, onClose, data, mesSel }) {
   const casas        = data.casas    || [];
   const todosEventos = data.eventos  || [];
 
-  // Mesmo filtro de mês do Dashboard
-  function opDoMes(ev) {
-    const d = new Date(ev.data);
+  // Mesmo filtro de mês do Dashboard — usa parseDateLocal para evitar shift de timezone
+  function doMesLocal(dataStr) {
+    const d = parseDateLocal(dataStr);
     return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes;
   }
 
   const todasOpsDoMes = todosEventos.flatMap(ev =>
-    (ev.operacoes || []).map(op => ({ op, ev })).filter(({ ev }) => opDoMes(ev))
+    (ev.operacoes || []).map(op => ({ op, ev })).filter(({ ev }) => doMesLocal(ev.data))
   );
-  const avulsasDoMes = (data.apostasAvulsas || []).filter(a => {
-    const d = new Date(a.data);
-    return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes;
-  });
-  const cassinosDoMes = (data.cassinos || []).filter(c => {
-    const d = new Date(c.data);
-    return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes;
-  });
+  const avulsasDoMes  = (data.apostasAvulsas || []).filter(a => doMesLocal(a.data));
+  const cassinosDoMes = (data.cassinos       || []).filter(c => doMesLocal(c.data));
   // Proteções com referência ao evento-pai (para obter a data)
   const protecoesMes = todosEventos
-    .filter(ev => opDoMes(ev))
+    .filter(ev => doMesLocal(ev.data))
     .flatMap(ev => (ev.protecoes || []).map(p => ({ p, ev })));
 
   const diasNoMes = new Date(anoSel, mesMes, 0).getDate();

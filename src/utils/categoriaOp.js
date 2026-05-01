@@ -37,6 +37,12 @@ export const CATEGORIAS = {
     cor:    "#8B5CF6",   // purple
     badge:  "purple",
   },
+  simples: {
+    label:  "Aposta Simples",
+    emoji:  "🍀",
+    cor:    "#60A5FA",   // blue
+    badge:  "blue",
+  },
 };
 
 /**
@@ -52,6 +58,7 @@ export const CATEGORIAS = {
 export function resolveCategoria(op) {
   const t = op?.tipoOp;
 
+  if (t === "simples")              return "simples";
   if (t === "procedimento_freebet") return "procedimento_freebet";
   if (t === "extracao_freebet")     return "extracao_freebet";
   if (t === "duplo")                return "duplo";

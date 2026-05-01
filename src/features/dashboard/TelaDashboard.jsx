@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { G, GRAD } from "../../constants/colors";
-import { fmt, fmtDate, getCasaNome } from "../../utils/format";
+import { fmt, fmtDate, getCasaNome, parseDateLocal } from "../../utils/format";
 import { lucroEfetivoOp } from "../../utils/calculos";
 import { statusOp } from "../../utils/status";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
@@ -18,8 +18,9 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
   const [modalDetalhesDias, setModalDetalhesDias] = useState(false);
   const [anoSel, mesMes] = mesSel.split("-").map(Number);
 
+  // Usa parseDateLocal para evitar shift de timezone em strings "YYYY-MM-DD"
   function opDoMes(ev) {
-    const d = new Date(ev.data);
+    const d = parseDateLocal(ev.data);
     return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes;
   }
 
@@ -27,8 +28,8 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
   const todasOpsDoMes   = todosEventos.flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev })).filter(({ ev }) => opDoMes(ev)));
   const totalOps        = todasOpsDoMes.length;
 
-  const avulsasDoMes    = (data.apostasAvulsas || []).filter(a => { const d = new Date(a.data); return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes; });
-  const cassinosDoMes   = (data.cassinos || []).filter(c => { const d = new Date(c.data); return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes; });
+  const avulsasDoMes    = (data.apostasAvulsas || []).filter(a => { const d = parseDateLocal(a.data); return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes; });
+  const cassinosDoMes   = (data.cassinos       || []).filter(c => { const d = parseDateLocal(c.data); return d.getFullYear() === anoSel && d.getMonth() + 1 === mesMes; });
   const protecoesMes    = todosEventos.filter(ev => opDoMes(ev)).flatMap(ev => ev.protecoes || []);
   const lucroMes        = todasOpsDoMes.reduce((s, { op }) => s + lucroEfetivoOp(op), 0)
     + avulsasDoMes.reduce((s, a) => s + lucroAvulsa(a), 0)
@@ -52,9 +53,9 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
   const mediaOpsDia  = diasComOps.size > 0 ? totalOps / diasComOps.size : 0;
 
   const mesesDisp = [...new Set([
-    ...todosEventos.map(ev => { const d = new Date(ev.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
-    ...(data.apostasAvulsas || []).map(a => { const d = new Date(a.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
-    ...(data.cassinos || []).map(c => { const d = new Date(c.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
+    ...todosEventos.map(ev => { const d = parseDateLocal(ev.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
+    ...(data.apostasAvulsas || []).map(a => { const d = parseDateLocal(a.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
+    ...(data.cassinos || []).map(c => { const d = parseDateLocal(c.data); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }),
   ])].sort().reverse();
   const mesMesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
   if (!mesesDisp.includes(mesMesAtual)) mesesDisp.unshift(mesMesAtual);
@@ -62,10 +63,10 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
   const mesesAnteriores = mesesDisp.filter(m => m !== mesSel);
   const lucrosPorMes = mesesAnteriores.map(m => {
     const [y, mo] = m.split("-").map(Number);
-    const evDoMesM  = todosEventos.filter(ev => { const d = new Date(ev.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; });
+    const evDoMesM  = todosEventos.filter(ev => { const d = parseDateLocal(ev.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; });
     const lucroOpsM  = evDoMesM.flatMap(ev => ev.operacoes || []).reduce((s, op) => s + lucroEfetivoOp(op), 0);
-    const lucroAvM   = (data.apostasAvulsas || []).filter(a => { const d = new Date(a.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, a) => s + lucroAvulsa(a), 0);
-    const lucroCasM  = (data.cassinos || []).filter(c => { const d = new Date(c.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, c) => s + lucroCassino(c), 0);
+    const lucroAvM   = (data.apostasAvulsas || []).filter(a => { const d = parseDateLocal(a.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, a) => s + lucroAvulsa(a), 0);
+    const lucroCasM  = (data.cassinos || []).filter(c => { const d = parseDateLocal(c.data); return d.getFullYear() === y && d.getMonth() + 1 === mo; }).reduce((s, c) => s + lucroCassino(c), 0);
     const lucroProtM = evDoMesM.flatMap(ev => ev.protecoes || []).reduce((s, p) => s + lucroProtecao(p), 0);
     return lucroOpsM + lucroAvM + lucroCasM + lucroProtM;
   });

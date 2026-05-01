@@ -2,7 +2,7 @@ import { useState } from "react";
 import { G } from "../../constants/colors";
 import iconBingo   from "../../assets/icons/Bingo.svg";
 import iconCassino from "../../assets/icons/Cassino.svg";
-import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
+import { fmt, fmtDate, fmtOdd, getCasaNome, parseDateLocal } from "../../utils/format";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { statusEvento } from "../../utils/status";
 import { getFreebets } from "../../utils/freebets";
@@ -234,7 +234,7 @@ export function TelaEventos({ data, setData }) {
   const buscaLC = busca.toLowerCase();
 
   const eventosFiltrados = [...(data.eventos || [])]
-    .sort((a, b) => new Date(a.data) - new Date(b.data))
+    .sort((a, b) => parseDateLocal(a.data) - parseDateLocal(b.data))
     .filter(ev => {
       const passaStatus = filtroStatus === "pendentes" ? ativo(statusEvento(ev)) : statusEvento(ev) === "finalizado";
       const passaBusca  = !busca || ev.nome.toLowerCase().includes(buscaLC);
@@ -242,7 +242,7 @@ export function TelaEventos({ data, setData }) {
     });
 
   const avulsasFiltradas = [...(data.apostasAvulsas || [])]
-    .sort((a, b) => new Date(a.data) - new Date(b.data))
+    .sort((a, b) => parseDateLocal(a.data) - parseDateLocal(b.data))
     .filter(a => {
       const passaStatus = filtroStatus === "pendentes" ? a.situacao === "pendente" : a.situacao !== "pendente";
       const passaBusca  = !busca || a.nome.toLowerCase().includes(buscaLC);
@@ -259,8 +259,8 @@ export function TelaEventos({ data, setData }) {
     ...avulsasFiltradas.map(a => ({ tipo: "avulsa",  item: a })),
     ...cassinosFiltrados.map(c => ({ tipo: "cassino", item: c })),
   ].sort((a, b) => filtroStatus === "concluidos"
-    ? new Date(b.item.data) - new Date(a.item.data)   // mais recente primeiro
-    : new Date(a.item.data) - new Date(b.item.data));  // mais próximo primeiro
+    ? parseDateLocal(b.item.data) - parseDateLocal(a.item.data)   // mais recente primeiro
+    : parseDateLocal(a.item.data) - parseDateLocal(b.item.data)); // mais próximo primeiro
 
   return (
     <div style={{ maxWidth: 820, margin: "0 auto" }}>

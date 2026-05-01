@@ -21,7 +21,11 @@ const TIPO_OP_OPTS = [
   { value: "procedimento_freebet", ...CATEGORIAS.procedimento_freebet, corAtivo: "#fbbf2422", corText: "#fbbf24" },
   { value: "extracao_freebet",     ...CATEGORIAS.extracao_freebet,     corAtivo: "#34D39922", corText: "#34D399" },
   { value: "duplo",                ...CATEGORIAS.duplo,                corAtivo: "#8B5CF633", corText: "#A78BFA" },
+  { value: "simples",              ...CATEGORIAS.simples,              corAtivo: "#60A5FA22", corText: "#60A5FA" },
 ];
+
+// Tipos que ficam travados em exatamente 1 entrada
+const TIPO_ENTRADA_UNICA = new Set(["simples"]);
 
 // Cor da borda e do label das entradas conforme tipo de operação
 const COR_ENTRADA = {
@@ -29,6 +33,7 @@ const COR_ENTRADA = {
   procedimento_freebet: { borda: "#fbbf2444", label: "#fbbf24"  },
   extracao_freebet:     { borda: "#34D39944", label: "#34D399"  },
   duplo:                { borda: "#8B5CF644", label: "#A78BFA"  },
+  simples:              { borda: "#60A5FA44", label: "#60A5FA"  },
 };
 
 // Banner informativo por tipo
@@ -399,12 +404,6 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
 
   return (
     <Modal open={open} onClose={onClose} title={editOp ? "Editar Operação" : "Nova Operação"} width={680}>
-      {erro && (
-        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13 }}>
-          {erro}
-        </div>
-      )}
-
       {/* ── Passo 1: Tipo da operação ─────────────────────────────────────── */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 }}>
@@ -414,7 +413,10 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
           {TIPO_OP_OPTS.map(t => {
             const ativo = tipoOp === t.value;
             return (
-              <button key={t.value} onClick={() => setTipoOp(t.value)} style={{
+              <button key={t.value} onClick={() => {
+                setTipoOp(t.value);
+                if (TIPO_ENTRADA_UNICA.has(t.value)) ajustarEntradas(1);
+              }} style={{
                 padding: "7px 14px", borderRadius: 6, border: "none", cursor: "pointer",
                 background: ativo ? t.corAtivo : "transparent",
                 color: ativo ? t.corText : G.textDim,
@@ -447,23 +449,25 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         </div>
       ) : (
         <>
-          {/* Número de entradas */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <div style={{ fontSize: 12, color: G.textDim }}>Entradas:</div>
-            <div style={{ display: "flex", gap: 4 }}>
-              {[1, 2, 3, 4, 5, 6, 7].map(n => (
-                <button key={n} onClick={() => ajustarEntradas(n)} style={{
-                  width: 30, height: 30, borderRadius: 6,
-                  border: `1px solid ${numEntradas === n ? G.accent : G.border}`,
-                  background: numEntradas === n ? "#22D3EE22" : G.surface2,
-                  color: numEntradas === n ? G.accent : G.textDim,
-                  fontWeight: 600, fontSize: 13, cursor: "pointer",
-                }}>
-                  {n}
-                </button>
-              ))}
+          {/* Número de entradas — oculto em tipos de entrada única (ex: Aposta Simples) */}
+          {!TIPO_ENTRADA_UNICA.has(tipoOp) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: G.textDim }}>Entradas:</div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {[1, 2, 3, 4, 5, 6, 7].map(n => (
+                  <button key={n} onClick={() => ajustarEntradas(n)} style={{
+                    width: 30, height: 30, borderRadius: 6,
+                    border: `1px solid ${numEntradas === n ? G.accent : G.border}`,
+                    background: numEntradas === n ? "#22D3EE22" : G.surface2,
+                    color: numEntradas === n ? G.accent : G.textDim,
+                    fontWeight: 600, fontSize: 13, cursor: "pointer",
+                  }}>
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Lista de entradas */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
@@ -1009,7 +1013,12 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         </>
       )}
 
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: tipoOp === null ? 8 : 0 }}>
+      {erro && (
+        <div style={{ background: "#F8717122", border: "1px solid #F8717144", color: G.red, borderRadius: 6, padding: "8px 12px", marginBottom: 10, fontSize: 13 }}>
+          {erro}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
         <Btn onClick={salvar}>{editOp ? "Salvar" : "Adicionar operação"}</Btn>
       </div>

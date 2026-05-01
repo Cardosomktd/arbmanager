@@ -16,6 +16,19 @@ export function fmtOdd(v) {
   return parseFloat((Math.floor(n * 100) / 100).toFixed(2)).toString();
 }
 
+// Parsa qualquer string de data sem deslocamento de timezone.
+// "YYYY-MM-DD" (date-only) → meia-noite LOCAL (não UTC).
+// Strings com horário              → delega ao Date() padrão.
+// Usar em TODOS os lugares onde datas são comparadas ou agrupadas.
+export function parseDateLocal(d) {
+  if (!d) return new Date(NaN);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    const [y, m, day] = d.split("-").map(Number);
+    return new Date(y, m - 1, day);  // meia-noite local
+  }
+  return new Date(d);  // já tem horário → JS usa hora local
+}
+
 export function fmtDate(dt) {
   if (!dt) return "";
   // Strings sem horário ("2024-01-15") são tratadas como data local
