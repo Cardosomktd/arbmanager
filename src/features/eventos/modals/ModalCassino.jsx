@@ -8,6 +8,7 @@ import { fmt } from "../../../utils/format";
 import { CasaSelect } from "../../../components/ui/CasaSelect";
 import iconCassino  from "../../../assets/icons/Cassino.svg";
 import iconFreebets from "../../../assets/icons/Freebets.svg";
+import { hojeISODateLocal } from "../../../utils/format";
 
 // Tipos do novo fluxo
 const TIPOS = [
@@ -17,7 +18,7 @@ const TIPOS = [
 
 export function ModalCassino({ open, onClose, onSalvar, casas }) {
   const [tipo,          setTipo]          = useState(null); // null = nenhum escolhido
-  const [data,          setData]          = useState("");
+  const [data,          setData]          = useState(hojeISODateLocal);
   const [casa,          setCasa]          = useState("");
   const [descricao,     setDescricao]     = useState("");
   const [valorApostado, setValorApostado] = useState("");
@@ -29,7 +30,7 @@ export function ModalCassino({ open, onClose, onSalvar, casas }) {
   useEffect(() => {
     if (!open) {
       setTipo(null);
-      setData(""); setCasa(""); setDescricao("");
+      setData(hojeISODateLocal()); setCasa(""); setDescricao("");
       setValorApostado(""); setRetorno(""); setValorGanho("");
       setErro("");
     }

@@ -48,3 +48,13 @@ export function fmtDate(dt) {
 export function getCasaNome(casas, id) {
   return casas.find(c => c.id === id)?.nome || id;
 }
+
+// Retorna a data de hoje no formato YYYY-MM-DD sem deslocamento de timezone.
+// Usar para pré-preencher inputs type="date" — NÃO usar new Date().toISOString().
+export function hojeISODateLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}

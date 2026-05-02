@@ -6,9 +6,10 @@ import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
 import { CasaSelect } from "../../../components/ui/CasaSelect";
 import iconBingo from "../../../assets/icons/Bingo.svg";
+import { hojeISODateLocal } from "../../../utils/format";
 
 export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
-  const [data,      setData]      = useState("");
+  const [data,      setData]      = useState(hojeISODateLocal);
   const [casa,      setCasa]      = useState("");
   const [descricao, setDescricao] = useState("");
   const [odd,       setOdd]       = useState("");
@@ -19,7 +20,7 @@ export function ModalApostaAvulsa({ open, onClose, onSalvar, casas }) {
 
   useEffect(() => {
     if (!open) {
-      setData(""); setCasa(""); setDescricao("");
+      setData(hojeISODateLocal()); setCasa(""); setDescricao("");
       setOdd(""); setValor(""); setIsFb(false); setFbTipo("freebet"); setErro("");
     }
   }, [open]);

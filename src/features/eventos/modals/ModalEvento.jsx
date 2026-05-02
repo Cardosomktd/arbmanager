@@ -5,6 +5,7 @@ import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Input";
 import { Btn } from "../../../components/ui/Btn";
 import { useFixtureSearch } from "../../../hooks/useFixtureSearch";
+import { hojeISODateLocal } from "../../../utils/format";
 
 // ── Feature flag — mudar para true quando a API estiver funcional ──
 const ENABLE_FIXTURE_SEARCH = false;
@@ -59,7 +60,7 @@ export function ModalEvento({ open, onClose, onSalvar, editEvento, eventosList =
         setHora("");
       }
     } else {
-      setMandante(""); setVisitante(""); setDataStr(""); setHora("");
+      setMandante(""); setVisitante(""); setDataStr(hojeISODateLocal()); setHora("");
     }
     setErro("");
     setAvisoExiste(false);
