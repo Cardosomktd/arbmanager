@@ -22,10 +22,11 @@ const TIPO_OP_OPTS = [
   { value: "extracao_freebet",     ...CATEGORIAS.extracao_freebet,     corAtivo: "#34D39922", corText: "#34D399" },
   { value: "duplo",                ...CATEGORIAS.duplo,                corAtivo: "#8B5CF633", corText: "#A78BFA" },
   { value: "simples",              ...CATEGORIAS.simples,              corAtivo: "#60A5FA22", corText: "#60A5FA" },
+  { value: "green_ou_anula",       ...CATEGORIAS.green_ou_anula,       corAtivo: "#F9731622", corText: "#F97316" },
 ];
 
 // Tipos que ficam travados em exatamente 1 entrada
-const TIPO_ENTRADA_UNICA = new Set(["simples"]);
+const TIPO_ENTRADA_UNICA = new Set(["simples", "green_ou_anula"]);
 
 // Cor da borda e do label das entradas conforme tipo de operação
 const COR_ENTRADA = {
@@ -34,6 +35,7 @@ const COR_ENTRADA = {
   extracao_freebet:     { borda: "#34D39944", label: "#34D399"  },
   duplo:                { borda: "#8B5CF644", label: "#A78BFA"  },
   simples:              { borda: "#60A5FA44", label: "#60A5FA"  },
+  green_ou_anula:       { borda: "#F9731644", label: "#F97316"  },
 };
 
 // Banner informativo por tipo
@@ -49,6 +51,10 @@ const BANNERS = {
   duplo: {
     bg:   "#8B5CF60d", borda: "#8B5CF633", cor: "#A78BFA",
     texto: "🎲 Chance de Duplo — cobertura de dois resultados. Sem lucro mínimo garantido.",
+  },
+  green_ou_anula: {
+    bg:   "#F973160d", borda: "#F9731633", cor: "#F97316",
+    texto: "🛡️ Green ou Anula — se red, o valor apostado é reembolsado em saldo real. Lucro mínimo: R$ 0,00.",
   },
 };
 

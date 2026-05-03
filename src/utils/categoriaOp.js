@@ -43,6 +43,12 @@ export const CATEGORIAS = {
     cor:    "#60A5FA",   // blue
     badge:  "blue",
   },
+  green_ou_anula: {
+    label:  "Green ou Anula",
+    emoji:  "🛡️",
+    cor:    "#F97316",   // orange
+    badge:  "orange",
+  },
 };
 
 /**
@@ -59,6 +65,7 @@ export function resolveCategoria(op) {
   const t = op?.tipoOp;
 
   if (t === "simples")              return "simples";
+  if (t === "green_ou_anula")       return "green_ou_anula";
   if (t === "procedimento_freebet") return "procedimento_freebet";
   if (t === "extracao_freebet")     return "extracao_freebet";
   if (t === "duplo")                return "duplo";

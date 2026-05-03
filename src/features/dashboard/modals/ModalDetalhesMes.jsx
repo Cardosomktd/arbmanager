@@ -213,11 +213,11 @@ function Secao({ titulo, cor, count, subtotal, aberto, onToggle, children }) {
 export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   const [anoSel, mesMes] = (mesSel || "2026-01").split("-").map(Number);
   const [abertas, setAbertas] = useState(
-    { simples: false, apostaSimples: false, paraFB: false, extFB: false, duplo: false, protecoes: false, avulsas: false, cassinos: false }
+    { simples: false, apostaSimples: false, greenOuAnula: false, paraFB: false, extFB: false, duplo: false, protecoes: false, avulsas: false, cassinos: false }
   );
 
   useEffect(() => {
-    if (open) setAbertas({ simples: false, apostaSimples: false, paraFB: false, extFB: false, duplo: false, protecoes: false, avulsas: false, cassinos: false });
+    if (open) setAbertas({ simples: false, apostaSimples: false, greenOuAnula: false, paraFB: false, extFB: false, duplo: false, protecoes: false, avulsas: false, cassinos: false });
   }, [open]);
 
   const toggle = k => setAbertas(p => ({ ...p, [k]: !p[k] }));
@@ -235,11 +235,12 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   const cassinosDoMes = (data.cassinos || []).filter(c => doMes(c.data));
 
   // ── Categorização via resolveCategoria ────────────────────────────────────
-  const opsSimples = [], opsApostaSimples = [], opsParaFB = [], opsExtFB = [], opsDuplo = [];
+  const opsSimples = [], opsApostaSimples = [], opsGreenOuAnula = [], opsParaFB = [], opsExtFB = [], opsDuplo = [];
   todosEventos.forEach(ev => {
     (ev.operacoes || []).forEach(op => {
       const cat = resolveCategoria(op);
       if      (cat === "simples")              opsApostaSimples.push({ op, ev });
+      else if (cat === "green_ou_anula")       opsGreenOuAnula.push({ op, ev });
       else if (cat === "duplo")                opsDuplo.push({ op, ev });
       else if (cat === "extracao_freebet")     opsExtFB.push({ op, ev });
       else if (cat === "procedimento_freebet") opsParaFB.push({ op, ev });
@@ -257,6 +258,9 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
 
   // Aposta Simples
   const lucroApostaSimples = sum(opsApostaSimples, ({ op }) => lucroEfetivoOp(op));
+
+  // Green ou Anula
+  const lucroGreenOuAnula = sum(opsGreenOuAnula, ({ op }) => lucroEfetivoOp(op));
 
   // Procedimento Freebet — resultado das ops
   const lucroParaFBOps = sum(opsParaFB, ({ op }) => lucroEfetivoOp(op));
@@ -298,7 +302,7 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
   //   Todas as ops via lucroEfetivoOp (finalizadas=real, pendentes=mín)
   //   + proteções finalizadas + avulsas/Bingo finalizados
   //   SEM somar o valor das freebets
-  const todosOps   = [...opsSimples, ...opsApostaSimples, ...opsParaFB, ...opsExtFB, ...opsDuplo];
+  const todosOps   = [...opsSimples, ...opsApostaSimples, ...opsGreenOuAnula, ...opsParaFB, ...opsExtFB, ...opsDuplo];
   const lucroAtual = r2(sum(todosOps, ({ op }) => lucroEfetivoOp(op)) + lucroProtecoes + lucroAvulsas + lucroCassinos);
 
   // Freebets disponíveis: mesma regra da aba Freebets
@@ -400,6 +404,17 @@ export function ModalDetalhesMes({ open, onClose, data, mesSel }) {
         aberto={abertas.apostaSimples} onToggle={() => toggle("apostaSimples")}
       >
         {opsApostaSimples.map(({ op, ev }) => (
+          <ItemOp key={op.id} op={op} ev={ev} casas={casas} />
+        ))}
+      </Secao>
+
+      {/* ── Green ou Anula ───────────────────────────────────────────────── */}
+      <Secao
+        titulo={tituloSecao("green_ou_anula")} cor={CATEGORIAS.green_ou_anula.cor}
+        count={opsGreenOuAnula.length} subtotal={lucroGreenOuAnula}
+        aberto={abertas.greenOuAnula} onToggle={() => toggle("greenOuAnula")}
+      >
+        {opsGreenOuAnula.map(({ op, ev }) => (
           <ItemOp key={op.id} op={op} ev={ev} casas={casas} />
         ))}
       </Secao>

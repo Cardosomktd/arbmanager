@@ -125,6 +125,9 @@ function condicaoAtingida(op) {
 }
 
 export function calcLucroMinOp(op) {
+  // Green ou Anula: pior cenário é a anulação — valor apostado devolvido, lucro = 0.
+  if (op.tipoOp === "green_ou_anula") return 0;
+
   const ents = op.entradas || [];
   const temExchange = ents.some(e => e.tipo === "exchange_back" || e.tipo === "exchange_lay");
 
@@ -202,6 +205,20 @@ export function calcLucroMinOp(op) {
 }
 
 export function calcLucroRealOp(op) {
+  // Green ou Anula:
+  //   green → lucro normal (odd × valor − valor)
+  //   red   → reembolso total → lucro = 0
+  if (op.tipoOp === "green_ou_anula") {
+    const e = (op.entradas || [])[0];
+    if (!e) return 0;
+    if (e.situacao === "green") {
+      const odd   = parseFloat(String(e.odd || "").replace(",", ".")) || 0;
+      const valor = parseFloat(e.valor) || 0;
+      return odd * valor - valor;
+    }
+    return 0; // red → anula, cashback do valor → lucro zero
+  }
+
   const ents = op.entradas || [];
   const temExchange = ents.some(e => e.tipo === "exchange_back" || e.tipo === "exchange_lay");
 
@@ -263,6 +280,10 @@ export function lucroEfetivoOp(op) {
     }
     // Freebet / bônus: stake não é dinheiro próprio → sem impacto no saldo
     else if (tipo === "freebet" || tipo === "bonus") {
+      return 0;
+    }
+    // Green ou Anula: stake será devolvida se perder → sem impacto no saldo pendente
+    else if (op.tipoOp === "green_ou_anula") {
       return 0;
     }
     // Normal (dinheiro real): stake comprometida na casa

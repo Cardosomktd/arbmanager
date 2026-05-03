@@ -12,6 +12,7 @@ const BORDA_CAT = {
   procedimento_freebet: "#fbbf2433",
   extracao_freebet:     "#34D39933",
   duplo:                "#8B5CF644",
+  green_ou_anula:       "#F9731633",
 };
 
 // ── Helper: informação da freebet gerada ──────────────────────────────────────
