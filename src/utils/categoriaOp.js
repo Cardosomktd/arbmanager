@@ -14,7 +14,7 @@
 
 export const CATEGORIAS = {
   arbitragem: {
-    label:  "Arbitragem",
+    label:  "Super ODD",
     emoji:  "💰",
     cor:    "#22D3EE",   // accent
     badge:  "blue",
