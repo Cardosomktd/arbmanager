@@ -68,7 +68,19 @@ export function TelaEventos({ data, setData }) {
 
   function salvarOp(op) {
     setData(d => {
-      // ── Baixa de freebets ──────────────────────────────────────────────────
+      // ── Edição: apenas substitui a operação — não retoca freebets/bônus ────
+      // Re-executar a baixa em edições consome saldos já abatidos (BUG).
+      if (editOp) {
+        return {
+          ...d,
+          eventos: d.eventos.map(ev => ev.id !== eventoAlvoId ? ev : {
+            ...ev,
+            operacoes: ev.operacoes.map(o => o.id === op.id ? op : o),
+          }),
+        };
+      }
+
+      // ── Baixa de freebets (apenas em nova operação) ────────────────────────
       let freebets = d.freebets || [];
       const freebetsAutoUsadas = [...(d.freebetsAutoUsadas || [])];
 
@@ -118,6 +130,20 @@ export function TelaEventos({ data, setData }) {
             // Acumulada: saldo pode zerar mas nunca marca como usada (carteira permanente)
             return { ...f, saldo: novoSaldo, usada: f.tipo === "acumulada" ? false : novoSaldo <= 0 };
           });
+          // BUG 3 — Acumulada Bet365 com auto-contribuições:
+          // Quando o saldo da carteira é reduzido, marca os auto_ IDs correspondentes
+          // em freebetsAutoUsadas para que getFreebets não os re-adicione ao saldo.
+          const fbRef = getFreebets(d).find(f => f.id === e.freebetId);
+          if (fbRef?._autoContrib?.length > 0) {
+            const valorUsado = parseFloat(e.freebetValorUsado) || (fbRef.saldo ?? fbRef.valor ?? 0);
+            let restante = valorUsado;
+            for (const contrib of fbRef._autoContrib) {
+              if (restante <= 0) break;
+              if (!freebetsAutoUsadas.includes(contrib.id))
+                freebetsAutoUsadas.push(contrib.id);
+              restante -= contrib.valor;
+            }
+          }
         }
       }
 
@@ -423,7 +449,13 @@ export function TelaEventos({ data, setData }) {
         open={modalOp} onClose={() => setModalOp(false)} onSalvar={salvarOp}
         casas={data.casas || []} editOp={editOp}
         evento={(data.eventos || []).find(e => e.id === eventoAlvoId)}
-        freebetsDisponiveis={getFreebets(data).filter(f => !f.usada)}
+        freebetsDisponiveis={getFreebets(data).filter(f => {
+          const s = f.saldo ?? f.valor ?? 0;
+          // Acumulada: sempre exibida enquanto tiver saldo (nunca recebe usada=true)
+          if (f.tipo === "acumulada") return s > 0;
+          // Demais: não usada E com saldo positivo
+          return !f.usada && s > 0;
+        })}
         bonusDisponiveis={(data.bonus || []).filter(b => !b.usada)}
       />
       <ModalApostaAvulsa open={modalAvulsa}   onClose={() => setModalAvulsa(false)}   onSalvar={salvarAposta}  casas={data.casas || []} />

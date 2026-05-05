@@ -118,31 +118,36 @@ export function TelaCasas({ data, setData }) {
 
           return (
             <Card key={c.id} style={{ padding: 0, overflow: "hidden", border: `1px solid ${temAlerta ? "#F8717133" : G.border}` }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", cursor: "pointer" }}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", cursor: "pointer", gap: 10 }}
                 onClick={() => setCasaDetalhe(aberta ? null : c.id)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ color: G.textDim, fontSize: 12 }}>{aberta ? "▼" : "▶"}</span>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                      {c.nome}
-                      {temAlerta && <span style={{ fontSize: 10, color: G.red, background: "#F8717122", borderRadius: 4, padding: "1px 6px", fontWeight: 700 }}>DEP. PENDENTE</span>}
+
+                {/* ── Lado esquerdo: nome + info ── */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                  <span style={{ color: G.textDim, fontSize: 12, flexShrink: 0 }}>{aberta ? "▼" : "▶"}</span>
+                  <div style={{ minWidth: 0, overflow: "hidden" }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{c.nome}</span>
+                      {temAlerta && <span style={{ fontSize: 10, color: G.red, background: "#F8717122", borderRadius: 4, padding: "1px 6px", fontWeight: 700, flexShrink: 0, whiteSpace: "nowrap" }}>DEP. PENDENTE</span>}
                     </div>
-                    <div style={{ fontSize: 11, color: G.textDim, marginTop: 1 }}>
-                      {c.titular && <span style={{ marginRight: 6 }}>👤 {c.titular} ·</span>}
-                      Inicial: {fmt(c.saldoInicial)} · {movs.length} movimentação{movs.length !== 1 ? "ões" : ""}
+                    <div style={{ fontSize: 11, color: G.textDim, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {c.titular && <span style={{ marginRight: 4 }}>👤 {c.titular} ·</span>}
+                      Inicial: {fmt(c.saldoInicial)} · {movs.length} mov.
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+
+                {/* ── Lado direito: saldo + botões ── */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 10, color: G.textDim }}>Saldo atual</div>
-                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 700, color: saldo >= 0 ? G.green : G.red }}>{fmt(saldo)}</div>
+                    <div style={{ fontSize: 10, color: G.textDim, whiteSpace: "nowrap" }}>Saldo atual</div>
+                    <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 20, fontWeight: 700, color: saldo >= 0 ? G.green : G.red, whiteSpace: "nowrap" }}>{fmt(saldo)}</div>
                   </div>
-                  <div style={{ display: "flex", gap: 4 }}>
+                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                     <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); setEditId(c.id); setNomeCasa(c.nome); setSaldoInicial(String(c.saldoInicial || "")); setTitular(c.titular || ""); setCasaDetalhe(c.id); }}>✏️</Btn>
                     <Btn size="sm" variant="ghost" onClick={e => { e.stopPropagation(); if (!window.confirm("Tem certeza que deseja arquivar esta casa?")) return; setData(d => ({ ...d, casas: d.casas.map(x => x.id === c.id ? { ...x, ativa: false } : x) })); }}>📦</Btn>
                   </div>
                 </div>
+
               </div>
 
               {aberta && (

@@ -255,7 +255,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
     : totalNum > 0 && todasPreenchidas;
 
   return (
-    <Modal open={open} onClose={onClose} title="🧮 Calculadora de Super ODD" width={500}>
+    <Modal open={open} onClose={onClose} title="🧮 Calculadora de Arbitragem" width={500}>
 
       {/* ── Linha 1: Seletor de entradas + Arb% ──────────────────────────── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -287,7 +287,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
       <div style={{ marginBottom: 8 }}>
         <div style={{ display: "flex", gap: 2, background: G.surface, borderRadius: 6, padding: 2, width: "fit-content" }}>
           {[
-            { value: "arbitragem",  label: "Super ODD"     },
+            { value: "arbitragem",  label: "Arbitragem"    },
             { value: "freebet_red", label: "Freebet se Red" },
             { value: "freebet",     label: "Ext. Freebet"   },
           ].map(({ value, label }) => {
