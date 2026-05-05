@@ -37,25 +37,48 @@ export function TelaCasas({ data, setData }) {
       setData(d => ({ ...d, movimentos: (d.movimentos || []).filter(m => m.id !== id) }));
   }
 
-  function temDepPendente(casa) {
-    // Rastreia o timestamp da última operação com entrada "normal" nesta casa.
-    // O alerta permanece enquanto não houver depósito registrado APÓS essa operação,
-    // independentemente de o saldo ter ficado positivo por um green.
-    let ultimaOpNormalTs = null;
-    (data.eventos || []).forEach(ev => (ev.operacoes || []).forEach(op => {
-      const temNormal = (op.entradas || []).some(e => e.casa === casa.id && e.tipo === "normal");
-      if (!temNormal) return;
-      const ts = op.criadoEm ? new Date(op.criadoEm).getTime() : 0;
-      if (ts > (ultimaOpNormalTs || 0)) ultimaOpNormalTs = ts;
-    }));
-    if (!ultimaOpNormalTs) return false;
-    const deps = (data.movimentos || []).filter(m => m.casaId === casa.id && m.tipo === "deposito");
-    return !deps.some(m => new Date(m.data).getTime() >= ultimaOpNormalTs);
-  }
-
   const ativas     = (data.casas || []).filter(c => c.ativa);
   const arquivadas = (data.casas || []).filter(c => !c.ativa);
-  const alertas    = ativas.filter(c => temDepPendente(c));
+
+  // ── Alerta de depósito pendente ────────────────────────────────────────────
+  // Regra: compara dinheiro real disponível × total apostado em dinheiro real.
+  // Greens e retornos de apostas NÃO limpam a pendência — apenas depósitos/ajustes manuais.
+  //
+  // dinheiroDisponível = saldoInicial + Σ depósitos − Σ saques
+  // totalApostado      = Σ entradas "normal" + Σ apostas avulsas (em dinheiro real)
+  //
+  // Pendente se: totalApostado > dinheiroDisponível
+  function temDepPendente(casa) {
+    // Entradas normais (apostas com dinheiro real da casa, não freebets)
+    const totalOps = (data.eventos || []).reduce((s, ev) =>
+      s + (ev.operacoes || []).reduce((ss, op) =>
+        ss + (op.entradas || []).reduce((sss, e) =>
+          e.casa === casa.id && e.tipo === "normal"
+            ? sss + (parseFloat(e.valor) || 0)
+            : sss
+        , 0)
+      , 0)
+    , 0);
+
+    // Apostas avulsas com dinheiro real (exclui as do tipo freebet)
+    const totalAvulsas = (data.apostasAvulsas || [])
+      .filter(a => a.casa === casa.id && a.tipoValor !== "freebet" && !a.freebet)
+      .reduce((s, a) => s + (parseFloat(a.valor) || 0), 0);
+
+    // Dinheiro real que entrou na casa (saldo inicial + depósitos − saques)
+    const totalMovimentos = (data.movimentos || [])
+      .filter(m => m.casaId === casa.id)
+      .reduce((s, m) =>
+        s + (m.tipo === "deposito" ? (parseFloat(m.valor) || 0) : -(parseFloat(m.valor) || 0))
+      , 0);
+
+    const dinheiroDisponivel = (casa.saldoInicial || 0) + totalMovimentos;
+    const totalApostado      = totalOps + totalAvulsas;
+
+    return totalApostado > dinheiroDisponivel;
+  }
+
+  const alertas = ativas.filter(c => temDepPendente(c));
   const saldoTotal = ativas.reduce((s, c) => s + Math.max(0, calcSaldoCasa(c, data)), 0);
   const casasFiltradas = ativas
     .filter(c => c.nome.toLowerCase().includes(filtro.toLowerCase()))
