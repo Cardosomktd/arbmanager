@@ -41,15 +41,18 @@ export function TelaCasas({ data, setData }) {
   const arquivadas = (data.casas || []).filter(c => !c.ativa);
 
   // ── Alerta de depósito pendente ────────────────────────────────────────────
-  // Regra: compara dinheiro real disponível × total apostado em dinheiro real.
-  // Greens e retornos de apostas NÃO limpam a pendência — apenas depósitos/ajustes manuais.
   //
-  // dinheiroDisponível = saldoInicial + Σ depósitos − Σ saques
-  // totalApostado      = Σ entradas "normal" + Σ apostas avulsas (em dinheiro real)
+  // Duas condições (OR):
   //
-  // Pendente se: totalApostado > dinheiroDisponível
+  // A) Apostas > saldoInicial + depósitos  (saques EXCLUÍDOS desta conta)
+  //    → bet nunca foi coberta por aporte real; green não limpa, depósito limpa.
+  //
+  // B) Saldo atual < 0  (calculado igual ao card, via calcSaldoCasa)
+  //    → saque excessivo ou qualquer outra causa que deixou saldo negativo.
+  //
+  // Saques NÃO geram pendência sozinhos enquanto o saldo atual permanecer ≥ 0.
   function temDepPendente(casa) {
-    // Entradas normais (apostas com dinheiro real da casa, não freebets)
+    // Condição A ── apostas em dinheiro real vs aportes reais (sem saques)
     const totalOps = (data.eventos || []).reduce((s, ev) =>
       s + (ev.operacoes || []).reduce((ss, op) =>
         ss + (op.entradas || []).reduce((sss, e) =>
@@ -60,22 +63,21 @@ export function TelaCasas({ data, setData }) {
       , 0)
     , 0);
 
-    // Apostas avulsas com dinheiro real (exclui as do tipo freebet)
     const totalAvulsas = (data.apostasAvulsas || [])
       .filter(a => a.casa === casa.id && a.tipoValor !== "freebet" && !a.freebet)
       .reduce((s, a) => s + (parseFloat(a.valor) || 0), 0);
 
-    // Dinheiro real que entrou na casa (saldo inicial + depósitos − saques)
-    const totalMovimentos = (data.movimentos || [])
-      .filter(m => m.casaId === casa.id)
-      .reduce((s, m) =>
-        s + (m.tipo === "deposito" ? (parseFloat(m.valor) || 0) : -(parseFloat(m.valor) || 0))
-      , 0);
+    const totalDepositos = (data.movimentos || [])
+      .filter(m => m.casaId === casa.id && m.tipo === "deposito")
+      .reduce((s, m) => s + (parseFloat(m.valor) || 0), 0);
 
-    const dinheiroDisponivel = (casa.saldoInicial || 0) + totalMovimentos;
-    const totalApostado      = totalOps + totalAvulsas;
+    const apostasNaoCobertasPorAporte =
+      (totalOps + totalAvulsas) > ((casa.saldoInicial || 0) + totalDepositos);
 
-    return totalApostado > dinheiroDisponivel;
+    // Condição B ── saldo atual negativo (mesma fonte do card)
+    const saldoAtualNegativo = calcSaldoCasa(casa, data) < 0;
+
+    return apostasNaoCobertasPorAporte || saldoAtualNegativo;
   }
 
   const alertas = ativas.filter(c => temDepPendente(c));
