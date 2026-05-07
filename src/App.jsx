@@ -8,6 +8,7 @@ import iconBanca        from "./assets/icons/Banca.svg";
 import iconCalculadora  from "./assets/icons/Calculadora.svg";
 import { supabase } from "./lib/supabase";
 import { useAppData } from "./hooks/useAppData";
+import { useTabGuard } from "./hooks/useTabGuard";
 import { LoginPage, ResetSenhaPage } from "./features/auth/LoginPage";
 import { TelaDashboard }        from "./features/dashboard/TelaDashboard";
 import { TelaEventos }          from "./features/eventos/TelaEventos";
@@ -83,7 +84,8 @@ export default function App() {
 // Separado para que useAppData e todo o flow da calc só montem após autenticação.
 function AppAutenticado({ aba, setAba, session, onLogout }) {
   const userId = session.user.id;
-  const { data, setData, loading, error } = useAppData(userId);
+  const { data, setData, loading, error, saveStatus } = useAppData(userId);
+  const { otherTabActive } = useTabGuard();
 
   // ── Flow global da Calculadora ───────────────────────────────────────────────
   // Vive aqui (não no Dashboard) para funcionar sobre qualquer tela.
@@ -145,20 +147,24 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
   return (
     <div style={{ minHeight: "100vh" }}>
 
+      {/* ── Aviso de múltiplas abas ── */}
+      {otherTabActive && <MultiTabWarning />}
+
       {/* ── Sidebar (desktop) ── */}
       <Sidebar
         aba={aba} setAba={setAba}
         session={session} onLogout={onLogout}
-        error={error}
+        error={error} saveStatus={saveStatus}
         onOpenCalc={openCalc}
       />
 
       {/* ── Header (mobile only — oculto no desktop via CSS) ── */}
+      {/* top ajustado para não ficar atrás do banner de multi-aba (≈ 58 px) */}
       <header className="app-header" style={{
         background: `${G.surface}ee`,
         borderBottom: `1px solid ${G.border}`,
         padding: "0 20px",
-        position: "sticky", top: 0, zIndex: 100,
+        position: "sticky", top: otherTabActive ? 58 : 0, zIndex: 100,
         backdropFilter: "blur(12px)",
       }}>
         <div className="app-header-inner">
@@ -186,6 +192,7 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
             ))}
           </nav>
           <div className="app-header-user">
+            <SaveStatusBadge status={saveStatus} compact />
             {error && <span title={error} style={{ fontSize: 11, color: G.red }}>⚠️</span>}
             <span className="app-header-email" style={{ color: G.textMuted }}>{session.user.email}</span>
             <button onClick={onLogout} style={{
@@ -287,7 +294,7 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
 }
 
 // ── Sidebar (desktop) ─────────────────────────────────────────────────────────
-function Sidebar({ aba, setAba, session, onLogout, error, onOpenCalc }) {
+function Sidebar({ aba, setAba, session, onLogout, error, saveStatus, onOpenCalc }) {
   return (
     <aside className="app-sidebar">
 
@@ -351,7 +358,9 @@ function Sidebar({ aba, setAba, session, onLogout, error, onOpenCalc }) {
       </nav>
 
       <div style={{ padding: "16px 20px", flexShrink: 0 }}>
-        {error && <div style={{ fontSize: 11, color: G.red, marginBottom: 8 }}>⚠️ Erro ao salvar</div>}
+        <div style={{ marginBottom: 10 }}>
+          <SaveStatusBadge status={saveStatus} />
+        </div>
         <div style={{
           fontSize: 11, color: G.textMuted, marginBottom: 10,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -407,6 +416,63 @@ function BottomNav({ aba, setAba }) {
         );
       })}
     </nav>
+  );
+}
+
+// ── Multi-tab Warning Banner ──────────────────────────────────────────────────
+// Aparece automaticamente quando outra aba do app é detectada via localStorage.
+// Desaparece sozinho quando a outra aba fecha (em até 8 s — tempo do heartbeat).
+// Não tem botão de fechar: o estado reflete a realidade em tempo real.
+function MultiTabWarning() {
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+      background: "#450a0a",
+      borderBottom: "2px solid #dc2626",
+      padding: "10px 20px",
+      display: "flex", alignItems: "center", gap: 12,
+    }}>
+      <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#fca5a5", lineHeight: 1.3 }}>
+          O app está aberto em outra aba
+        </div>
+        <div style={{ fontSize: 12, color: "#fca5a5", opacity: 0.8, marginTop: 2 }}>
+          Usar em duas abas simultaneamente pode causar perda de dados — a última aba a salvar sobrescreve a outra. Feche uma das abas.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Save Status Badge ─────────────────────────────────────────────────────────
+// `compact`: só exibe um ponto colorido (sem texto) — usado no header mobile.
+// `status`: "idle" | "unsaved" | "saving" | "saved" | "error"
+function SaveStatusBadge({ status, compact = false }) {
+  if (status === "idle") return null;
+
+  const config = {
+    unsaved: { text: "Não salvo",      color: "#F59E0B", dot: "#F59E0B" },
+    saving:  { text: "Salvando...",    color: G.textDim, dot: G.textDim  },
+    saved:   { text: "Salvo",          color: G.green,   dot: G.green    },
+    error:   { text: "Erro ao salvar", color: G.red,     dot: G.red      },
+  }[status];
+
+  if (!config) return null;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 5 }} title={config.text}>
+      <div style={{
+        width: 7, height: 7, borderRadius: "50%",
+        background: config.dot, flexShrink: 0,
+        boxShadow: status === "unsaved" ? `0 0 5px ${config.dot}99` : "none",
+      }} />
+      {!compact && (
+        <span style={{ fontSize: 11, color: config.color, whiteSpace: "nowrap" }}>
+          {config.text}
+        </span>
+      )}
+    </div>
   );
 }
 
