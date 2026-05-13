@@ -252,7 +252,9 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
       if (!e.valor)          { setErro(`Informe o valor da entrada ${i + 1}.`); return; }
 
       // Validações de freebet/bônus na extração
-      if (tipoOp === "extracao_freebet" && (e.tipo === "freebet" || e.tipo === "bonus")) {
+      // Em edição (editOp !== null) salvarOp não toca freebets/bônus,
+      // portanto qualquer validação de saldo aqui bloquearia o save sem necessidade.
+      if (!editOp && tipoOp === "extracao_freebet" && (e.tipo === "freebet" || e.tipo === "bonus")) {
         const isFbType = e.tipo === "freebet";
 
         // Detecta carteira acumulada (dispensa seleção explícita no dropdown)
@@ -314,7 +316,8 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
       }
 
       // Valida saldo de freebet/bônus individual fora de extração (ex: duplo com freebet)
-      if (e.freebetId && !e.freebetManual && e.freebetValorUsado) {
+      // Ignorado em edição pelo mesmo motivo — salvarOp não toca estoque ao editar.
+      if (!editOp && e.freebetId && !e.freebetManual && e.freebetValorUsado) {
         const fb = freebetsDisponiveis.find(f => f.id === e.freebetId);
         const saldo = fb ? (fb.saldo ?? fb.valor ?? 0) : 0;
         if (parseFloat(e.freebetValorUsado) > saldo + 0.001) {
@@ -322,7 +325,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
           return;
         }
       }
-      if (e.bonusId && !e.bonusManual && e.bonusValorUsado) {
+      if (!editOp && e.bonusId && !e.bonusManual && e.bonusValorUsado) {
         const bn = bonusDisponiveis.find(b => b.id === e.bonusId);
         const saldo = bn ? (bn.saldo ?? bn.valor ?? 0) : 0;
         if (parseFloat(e.bonusValorUsado) > saldo + 0.001) {
@@ -389,9 +392,12 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
       geraFreebet: tipoOp === "procedimento_freebet"
         ? {
             entradaGatilhoId: fbGatilhoId || null,
+            // Quando há gatilho: deriva a casa da entrada selecionada.
+            // Quando não há gatilho (ops legado ou não preenchido): preserva a casa
+            // original do editOp para não deslocar o auto-freebet em getFreebets().
             casa: fbGatilhoId
               ? (entradasFinal.find(e => e.id === fbGatilhoId)?.casa || "")
-              : "",
+              : (editOp?.geraFreebet?.casa ?? ""),
             valor: parseFloat(fbValor) || 0,
             condicao: fbCondicao,
             tipoBeneficio: fbTipo,
@@ -835,9 +841,23 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                                     const fbsDaCasa = freebetsDisponiveis.filter(
                                       f => f.casaId === e.casa && f.tipo !== "acumulada"
                                     );
+                                    // IDs já vinculados ao op original (podem estar consumidos
+                                    // e fora de freebetsDisponiveis — mostra indicador em edição)
+                                    const idsVinculados = editOp ? (e.freebetIds || []).filter(
+                                      fid => !fbsDaCasa.find(f => f.id === fid)
+                                    ) : [];
                                     return (
                                       <>
-                                        {fbsDaCasa.length === 0 && (
+                                        {/* Freebets já usadas neste op (consumidas, fora do estoque disponível) */}
+                                        {idsVinculados.length > 0 && (
+                                          <div style={{ fontSize: 11, color: G.green, display: "flex", alignItems: "center", gap: 5, padding: "3px 0" }}>
+                                            <span>✓</span>
+                                            <span>
+                                              {idsVinculados.length} freebet{idsVinculados.length > 1 ? "s" : ""} vinculada{idsVinculados.length > 1 ? "s" : ""} a este op — mantida{idsVinculados.length > 1 ? "s" : ""} na edição
+                                            </span>
+                                          </div>
+                                        )}
+                                        {fbsDaCasa.length === 0 && idsVinculados.length === 0 && (
                                           <div style={{ fontSize: 12, color: G.textMuted }}>
                                             Nenhuma freebet disponível para esta casa.
                                           </div>
