@@ -6,43 +6,50 @@ export function calcSaldoCasa(casa, data) {
 
   // Operações esportivas
   //
-  // Regra: o custo é deducido no lançamento, independente do resultado.
-  // O retorno é creditado apenas no green.
+  // Cada tipo é tratado de forma totalmente explícita, sem delegar ao calcRetorno
+  // para as entradas de exchange (evita ambiguidade sobre o que está sendo somado).
   //
-  //   normal / exchange_back  →  custo = stake (e.valor)
-  //   exchange_lay            →  custo = responsabilidade = e.valor × (odd − 1)
-  //   freebet / bonus         →  sem custo (stake não é dinheiro real)
+  // Regra geral: custo deducido no lançamento (independente do resultado);
+  //              crédito somado apenas no green; red não altera nada além do custo.
   //
-  // Green:
-  //   exchange_back / normal / freebet / bonus → calcRetorno inclui stake de volta + lucro
-  //   exchange_lay → responsabilidade devolvida + lucro = valor×(odd−1) + calcRetorno(e)
-  //
-  // Red: custo já foi deducido no lançamento; nenhum crédito adicional.
+  //  normal       →  custo = stake (valor)
+  //                   green: stake devolvida + lucro = calcRetorno(e) = odd × valor
+  //  exchange_back →  custo = stake (valor)
+  //                   green: stake devolvida + lucro líquido = valor + valor×(odd−1)×(1−comm)
+  //  exchange_lay  →  custo = responsabilidade = valor × (odd − 1)
+  //                   green: responsabilidade devolvida + lucro = valor×(odd−1) + valor×(1−comm)
+  //  freebet/bonus →  sem custo; green: lucro líquido via calcRetorno(e)
   (data.eventos || []).forEach(ev =>
     (ev.operacoes || []).forEach(op =>
       (op.entradas || []).forEach(e => {
         if (e.casa !== casa.id) return;
         const valor = parseFloat(e.valor) || 0;
         const odd   = parseFloat(String(e.odd || "").replace(",", ".")) || 0;
+        const comm  = parseFloat(e.comissao) / 100 || 0;
 
-        // ── Custo no lançamento ──────────────────────────────────────────────
-        if (e.tipo === "normal" || e.tipo === "exchange_back") {
-          saldo -= valor;               // stake sai imediatamente
-        }
-        if (e.tipo === "exchange_lay") {
-          saldo -= valor * (odd - 1);   // responsabilidade reservada
-        }
-        // freebet / bonus: stake não é dinheiro próprio → sem dedução
+        if (e.tipo === "normal") {
+          saldo -= valor;                                   // stake sai no lançamento
+          if (e.situacao === "green") saldo += calcRetorno(e); // odd × valor (inclui stake)
 
-        // ── Crédito no green ─────────────────────────────────────────────────
-        if (e.situacao === "green") {
-          if (e.tipo === "exchange_lay") {
-            // Responsabilidade devolvida + lucro líquido recebido
-            saldo += valor * (odd - 1) + calcRetorno(e);
-          } else {
-            // back / normal / freebet / bonus: calcRetorno inclui stake de volta (para back/normal)
-            saldo += calcRetorno(e);
+        } else if (e.tipo === "exchange_back") {
+          saldo -= valor;                                   // stake sai no lançamento
+          if (e.situacao === "green") {
+            saldo += valor;                                 // stake devolvida
+            saldo += valor * (odd - 1) * (1 - comm);       // lucro líquido
           }
+          // red: stake perdida, já deducida — nada mais
+
+        } else if (e.tipo === "exchange_lay") {
+          saldo -= valor * (odd - 1);                       // responsabilidade reservada
+          if (e.situacao === "green") {
+            saldo += valor * (odd - 1);                     // responsabilidade devolvida
+            saldo += valor * (1 - comm);                    // lucro (stake do apostador − comm)
+          }
+          // red: responsabilidade perdida, já deducida — nada mais
+
+        } else {
+          // freebet / bonus: stake não é dinheiro real → sem custo
+          if (e.situacao === "green") saldo += calcRetorno(e);
         }
       })
     )
