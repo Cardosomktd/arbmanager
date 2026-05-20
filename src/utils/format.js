@@ -1,10 +1,14 @@
 export function fmt(v) {
-  return "R$ " + (Number(v) || 0).toFixed(2).replace(".", ",");
+  // Arredonda para centavos inteiros antes de formatar — elimina "-0,00" causado por
+  // resíduo de ponto flutuante (ex: -0.000001 → 0 centavos → "R$ 0,00").
+  const cents = Math.round((Number(v) || 0) * 100);
+  return "R$ " + (cents / 100).toFixed(2).replace(".", ",");
 }
 
 // Número sem prefixo "R$" — usado em campos onde o símbolo já está no label.
 export function fmtNum(v) {
-  return (Number(v) || 0).toFixed(2).replace(".", ",");
+  const cents = Math.round((Number(v) || 0) * 100);
+  return (cents / 100).toFixed(2).replace(".", ",");
 }
 
 // Formata odd apenas para exibição — trunca (não arredonda) para no máximo 2 casas decimais,

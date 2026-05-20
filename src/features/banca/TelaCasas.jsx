@@ -9,9 +9,10 @@ import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { ModalMovimento } from "./modals/ModalMovimento";
 
-// Tolerância de 1 centavo para evitar falso positivo por imprecisão de ponto flutuante.
-// Valores como -0.000001 ou diferenças de 0.000001 NÃO configuram pendência real.
-const EPS = 0.01;
+// Converte valor financeiro para centavos inteiros.
+// Elimina resíduo de ponto flutuante: -0.000001 → 0 ct, -0.006 → -1 ct, -10 → -1000 ct.
+// Usar para TODAS as comparações de "saldo negativo" — nunca comparar float < 0 diretamente.
+const centsOf = v => Math.round((Number(v) || 0) * 100);
 
 export function TelaCasas({ data, setData }) {
   const [nomeCasa,     setNomeCasa]     = useState("");
@@ -46,45 +47,18 @@ export function TelaCasas({ data, setData }) {
 
   // ── Alerta de depósito pendente ────────────────────────────────────────────
   //
-  // Duas condições (OR):
+  // Regra única: saldo atual em centavos < 0.
   //
-  // A) Apostas > saldoInicial + depósitos  (saques EXCLUÍDOS desta conta)
-  //    → bet nunca foi coberta por aporte real; green não limpa, depósito limpa.
+  // • Saldo zero (0 ct) → NÃO pendente.
+  // • Resíduo float como -0.000001 → 0 ct → NÃO pendente.
+  // • Saldo -0,004 → 0 ct (rounds to 0) → NÃO pendente.
+  // • Saldo -0,006 → -1 ct → pendente.
+  // • Saldo -10 → -1000 ct → pendente.
   //
-  // B) Saldo atual < 0  (calculado igual ao card, via calcSaldoCasa)
-  //    → saque excessivo ou qualquer outra causa que deixou saldo negativo.
-  //
-  // Saques NÃO geram pendência sozinhos enquanto o saldo atual permanecer ≥ 0.
+  // Usando centsOf() para TODAS as comparações de saldo — banner e badge
+  // agora usam exatamente a mesma lógica, eliminando inconsistências.
   function temDepPendente(casa) {
-    // Condição A ── apostas em dinheiro real vs aportes reais (sem saques)
-    const totalOps = (data.eventos || []).reduce((s, ev) =>
-      s + (ev.operacoes || []).reduce((ss, op) =>
-        ss + (op.entradas || []).reduce((sss, e) =>
-          e.casa === casa.id && e.tipo === "normal"
-            ? sss + (parseFloat(e.valor) || 0)
-            : sss
-        , 0)
-      , 0)
-    , 0);
-
-    const totalAvulsas = (data.apostasAvulsas || [])
-      .filter(a => a.casa === casa.id && a.tipoValor !== "freebet" && !a.freebet)
-      .reduce((s, a) => s + (parseFloat(a.valor) || 0), 0);
-
-    const totalDepositos = (data.movimentos || [])
-      .filter(m => m.casaId === casa.id && m.tipo === "deposito")
-      .reduce((s, m) => s + (parseFloat(m.valor) || 0), 0);
-
-    // Só considera pendente se a diferença for maior que EPS (1 centavo).
-    // Imprecisão de ponto flutuante (ex: 100.000000001 > 100) não configura pendência.
-    const apostasNaoCobertasPorAporte =
-      (totalOps + totalAvulsas) - ((casa.saldoInicial || 0) + totalDepositos) > EPS;
-
-    // Condição B ── saldo atual negativo (mesma fonte do card).
-    // Saldo zero ou resíduo decimal ínfimo (ex: -0.000001) não é pendência.
-    const saldoAtualNegativo = calcSaldoCasa(casa, data) < -EPS;
-
-    return apostasNaoCobertasPorAporte || saldoAtualNegativo;
+    return centsOf(calcSaldoCasa(casa, data)) < 0;
   }
 
   const alertas = ativas.filter(c => temDepPendente(c));
@@ -146,7 +120,7 @@ export function TelaCasas({ data, setData }) {
           const saldo    = calcSaldoCasa(c, data);
           const movs     = (data.movimentos || []).filter(m => m.casaId === c.id);
           const aberta   = casaDetalhe === c.id;
-          const temAlerta = saldo < -EPS;
+          const temAlerta = centsOf(saldo) < 0;
 
           return (
             <Card key={c.id} style={{ padding: 0, overflow: "hidden", border: `1px solid ${temAlerta ? "#F8717133" : G.border}` }}>
