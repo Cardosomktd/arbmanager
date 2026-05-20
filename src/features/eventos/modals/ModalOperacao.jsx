@@ -127,6 +127,8 @@ function EstoqueSelect({ valor, onChange, itens, temCasa, placeholderSemCasa, pl
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Limite máximo de entradas por operação — altere aqui para aumentar o limite.
+const MAX_ENTRADAS = 10;
 
 export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, rascunhoCalc, freebetsDisponiveis = [], bonusDisponiveis = [] }) {
   // null = nenhum tipo selecionado (novo modal); string = tipo selecionado
@@ -186,7 +188,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
   }, [open, editOp, rascunhoCalc]);
 
   function ajustarEntradas(n) {
-    const num = Math.min(7, Math.max(1, parseInt(n) || 1));
+    const num = Math.min(MAX_ENTRADAS, Math.max(1, parseInt(n) || 1));
     setNumEntradas(num);
     setEntradas(prev => num > prev.length
       ? [...prev, ...Array(num - prev.length).fill(null).map(entradaVazia)]
@@ -463,7 +465,7 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         <>
           {/* Número de entradas — oculto em tipos de entrada única (ex: Aposta Simples) */}
           {!TIPO_ENTRADA_UNICA.has(tipoOp) && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
               <div style={{ fontSize: 12, color: G.textDim }}>Entradas:</div>
               <div style={{ display: "flex", gap: 4 }}>
                 {[1, 2, 3, 4, 5, 6, 7].map(n => (
@@ -477,6 +479,37 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
                     {n}
                   </button>
                 ))}
+                {/* Chip numérico quando acima de 7 */}
+                {numEntradas > 7 && (
+                  <div style={{
+                    width: 30, height: 30, borderRadius: 6,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    border: `1px solid ${G.accent}`,
+                    background: "#22D3EE22",
+                    color: G.accent, fontWeight: 700, fontSize: 13,
+                  }}>
+                    {numEntradas}
+                  </div>
+                )}
+              </div>
+              {/* Botões − / + para ajuste fino acima de 7 */}
+              <div style={{ display: "flex", gap: 4 }}>
+                {numEntradas > 1 && (
+                  <button onClick={() => ajustarEntradas(numEntradas - 1)} title="Remover última entrada" style={{
+                    width: 28, height: 28, borderRadius: 6,
+                    border: `1px solid ${G.border}`, background: G.surface2,
+                    color: G.textDim, fontWeight: 700, fontSize: 16, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>−</button>
+                )}
+                {numEntradas < MAX_ENTRADAS && (
+                  <button onClick={() => ajustarEntradas(numEntradas + 1)} title="Adicionar entrada" style={{
+                    width: 28, height: 28, borderRadius: 6,
+                    border: `1px solid ${G.accent}44`, background: "#22D3EE11",
+                    color: G.accent, fontWeight: 700, fontSize: 16, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>+</button>
+                )}
               </div>
             </div>
           )}
