@@ -194,8 +194,23 @@ export function calcLucroMinOp(op) {
     cenarios.push(gainOther);
   }
 
-  // Entradas independentes (múltiplas) contribuem individualmente
-  const cenariosInd = independente.map(e => calcRetorno(e));
+  // Entradas independentes (múltiplas): agrupar por (principal|secundário),
+  // somar dentro de cada grupo e tomar o menor grupo por resultado principal —
+  // mesma lógica usada por retornosPorResultado no branch sem exchange.
+  const gruposInd = new Map();
+  for (const e of independente) {
+    const pri = chaveResultado(e);
+    const sec = (e.multiplaDesc || "").trim().toLowerCase();
+    const k   = `${pri}|${sec}`;
+    gruposInd.set(k, (gruposInd.get(k) ?? 0) + calcRetorno(e));
+  }
+  const minGruposInd = new Map();
+  for (const [k, soma] of gruposInd) {
+    const pri = k.split("|")[0];
+    const cur = minGruposInd.get(pri);
+    minGruposInd.set(pri, cur === undefined ? soma : Math.min(cur, soma));
+  }
+  const cenariosInd = [...minGruposInd.values()];
 
   const todos = [...cenarios, ...cenariosInd];
   if (todos.length === 0) return cashback;
