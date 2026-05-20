@@ -14,6 +14,66 @@ import { ModalMovimento } from "./modals/ModalMovimento";
 // Usar para TODAS as comparações de "saldo negativo" — nunca comparar float < 0 diretamente.
 const centsOf = v => Math.round((Number(v) || 0) * 100);
 
+// ── Cálculo de pendentes da banca ────────────────────────────────────────────
+//
+// Varre todas as entradas pendentes e retorna:
+//   comprometido: capital real bloqueado (já deducido do saldo atual)
+//     normal/exchange_back → valor
+//     exchange_lay         → valor × (odd − 1)
+//     freebet/bonus        → 0 (stake não é dinheiro próprio)
+//
+//   potencial: retorno total se todas as entradas pendentes forem green
+//     normal         → odd × valor             (via calcRetorno)
+//     exchange_back  → valor + valor×(odd−1)×(1−comm)  (via calcRetorno)
+//     exchange_lay   → valor×(odd−1) + valor×(1−comm)  (responsabilidade + lucro)
+//     freebet/bonus  → odd×valor − valor        (via calcRetorno; stake não era real)
+//
+// ⚠️  Em operações com back + lay no mesmo evento apenas um lado vira green.
+//     O "potencial" é o cenário máximo (tudo green) — apenas indicativo.
+//
+function calcPendentesBanca(data) {
+  let comprometido = 0;
+  let potencial    = 0;
+
+  const processarEntrada = e => {
+    if (e.situacao !== "pendente") return;
+    const valor = parseFloat(e.valor) || 0;
+    const odd   = parseFloat(String(e.odd || "").replace(",", ".")) || 0;
+    const comm  = parseFloat(e.comissao) / 100 || 0;
+
+    // Capital comprometido (o que já saiu do saldo)
+    if (e.tipo === "exchange_lay") {
+      comprometido += valor * (odd - 1);
+      potencial    += valor * (odd - 1) + valor * (1 - comm); // responsabilidade + lucro
+    } else if (e.tipo === "freebet" || e.tipo === "bonus") {
+      // stake não era dinheiro real → comprometido = 0; potencial = lucro líquido
+      potencial += calcRetorno(e);
+    } else {
+      // normal / exchange_back
+      comprometido += valor;
+      potencial    += calcRetorno(e); // inclui stake devolvida + lucro
+    }
+  };
+
+  // Operações esportivas
+  (data.eventos || []).forEach(ev =>
+    (ev.operacoes || []).forEach(op =>
+      (op.entradas || []).forEach(processarEntrada)
+    )
+  );
+
+  // Apostas avulsas pendentes (normal simples sem cobertura)
+  (data.apostasAvulsas || []).forEach(a => {
+    if (a.situacao !== "pendente") return;
+    const valor = parseFloat(a.valor) || 0;
+    const odd   = parseFloat(String(a.odd || "").replace(",", ".")) || 0;
+    comprometido += valor;
+    potencial    += odd * valor;
+  });
+
+  return { comprometido, potencial };
+}
+
 export function TelaCasas({ data, setData }) {
   const [nomeCasa,     setNomeCasa]     = useState("");
   const [saldoInicial, setSaldoInicial] = useState("");
@@ -45,6 +105,9 @@ export function TelaCasas({ data, setData }) {
   const ativas     = (data.casas || []).filter(c => c.ativa);
   const arquivadas = (data.casas || []).filter(c => !c.ativa);
 
+  // Capital comprometido em entradas pendentes (deducido do saldo atual mas ainda por resolver)
+  const { comprometido: pendComprometido } = calcPendentesBanca(data);
+
   // ── Alerta de depósito pendente ────────────────────────────────────────────
   //
   // Regra única: saldo atual em centavos < 0.
@@ -63,6 +126,8 @@ export function TelaCasas({ data, setData }) {
 
   const alertas = ativas.filter(c => temDepPendente(c));
   const saldoTotal = ativas.reduce((s, c) => s + Math.max(0, calcSaldoCasa(c, data)), 0);
+  // "com pendentes" = saldo atual + capital comprometido (o que voltaria se tudo cancelado)
+  const saldoComPendentes = saldoTotal + pendComprometido;
   const casasFiltradas = ativas
     .filter(c => c.nome.toLowerCase().includes(filtro.toLowerCase()))
     .map(c => ({ c, saldo: calcSaldoCasa(c, data) }))
@@ -101,10 +166,30 @@ export function TelaCasas({ data, setData }) {
         </div>
       )}
 
-      {/* KPI total */}
-      <Card style={{ marginBottom: 16, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontSize: 12, color: G.textDim, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Saldo Total da Banca</div>
-        <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 26, fontWeight: 800, color: G.green }}>{fmt(saldoTotal)}</div>
+      {/* KPI total — duas colunas: saldo atual | em operações */}
+      <Card style={{ marginBottom: 16, padding: "12px 16px" }}>
+        <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+
+          {/* Saldo atual */}
+          <div style={{ flex: 1, textAlign: "center", padding: "2px 8px" }}>
+            <div style={{ fontSize: 10, color: G.textDim, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Saldo Atual</div>
+            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 26, fontWeight: 800, color: G.green, whiteSpace: "nowrap" }}>{fmt(saldoTotal)}</div>
+            {pendComprometido > 0 && (
+              <div style={{ fontSize: 11, color: G.textDim, marginTop: 3, whiteSpace: "nowrap" }}>
+                com pendentes: <span style={{ color: G.text, fontWeight: 600 }}>{fmt(saldoComPendentes)}</span>
+              </div>
+            )}
+          </div>
+
+          <div style={{ width: 1, background: G.border, alignSelf: "stretch", margin: "0 4px" }} />
+
+          {/* Em operações */}
+          <div style={{ flex: 1, textAlign: "center", padding: "2px 8px" }}>
+            <div style={{ fontSize: 10, color: G.textDim, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Em Operações</div>
+            <div style={{ fontFamily: "'Barlow Condensed'", fontSize: 26, fontWeight: 800, color: "#F59E0B", whiteSpace: "nowrap" }}>{fmt(pendComprometido)}</div>
+          </div>
+
+        </div>
       </Card>
 
       {/* Ações */}
