@@ -9,6 +9,10 @@ import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { ModalMovimento } from "./modals/ModalMovimento";
 
+// Tolerância de 1 centavo para evitar falso positivo por imprecisão de ponto flutuante.
+// Valores como -0.000001 ou diferenças de 0.000001 NÃO configuram pendência real.
+const EPS = 0.01;
+
 export function TelaCasas({ data, setData }) {
   const [nomeCasa,     setNomeCasa]     = useState("");
   const [saldoInicial, setSaldoInicial] = useState("");
@@ -71,11 +75,14 @@ export function TelaCasas({ data, setData }) {
       .filter(m => m.casaId === casa.id && m.tipo === "deposito")
       .reduce((s, m) => s + (parseFloat(m.valor) || 0), 0);
 
+    // Só considera pendente se a diferença for maior que EPS (1 centavo).
+    // Imprecisão de ponto flutuante (ex: 100.000000001 > 100) não configura pendência.
     const apostasNaoCobertasPorAporte =
-      (totalOps + totalAvulsas) > ((casa.saldoInicial || 0) + totalDepositos);
+      (totalOps + totalAvulsas) - ((casa.saldoInicial || 0) + totalDepositos) > EPS;
 
-    // Condição B ── saldo atual negativo (mesma fonte do card)
-    const saldoAtualNegativo = calcSaldoCasa(casa, data) < 0;
+    // Condição B ── saldo atual negativo (mesma fonte do card).
+    // Saldo zero ou resíduo decimal ínfimo (ex: -0.000001) não é pendência.
+    const saldoAtualNegativo = calcSaldoCasa(casa, data) < -EPS;
 
     return apostasNaoCobertasPorAporte || saldoAtualNegativo;
   }
@@ -139,7 +146,7 @@ export function TelaCasas({ data, setData }) {
           const saldo    = calcSaldoCasa(c, data);
           const movs     = (data.movimentos || []).filter(m => m.casaId === c.id);
           const aberta   = casaDetalhe === c.id;
-          const temAlerta = saldo < 0;
+          const temAlerta = saldo < -EPS;
 
           return (
             <Card key={c.id} style={{ padding: 0, overflow: "hidden", border: `1px solid ${temAlerta ? "#F8717133" : G.border}` }}>
