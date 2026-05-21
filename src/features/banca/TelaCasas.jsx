@@ -71,6 +71,17 @@ function calcPendentesBanca(data) {
     potencial    += odd * valor;
   });
 
+  // Proteções pendentes (mesmo tratamento de aposta normal)
+  (data.eventos || []).forEach(ev =>
+    (ev.protecoes || []).forEach(p => {
+      if (p.situacao !== "pendente") return;
+      const valor = parseFloat(p.valor) || 0;
+      const odd   = parseFloat(String(p.odd || "").replace(",", ".")) || 0;
+      comprometido += valor;
+      potencial    += odd * valor;
+    })
+  );
+
   return { comprometido, potencial };
 }
 

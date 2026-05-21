@@ -16,8 +16,11 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
 
   const lucroOps  = (evento.operacoes || []).reduce((s, op) => s + lucroEfetivoOp(op), 0);
   const lucroProts = (evento.protecoes || []).reduce((s, p) => {
-    if (p.situacao === "pendente") return s;
-    return s + lucroProtecao(p);
+    // Pendente → exibida como green no card: a proteção existe para cobrir o cenário
+    // ainda não resolvido, então seu lucro esperado já deve entrar no total do evento.
+    // O status real da proteção não é alterado — apenas o cálculo de exibição.
+    const pEfetiva = p.situacao === "pendente" ? { ...p, situacao: "green" } : p;
+    return s + lucroProtecao(pEfetiva);
   }, 0);
   const lucro = lucroOps + lucroProts;
 

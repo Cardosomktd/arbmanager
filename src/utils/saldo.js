@@ -55,6 +55,22 @@ export function calcSaldoCasa(casa, data) {
     )
   );
 
+  // Proteções (salvas em evento.protecoes — tipo sempre "normal")
+  //
+  //  pendente → stake deducida no lançamento (dinheiro real comprometido)
+  //  green    → stake devolvida + lucro = odd × valor
+  //  red      → stake perdida, já deducida — nada mais
+  (data.eventos || []).forEach(ev =>
+    (ev.protecoes || []).forEach(p => {
+      if (p.casa !== casa.id) return;
+      const valor = parseFloat(p.valor) || 0;
+      const odd   = parseFloat(String(p.odd || "").replace(",", ".")) || 0;
+      saldo -= valor;                                   // stake sai no lançamento
+      if (p.situacao === "green") saldo += odd * valor; // retorno bruto (inclui stake)
+      // red: stake perdida, já deducida — nada mais
+    })
+  );
+
   // Apostas avulsas
   (data.apostasAvulsas || []).filter(a => a.casa === casa.id).forEach(a => {
     saldo -= parseFloat(a.valor) || 0;
