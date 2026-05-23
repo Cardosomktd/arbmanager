@@ -8,6 +8,7 @@ const CORES = {
   gray:   { bg: "rgba(255,255,255,0.05)", color: G.textDim, border: "rgba(255,255,255,0.1)" },
   purple: { bg: "#8B5CF61A", color: G.purple,    border: "#8B5CF644" },
   orange: { bg: "#F973161A", color: "#F97316",   border: "#F9731644" },
+  pink:   { bg: "#EC48991A", color: "#EC4899",   border: "#EC489944" },
 };
 
 export function Badge({ cor, children }) {

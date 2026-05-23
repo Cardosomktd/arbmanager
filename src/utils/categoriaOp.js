@@ -10,6 +10,7 @@
  *   "procedimento_freebet" — gera freebet ao completar condição
  *   "extracao_freebet"     — consome freebet já gerada
  *   "duplo"                — chance de duplo, sem lucro mínimo garantido
+ *   "aumento_25"           — aumento de 25% (mesma lógica do duplo, categoria separada)
  */
 
 export const CATEGORIAS = {
@@ -36,6 +37,12 @@ export const CATEGORIAS = {
     emoji:  "🎲",
     cor:    "#8B5CF6",   // purple
     badge:  "purple",
+  },
+  aumento_25: {
+    label:  "Aumento de 25%",
+    emoji:  "📈",
+    cor:    "#EC4899",   // pink — distinto do duplo (purple)
+    badge:  "pink",
   },
   simples: {
     label:  "Aposta Simples",
@@ -69,6 +76,7 @@ export function resolveCategoria(op) {
   if (t === "procedimento_freebet") return "procedimento_freebet";
   if (t === "extracao_freebet")     return "extracao_freebet";
   if (t === "duplo")                return "duplo";
+  if (t === "aumento_25")           return "aumento_25";
 
   // Legado: tipoOp === "arbitragem" (ou ausente) — deriva pelos flags operacionais
   const temEntradaFB = (op?.entradas || []).some(e => e.tipo === "freebet");

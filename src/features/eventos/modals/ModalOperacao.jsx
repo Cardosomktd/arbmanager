@@ -21,6 +21,7 @@ const TIPO_OP_OPTS = [
   { value: "procedimento_freebet", ...CATEGORIAS.procedimento_freebet, corAtivo: "#fbbf2422", corText: "#fbbf24" },
   { value: "extracao_freebet",     ...CATEGORIAS.extracao_freebet,     corAtivo: "#34D39922", corText: "#34D399" },
   { value: "duplo",                ...CATEGORIAS.duplo,                corAtivo: "#8B5CF633", corText: "#A78BFA" },
+  { value: "aumento_25",           ...CATEGORIAS.aumento_25,           corAtivo: "#EC489922", corText: "#EC4899" },
   { value: "simples",              ...CATEGORIAS.simples,              corAtivo: "#60A5FA22", corText: "#60A5FA" },
   { value: "green_ou_anula",       ...CATEGORIAS.green_ou_anula,       corAtivo: "#F9731622", corText: "#F97316" },
 ];
@@ -34,6 +35,7 @@ const COR_ENTRADA = {
   procedimento_freebet: { borda: "#fbbf2444", label: "#fbbf24"  },
   extracao_freebet:     { borda: "#34D39944", label: "#34D399"  },
   duplo:                { borda: "#8B5CF644", label: "#A78BFA"  },
+  aumento_25:           { borda: "#EC489944", label: "#EC4899"  },
   simples:              { borda: "#60A5FA44", label: "#60A5FA"  },
   green_ou_anula:       { borda: "#F9731644", label: "#F97316"  },
 };
@@ -51,6 +53,10 @@ const BANNERS = {
   duplo: {
     bg:   "#8B5CF60d", borda: "#8B5CF633", cor: "#A78BFA",
     texto: "🎲 Chance de Duplo — cobertura de dois resultados. Sem lucro mínimo garantido.",
+  },
+  aumento_25: {
+    bg:   "#EC48990d", borda: "#EC489933", cor: "#EC4899",
+    texto: "📈 Aumento de 25% — cobertura de dois resultados. Sem lucro mínimo garantido.",
   },
   green_ou_anula: {
     bg:   "#F973160d", borda: "#F9731633", cor: "#F97316",
@@ -139,6 +145,9 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
   const [fbCondicao,  setFbCondicao]  = useState("qualquer");
   const [fbGatilhoId, setFbGatilhoId] = useState("");
   const [fbTipo,      setFbTipo]      = useState("freebet");
+  // fbExtras: freebets adicionais geradas na mesma operação (índice 1+)
+  // Cada item: { _id, gatilhoId, casa, valor, condicao, tipo }
+  const [fbExtras,    setFbExtras]    = useState([]);
   const [erro,        setErro]        = useState("");
 
   useEffect(() => {
@@ -156,14 +165,26 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         };
       }));
       setNumEntradas(editOp.entradas?.length || 1);
-      if (editOp.geraFreebet) {
-        setFbValor(String(editOp.geraFreebet.valor || ""));
-        setFbCondicao(editOp.geraFreebet.condicao || "qualquer");
-        setFbGatilhoId(editOp.geraFreebet.entradaGatilhoId || "");
-        setFbTipo(editOp.geraFreebet.tipoBeneficio || "freebet");
+      // Suporta novo formato (geraFreebets[]) e legado (geraFreebet)
+      const primaryFb = editOp?.geraFreebets?.[0] ?? editOp?.geraFreebet ?? null;
+      if (primaryFb) {
+        setFbValor(String(primaryFb.valor || ""));
+        setFbCondicao(primaryFb.condicao || "qualquer");
+        setFbGatilhoId(primaryFb.entradaGatilhoId || "");
+        setFbTipo(primaryFb.tipoBeneficio || "freebet");
       } else {
         setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
       }
+      // Carrega freebets extras (índice 1+ do array novo; legado não tem extras)
+      const allFbs = editOp?.geraFreebets ?? [];
+      setFbExtras(allFbs.slice(1).map(fb => ({
+        _id:       fb._id || uid(),
+        gatilhoId: fb.entradaGatilhoId || "",
+        casa:      fb.casa || "",
+        valor:     String(fb.valor || ""),
+        condicao:  fb.condicao || "qualquer",
+        tipo:      fb.tipoBeneficio || "freebet",
+      })));
     } else if (rascunhoCalc) {
       // Vindo da calculadora: pré-preenche odd e stake; os demais campos ficam em branco
       const n = rascunhoCalc.entradas.length;
@@ -177,12 +198,12 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         ...(r.tipo     && { tipo:     r.tipo     }),
         ...(r.comissao && { comissao: r.comissao }),
       })));
-      setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
+      setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet"); setFbExtras([]);
     } else {
       // Novo: nenhum tipo pré-selecionado — aguarda escolha do usuário
       setTipoOp(null);
       setNumEntradas(2); setEntradas([entradaVazia(), entradaVazia()]);
-      setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet");
+      setFbValor(""); setFbCondicao("qualquer"); setFbGatilhoId(""); setFbTipo("freebet"); setFbExtras([]);
     }
     setErro("");
   }, [open, editOp, rascunhoCalc]);
@@ -242,6 +263,26 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         retornoStr: next && e.odd && e.valor ? String(calcRetorno(e).toFixed(2)) : e.retornoStr,
       };
     }));
+  }
+
+  // ── Helpers para freebets extras ─────────────────────────────────────────────
+  function addExtra() {
+    setFbExtras(prev => [...prev, {
+      _id:       uid(),
+      gatilhoId: "",
+      casa:      "",
+      valor:     "",
+      condicao:  "qualquer",
+      tipo:      "freebet",
+    }]);
+  }
+
+  function removeExtra(id) {
+    setFbExtras(prev => prev.filter(ex => ex._id !== id));
+  }
+
+  function updateExtra(id, field, value) {
+    setFbExtras(prev => prev.map(ex => ex._id === id ? { ...ex, [field]: value } : ex));
   }
 
   function salvar() {
@@ -386,25 +427,50 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
       return entry;
     });
 
+    // ID estável da operação — necessário para derivar o _id da primeira freebet
+    const opId = editOp?.id || uid();
+
     onSalvar({
-      id: editOp?.id || uid(),
+      id: opId,
       tipoOp,
       entradas: entradasFinal,
-      // geraFreebet só é salvo para procedimento_freebet
-      geraFreebet: tipoOp === "procedimento_freebet"
-        ? {
-            entradaGatilhoId: fbGatilhoId || null,
-            // Quando há gatilho: deriva a casa da entrada selecionada.
-            // Quando não há gatilho (ops legado ou não preenchido): preserva a casa
-            // original do editOp para não deslocar o auto-freebet em getFreebets().
-            casa: fbGatilhoId
-              ? (entradasFinal.find(e => e.id === fbGatilhoId)?.casa || "")
-              : (editOp?.geraFreebet?.casa ?? ""),
-            valor: parseFloat(fbValor) || 0,
-            condicao: fbCondicao,
-            tipoBeneficio: fbTipo,
-            prazo: editOp?.geraFreebet?.prazo ?? "",   // preserva prazo existente; "" em ops novas
-          }
+      // geraFreebet: null — campo legado; substituído por geraFreebets[] abaixo.
+      // Ops antigas que ainda têm geraFreebet continuam lidas por getFreebets() via
+      // o caminho legado; ao editar, são migradas automaticamente para geraFreebets[].
+      geraFreebet: null,
+      // geraFreebets[]: array normalizado com 1 ou mais freebets geradas.
+      // Índice 0: primeira freebet (usa opId como _id → auto-ID compat. com legado).
+      // Índice 1+: freebets extras adicionadas pelo usuário.
+      geraFreebets: tipoOp === "procedimento_freebet"
+        ? [
+            {
+              // _id estável: preserva id existente em edição; novo = opId (compat. legado)
+              _id: editOp?.geraFreebets?.[0]?._id ?? opId,
+              entradaGatilhoId: fbGatilhoId || null,
+              // Casa: derivada do gatilho ou preservada do dado anterior
+              casa: fbGatilhoId
+                ? (entradasFinal.find(e => e.id === fbGatilhoId)?.casa || "")
+                : (editOp?.geraFreebets?.[0]?.casa ?? editOp?.geraFreebet?.casa ?? ""),
+              valor: parseFloat(fbValor) || 0,
+              condicao: fbCondicao,
+              tipoBeneficio: fbTipo,
+              // Preserva prazo de edições anteriores; "" em ops novas
+              prazo: editOp?.geraFreebets?.[0]?.prazo ?? editOp?.geraFreebet?.prazo ?? "",
+            },
+            // Freebets extras (índice 1+)
+            ...fbExtras.map(ex => ({
+              _id:             ex._id,
+              entradaGatilhoId: ex.gatilhoId || null,
+              // Casa: derivada do gatilho ou selecionada manualmente
+              casa: ex.gatilhoId
+                ? (entradasFinal.find(e => e.id === ex.gatilhoId)?.casa || "")
+                : ex.casa || "",
+              valor:         parseFloat(ex.valor) || 0,
+              condicao:      ex.condicao,
+              tipoBeneficio: ex.tipo,
+              prazo:         "",
+            })),
+          ]
         : null,
       criadoEm: editOp?.criadoEm || new Date().toISOString(),
     });
@@ -991,84 +1057,176 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
             })}
           </div>
 
-          {/* ── Configuração da Freebet (apenas para Proc. Freebet) ─────────── */}
-          {tipoOp === "procedimento_freebet" && (
-            <div style={{ borderTop: `1px solid ${G.border}`, paddingTop: 16, marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-                <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>
-                  Benefício Gerado
-                </div>
-                {/* Tipo do benefício: Free Bet / Bônus / Cashback */}
-                <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 6, padding: 2 }}>
-                  {[
-                    { value: "freebet",  label: "🎁 Free Bet" },
-                    { value: "bonus",    label: "🎰 Bônus"    },
-                    { value: "cashback", label: "💰 Cashback" },
-                  ].map(t => (
-                    <button key={t.value} onClick={() => setFbTipo(t.value)} style={{
-                      padding: "4px 12px", borderRadius: 5, border: "none", cursor: "pointer",
-                      background: fbTipo === t.value ? "#fbbf2422" : "transparent",
-                      color: fbTipo === t.value ? "#fbbf24" : G.textDim,
-                      fontSize: 12, fontWeight: 600, 
-                      transition: "all 0.15s",
-                    }}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* ── Benefício(s) Gerado(s) — apenas para Proc. Freebet ──────────── */}
+          {tipoOp === "procedimento_freebet" && (() => {
+            // Reutilizável: renderiza os campos de uma freebet gerada (primária ou extra)
+            const TIPO_OPTS = [
+              { value: "freebet",  label: "🎁 Free Bet" },
+              { value: "bonus",    label: "🎰 Bônus"    },
+              { value: "cashback", label: "💰 Cashback" },
+            ];
 
-                {/* Entrada gatilho */}
-                <div>
-                  <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", display: "block", marginBottom: 4 }}>
-                    Entrada gatilho <span style={{ color: G.red }}>*</span>
-                  </label>
-                  {entradasElegiveis.length === 0 ? (
-                    <div style={{ fontSize: 12, color: G.textMuted, padding: "8px 12px", background: G.surface2, borderRadius: 6, border: `1px solid ${G.border}` }}>
-                      Preencha casa e resultado em ao menos uma entrada para selecionar o gatilho.
+            // Seletor de tipo: Free Bet / Bônus / Cashback
+            const TipoSwitcher = ({ value, onChange }) => (
+              <div style={{ display: "flex", gap: 2, background: G.surface, borderRadius: 6, padding: 2 }}>
+                {TIPO_OPTS.map(t => (
+                  <button key={t.value} onClick={() => onChange(t.value)} style={{
+                    padding: "3px 10px", borderRadius: 5, border: "none", cursor: "pointer",
+                    background: value === t.value ? "#fbbf2422" : "transparent",
+                    color: value === t.value ? "#fbbf24" : G.textDim,
+                    fontSize: 11, fontWeight: 600, transition: "all 0.15s",
+                  }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            );
+
+            // Seletor de entrada gatilho (compartilhado entre primária e extras)
+            const GatilhoSelect = ({ value, onChange, semOpcaoVazia = false }) => (
+              entradasElegiveis.length === 0 ? (
+                <div style={{ fontSize: 12, color: G.textMuted, padding: "8px 12px", background: G.surface2, borderRadius: 6, border: `1px solid ${G.border}` }}>
+                  Preencha casa e resultado em ao menos uma entrada para selecionar o gatilho.
+                </div>
+              ) : (
+                <select value={value} onChange={ev => onChange(ev.target.value)}
+                  style={{ background: G.surface2, border: `1px solid ${value ? "#fbbf24" : G.border}`, borderRadius: 6, padding: "8px 10px", color: value ? G.text : G.textDim, fontSize: 13, width: "100%", outline: "none", appearance: "none" }}>
+                  {!semOpcaoVazia && <option value="">— selecionar entrada —</option>}
+                  {semOpcaoVazia && <option value="">— sem gatilho (selecionar casa abaixo) —</option>}
+                  {entradasElegiveis.map(e => {
+                    const nomeCasa = getCasaNome(casasAtivas, e.casa);
+                    const desc     = e.entrada === "outro" ? (e.entradaCustom || "?") : e.entrada;
+                    const odd      = e.odd ? ` @${fmtOdd(e.odd)}` : "";
+                    const valor    = e.valor ? ` · R$${e.valor}` : "";
+                    return (
+                      <option key={e.id} value={e.id}>{nomeCasa} · {desc}{odd}{valor}</option>
+                    );
+                  })}
+                </select>
+              )
+            );
+
+            // Dica "será creditado em Casa X"
+            const CreditoHint = ({ gatilhoId, tipo }) => {
+              const ent = entradasElegiveis.find(e => e.id === gatilhoId);
+              if (!ent) return null;
+              return (
+                <div style={{ fontSize: 11, color: G.textDim, marginTop: 4 }}>
+                  {{ freebet: "A free bet", bonus: "O bônus", cashback: "O cashback" }[tipo] ?? "O benefício"} será creditado em <strong style={{ color: G.text }}>{getCasaNome(casasAtivas, ent.casa)}</strong>.
+                </div>
+              );
+            };
+
+            return (
+              <div style={{ borderTop: `1px solid ${G.border}`, paddingTop: 16, marginBottom: 20 }}>
+                {/* Cabeçalho da seção */}
+                <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>
+                  Benefício(s) Gerado(s)
+                </div>
+
+                {/* ── Freebet gerada 1 (primária) ─────────────────────────────── */}
+                <div style={{ background: G.surface2, border: "1px solid #fbbf2422", borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, letterSpacing: 0.5 }}>
+                      FREEBET GERADA 1
                     </div>
-                  ) : (
-                    <>
-                      <select value={fbGatilhoId} onChange={e => setFbGatilhoId(e.target.value)}
-                        style={{ background: G.surface2, border: `1px solid ${fbGatilhoId ? "#fbbf24" : G.border}`, borderRadius: 6, padding: "8px 10px", color: fbGatilhoId ? G.text : G.textDim, fontSize: 13, width: "100%", outline: "none", appearance: "none" }}>
-                        <option value="">— selecionar entrada —</option>
-                        {entradasElegiveis.map(e => {
-                          const nomeCasa = getCasaNome(casasAtivas, e.casa);
-                          const desc     = e.entrada === "outro" ? (e.entradaCustom || "?") : e.entrada;
-                          const odd      = e.odd ? ` @${fmtOdd(e.odd)}` : "";
-                          const valor    = e.valor ? ` · R$${e.valor}` : "";
-                          return (
-                            <option key={e.id} value={e.id}>
-                              {nomeCasa} · {desc}{odd}{valor}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      {fbGatilhoId && (() => {
-                        const ent = entradasElegiveis.find(e => e.id === fbGatilhoId);
-                        return ent ? (
-                          <div style={{ fontSize: 11, color: G.textDim, marginTop: 4 }}>
-                            {{ freebet: "A free bet", bonus: "O bônus", cashback: "O cashback" }[fbTipo] ?? "O benefício"} será creditado em <strong style={{ color: G.text }}>{getCasaNome(casasAtivas, ent.casa)}</strong>.
-                          </div>
-                        ) : null;
-                      })()}
-                    </>
-                  )}
+                    <TipoSwitcher value={fbTipo} onChange={setFbTipo} />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {/* Entrada gatilho */}
+                    <div>
+                      <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                        Entrada gatilho <span style={{ color: G.red }}>*</span>
+                      </label>
+                      <GatilhoSelect value={fbGatilhoId} onChange={setFbGatilhoId} />
+                      <CreditoHint gatilhoId={fbGatilhoId} tipo={fbTipo} />
+                    </div>
+
+                    {/* Valor e condição */}
+                    <Input
+                      label={{ freebet: "Valor da Free Bet", bonus: "Valor do Bônus", cashback: "Valor do Cashback" }[fbTipo] ?? "Valor"}
+                      value={fbValor} onChange={setFbValor} type="number" placeholder="0,00"
+                    />
+                    <Input label="Condição" value={fbCondicao} onChange={setFbCondicao} options={CONDICAO_OPTS} />
+                  </div>
                 </div>
 
-                {/* Valor e condição */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <Input
-                    label={{ freebet: "Valor da Free Bet", bonus: "Valor do Bônus", cashback: "Valor do Cashback" }[fbTipo] ?? "Valor"}
-                    value={fbValor} onChange={setFbValor} type="number" placeholder="0,00"
-                  />
-                  <Input label="Condição" value={fbCondicao} onChange={setFbCondicao} options={CONDICAO_OPTS} />
-                </div>
+                {/* ── Freebets extras (índice 1+) ─────────────────────────────── */}
+                {fbExtras.map((ex, xi) => (
+                  <div key={ex._id} style={{ background: G.surface2, border: "1px solid #fbbf2422", borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
+                    {/* Cabeçalho: label + tipo + remover */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 700, letterSpacing: 0.5 }}>
+                        FREEBET GERADA {xi + 2}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <TipoSwitcher value={ex.tipo} onChange={v => updateExtra(ex._id, "tipo", v)} />
+                        <button
+                          onClick={() => removeExtra(ex._id)}
+                          title="Remover esta freebet"
+                          style={{
+                            background: "none", border: `1px solid ${G.border}`,
+                            borderRadius: 5, padding: "3px 8px", cursor: "pointer",
+                            color: G.textDim, fontSize: 13,
+                          }}
+                        >🗑️</button>
+                      </div>
+                    </div>
 
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {/* Entrada gatilho — opcional para extras */}
+                      <div>
+                        <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                          Entrada gatilho <span style={{ fontSize: 10, color: G.textMuted, fontWeight: 400 }}>(opcional)</span>
+                        </label>
+                        <GatilhoSelect value={ex.gatilhoId} onChange={v => updateExtra(ex._id, "gatilhoId", v)} semOpcaoVazia />
+                        {ex.gatilhoId
+                          ? <CreditoHint gatilhoId={ex.gatilhoId} tipo={ex.tipo} />
+                          : (
+                            /* Sem gatilho: o usuário seleciona a casa manualmente */
+                            <div style={{ marginTop: 8 }}>
+                              <label style={{ fontSize: 11, color: G.textDim, fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase", display: "block", marginBottom: 4 }}>
+                                Casa <span style={{ color: G.red }}>*</span>
+                              </label>
+                              <CasaSelect casas={casasAtivas} value={ex.casa} onChange={v => updateExtra(ex._id, "casa", v)} required />
+                            </div>
+                          )
+                        }
+                      </div>
+
+                      {/* Valor */}
+                      <Input
+                        label={{ freebet: "Valor da Free Bet", bonus: "Valor do Bônus", cashback: "Valor do Cashback" }[ex.tipo] ?? "Valor"}
+                        value={ex.valor} onChange={v => updateExtra(ex._id, "valor", v)} type="number" placeholder="0,00"
+                      />
+                      {/* Condição */}
+                      <Input
+                        label="Condição"
+                        value={ex.condicao}
+                        onChange={v => updateExtra(ex._id, "condicao", v)}
+                        options={CONDICAO_OPTS}
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                {/* ── Botão adicionar freebet extra ───────────────────────────── */}
+                <button
+                  onClick={addExtra}
+                  style={{
+                    width: "100%", padding: "8px 14px",
+                    background: "#fbbf2408", border: "1px dashed #fbbf2444",
+                    borderRadius: 8, cursor: "pointer",
+                    color: "#fbbf24", fontSize: 13, fontWeight: 600,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Adicionar outra freebet
+                </button>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </>
       )}
 

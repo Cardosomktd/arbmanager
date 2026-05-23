@@ -10,11 +10,16 @@ export function isBet365Casa(casas, casaId) {
 }
 
 /**
- * Calcula se a condição de geraFreebet foi atingida.
- * Mesma lógica do fbAtingida em ModalDetalhesMes — fonte única de verdade.
+ * Calcula se a condição de uma freebet gerada foi atingida.
+ *
+ * Assinatura atualizada: aceita um `fbItem` explícito (item de geraFreebets[])
+ * ou faz fallback para op.geraFreebet (retrocompatibilidade com ops legado e
+ * com chamadas externas que ainda passam apenas `op`).
  */
-export function computeGanhou(op) {
-  const { condicao, entradaGatilhoId } = op.geraFreebet;
+export function computeGanhou(op, fbItem) {
+  const fb = fbItem ?? op.geraFreebet;
+  if (!fb) return false;
+  const { condicao, entradaGatilhoId } = fb;
   const ents = op.entradas || [];
 
   if (entradaGatilhoId) {
@@ -42,79 +47,144 @@ export function computeGanhou(op) {
  *  - Freebets manuais (data.freebets)
  *  - Freebets geradas por ops (tipo "gerada") — casas normais
  *  - Freebets Bet365 geradas por ops → MERGEADAS na carteira acumulada
- *    em vez de aparecerem como entradas individuais.
  *
- * Cada acumulada Bet365 que recebe contribuições auto-geradas ganha a
- * propriedade `_autoContrib: [{ id, valor }]` para rastrear o consumo
- * desses IDs quando a carteira for usada em salvarOp.
+ * Suporta dois formatos de operação:
+ *  - Legado:  op.geraFreebet  (objeto único)
+ *  - Novo:    op.geraFreebets (array — múltiplas freebets por operação)
+ *
+ * IDs automáticos:
+ *  - Legado:   "auto_" + op.id
+ *  - Novo:     "auto_" + fbItem._id  (primeiro item usa op.id como _id → mesmo ID legado)
  */
 export function getFreebets(data) {
   const casas      = data.casas      || [];
   const autoUsadas = data.freebetsAutoUsadas || [];
 
-  // Clona cada objeto de freebet manual para poder estender sem mutar d.freebets
+  // Clona cada objeto de freebet manual para poder estender sem mutar data.freebets
   const todas = (data.freebets || []).map(f => ({ ...f }));
 
   (data.eventos || []).forEach(ev => {
     (ev.operacoes || []).forEach(op => {
-      if (!op.geraFreebet) return;
-      if (op.geraFreebet.tipoBeneficio === "cashback") return;
 
-      const { casa, valor, prazo } = op.geraFreebet;
-      const autoId = "auto_" + op.id;
+      // ── Formato LEGADO: op.geraFreebet (objeto único) ──────────────────────
+      // Caminho completamente inalterado para garantir que ops antigas continuem
+      // funcionando exatamente como antes.
+      if (!op.geraFreebets && op.geraFreebet) {
+        if (op.geraFreebet.tipoBeneficio === "cashback") return;
 
-      // Se já foi "materializada" manualmente em d.freebets, não duplicar
-      if (todas.find(f => f.origemOpId === op.id)) return;
+        const { casa, valor, prazo } = op.geraFreebet;
+        const autoId = "auto_" + op.id;
 
-      if (!computeGanhou(op)) return;
+        // Se já foi materializada manualmente, não duplicar
+        if (todas.find(f => f.origemOpId === op.id)) return;
 
-      const isUsed = autoUsadas.includes(autoId);
+        if (!computeGanhou(op)) return;
 
-      if (isBet365Casa(casas, casa)) {
-        // ── Bet365: contribui para a carteira acumulada ──────────────────────
-        // Auto-freebets usadas (in autoUsadas) já foram consumidas — não re-adicionar.
-        if (!isUsed) {
-          const acumIdx = todas.findIndex(f => f.tipo === "acumulada" && f.casaId === casa);
-          if (acumIdx >= 0) {
-            // Acumulada manual existente: incrementa saldo e registra contribuição
-            todas[acumIdx] = {
-              ...todas[acumIdx],
-              saldo: (todas[acumIdx].saldo ?? todas[acumIdx].valor ?? 0) + valor,
-              _autoContrib: [
-                ...(todas[acumIdx]._autoContrib || []),
-                { id: autoId, valor },
-              ],
-            };
-          } else {
-            // Sem acumulada manual: cria uma sintética para Bet365
-            todas.push({
-              id:           "bet365_auto_" + casa,
-              casaId:       casa,
-              valor,
-              saldo:        valor,
-              prazo,
-              tipo:         "acumulada",
-              usada:        false,
-              _autoContrib: [{ id: autoId, valor }],
-              criadoEm:     new Date().toISOString(),
-              obs:          `Gerada pela operação: ${ev.nome}`,
-            });
+        const isUsed = autoUsadas.includes(autoId);
+
+        if (isBet365Casa(casas, casa)) {
+          if (!isUsed) {
+            const acumIdx = todas.findIndex(f => f.tipo === "acumulada" && f.casaId === casa);
+            if (acumIdx >= 0) {
+              todas[acumIdx] = {
+                ...todas[acumIdx],
+                saldo: (todas[acumIdx].saldo ?? todas[acumIdx].valor ?? 0) + valor,
+                _autoContrib: [
+                  ...(todas[acumIdx]._autoContrib || []),
+                  { id: autoId, valor },
+                ],
+              };
+            } else {
+              todas.push({
+                id:           "bet365_auto_" + casa,
+                casaId:       casa,
+                valor,
+                saldo:        valor,
+                prazo,
+                tipo:         "acumulada",
+                usada:        false,
+                _autoContrib: [{ id: autoId, valor }],
+                criadoEm:     new Date().toISOString(),
+                obs:          `Gerada pela operação: ${ev.nome}`,
+              });
+            }
           }
+        } else {
+          todas.push({
+            id:         autoId,
+            origemOpId: op.id,
+            casaId:     casa,
+            valor,
+            prazo,
+            tipo:       "gerada",
+            usada:      isUsed,
+            criadoEm:   new Date().toISOString(),
+            obs:        `Gerada pela operação: ${ev.nome}`,
+          });
         }
-      } else {
-        // ── Outras casas: entrada individual (comportamento original) ────────
-        todas.push({
-          id:         autoId,
-          origemOpId: op.id,
-          casaId:     casa,
-          valor,
-          prazo,
-          tipo:       "gerada",
-          usada:      isUsed,
-          criadoEm:   new Date().toISOString(),
-          obs:        `Gerada pela operação: ${ev.nome}`,
-        });
+        return; // legado processado — pula o bloco novo
       }
+
+      // ── Formato NOVO: op.geraFreebets[] (array, múltiplas por op) ──────────
+      if (!op.geraFreebets?.length) return;
+
+      op.geraFreebets.forEach(fbItem => {
+        if (fbItem.tipoBeneficio === "cashback") return;
+
+        const { casa, valor, prazo, _id } = fbItem;
+        // Primeiro item usa op.id como _id → "auto_" + op.id (mesmo ID do legado)
+        const autoId = "auto_" + (_id ?? op.id);
+
+        // Se já existe uma entrada com este autoId (materialização manual ou prévia), pular
+        if (todas.find(f => f.id === autoId)) return;
+
+        if (!computeGanhou(op, fbItem)) return;
+
+        const isUsed = autoUsadas.includes(autoId);
+
+        if (isBet365Casa(casas, casa)) {
+          // Bet365: agrega na carteira acumulada
+          if (!isUsed) {
+            const acumIdx = todas.findIndex(f => f.tipo === "acumulada" && f.casaId === casa);
+            if (acumIdx >= 0) {
+              todas[acumIdx] = {
+                ...todas[acumIdx],
+                saldo: (todas[acumIdx].saldo ?? todas[acumIdx].valor ?? 0) + valor,
+                _autoContrib: [
+                  ...(todas[acumIdx]._autoContrib || []),
+                  { id: autoId, valor },
+                ],
+              };
+            } else {
+              todas.push({
+                id:           "bet365_auto_" + casa,
+                casaId:       casa,
+                valor,
+                saldo:        valor,
+                prazo,
+                tipo:         "acumulada",
+                usada:        false,
+                _autoContrib: [{ id: autoId, valor }],
+                criadoEm:     new Date().toISOString(),
+                obs:          `Gerada pela operação: ${ev.nome}`,
+              });
+            }
+          }
+        } else {
+          // Casa normal: freebet individual
+          todas.push({
+            id:         autoId,
+            origemOpId: op.id,
+            casaId:     casa,
+            valor,
+            prazo,
+            tipo:       "gerada",
+            usada:      isUsed,
+            criadoEm:   new Date().toISOString(),
+            obs:        `Gerada pela operação: ${ev.nome}`,
+          });
+        }
+      });
     });
   });
 
