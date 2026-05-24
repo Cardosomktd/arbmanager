@@ -9,7 +9,7 @@ import { lucroProtecao } from "../../utils/lucroProtecao";
 import { Card } from "../../components/ui/Card";
 import { ModalDetalhesMes }  from "./modals/ModalDetalhesMes";
 import { ModalDetalhesDias } from "./modals/ModalDetalhesDias";
-import { calcProgressoBet365 } from "../../utils/calcProgressoBet365";
+import { calcProgressoBet365, getWeekRangeLocal } from "../../utils/calcProgressoBet365";
 
 // onOpenCalc: callback para abrir o ModalCalculadora global (gerenciado em App.jsx)
 export function TelaDashboard({ data, setData, onOpenCalc }) {
@@ -94,6 +94,9 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
     .sort((a, b) => new Date(b.op.criadoEm || 0) - new Date(a.op.criadoEm || 0));
 
   const progressoBet365 = calcProgressoBet365(data);
+  const { start: semanaStart, end: semanaEnd } = getWeekRangeLocal();
+  const fmtDia = d => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const semanaLabel = `${fmtDia(semanaStart)} – ${fmtDia(semanaEnd)}`;
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -227,8 +230,13 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
       {/* Progresso semanal Bet365 */}
       {progressoBet365.length > 0 && (
         <Card style={{ marginBottom: 20, border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
-          <div style={{ fontSize: 10, color: G.textMuted, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>
-            🎯 Bet365 — Progresso Semanal
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: G.textMuted, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>
+              🎯 Bet365 — Progresso Semanal
+            </div>
+            <div style={{ fontSize: 10, color: G.textMuted }}>
+              {semanaLabel}
+            </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {progressoBet365.map(p => (

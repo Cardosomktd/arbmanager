@@ -4,18 +4,26 @@ import { isBet365Casa   } from "./freebets";
 const META_SEMANAL = 1500;
 
 /**
- * Retorna segunda-feira e domingo da semana atual, em hora local.
- * Usa somente o construtor Date(year, month, day) — sem strings ISO —
- * para evitar qualquer deslocamento de timezone.
+ * Retorna início (segunda 00:00) e fim (domingo 23:59:59.999) da semana atual,
+ * em hora local. Usa setDate/setHours para evitar qualquer deslocamento de timezone.
+ *
+ * @returns {{ start: Date, end: Date }}
  */
-function getSemanaAtual() {
-  const hoje = new Date();
-  const dow  = hoje.getDay(); // 0 = domingo, 1 = segunda … 6 = sábado
-  // Quantos dias se passaram desde segunda: domingo → 6, segunda → 0, etc.
-  const diasDesdeSegunda = dow === 0 ? 6 : dow - 1;
-  const segunda = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - diasDesdeSegunda);
-  const domingo = new Date(segunda.getFullYear(), segunda.getMonth(), segunda.getDate() + 6, 23, 59, 59, 999);
-  return { segunda, domingo };
+export function getWeekRangeLocal() {
+  const now = new Date();
+
+  const day = now.getDay(); // 0 = domingo, 1 = segunda … 6 = sábado
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+
+  const start = new Date(now);
+  start.setDate(now.getDate() + diffToMonday);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
 }
 
 /**
@@ -47,12 +55,12 @@ export function calcProgressoBet365(data) {
   // Mapa { casaId → total apostado no período }
   const totais = Object.fromEntries(casasBet365.map(c => [c.id, 0]));
 
-  const { segunda, domingo } = getSemanaAtual();
+  const { start, end } = getWeekRangeLocal();
 
   (data.eventos || []).forEach(ev => {
     // Filtra eventos fora da semana atual — usa parseDateLocal para evitar timezone shift
     const dataEv = parseDateLocal(ev.data);
-    if (dataEv < segunda || dataEv > domingo) return;
+    if (dataEv < start || dataEv > end) return;
 
     (ev.operacoes || []).forEach(op => {
       (op.entradas || []).forEach(e => {
