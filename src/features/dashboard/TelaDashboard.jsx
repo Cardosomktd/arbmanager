@@ -9,6 +9,7 @@ import { lucroProtecao } from "../../utils/lucroProtecao";
 import { Card } from "../../components/ui/Card";
 import { ModalDetalhesMes }  from "./modals/ModalDetalhesMes";
 import { ModalDetalhesDias } from "./modals/ModalDetalhesDias";
+import { calcProgressoBet365 } from "../../utils/calcProgressoBet365";
 
 // onOpenCalc: callback para abrir o ModalCalculadora global (gerenciado em App.jsx)
 export function TelaDashboard({ data, setData, onOpenCalc }) {
@@ -91,6 +92,8 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
   const ultimasOps = todosEventos
     .flatMap(ev => (ev.operacoes || []).map(op => ({ op, ev })))
     .sort((a, b) => new Date(b.op.criadoEm || 0) - new Date(a.op.criadoEm || 0));
+
+  const progressoBet365 = calcProgressoBet365(data);
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -220,6 +223,57 @@ export function TelaDashboard({ data, setData, onOpenCalc }) {
           </div>
         );
       })()}
+
+      {/* Progresso semanal Bet365 */}
+      {progressoBet365.length > 0 && (
+        <Card style={{ marginBottom: 20, border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
+          <div style={{ fontSize: 10, color: G.textMuted, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>
+            🎯 Bet365 — Progresso Semanal
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {progressoBet365.map(p => (
+              <div key={p.casaId}>
+                {/* Titular + valores */}
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: G.text }}>
+                      {p.titular || p.casaNome}
+                    </span>
+                    {p.titular && (
+                      <span style={{ fontSize: 10, color: G.textMuted }}>{p.casaNome}</span>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontFamily: "'Barlow Condensed'", fontSize: 16, fontWeight: 700, color: p.percentual >= 100 ? G.green : G.text }}>
+                      {fmt(p.total)}
+                    </span>
+                    <span style={{ fontSize: 11, color: G.textMuted }}> / {fmt(p.meta)}</span>
+                  </div>
+                </div>
+                {/* Barra de progresso */}
+                <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${p.percentual}%`,
+                    background: p.percentual >= 100
+                      ? "linear-gradient(to right, #047857, #34D399)"
+                      : "linear-gradient(to right, #1d4ed8, #22D3EE)",
+                    borderRadius: 4,
+                    transition: "width 0.4s ease",
+                  }} />
+                </div>
+                {/* Faltam / Concluído */}
+                <div style={{ marginTop: 4, fontSize: 10, color: G.textMuted, textAlign: "right" }}>
+                  {p.percentual >= 100
+                    ? <span style={{ color: G.green, fontWeight: 600 }}>✅ Meta atingida! +R$ 100 freebet</span>
+                    : <>Faltam <span style={{ color: G.text, fontWeight: 600 }}>{fmt(p.faltam)}</span> · {p.percentual.toFixed(0)}%</>
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Últimas operações */}
       <Card style={{ border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
