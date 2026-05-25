@@ -1,6 +1,30 @@
 import { calcRetorno } from "./calculos";
 import { lucroCassino } from "./lucroCassino";
 
+/**
+ * Verifica se a condição de um item de cashback/freebet foi atingida,
+ * dado o conjunto de entradas da operação.
+ *
+ * Espelha a lógica de `condicaoAtingida` em calculos.js mas aceita
+ * qualquer fbItem (suporta tanto geraFreebet legado quanto geraFreebets[]).
+ */
+function cashbackAtingido(fbItem, ents) {
+  const { condicao, entradaGatilhoId } = fbItem;
+  if (entradaGatilhoId) {
+    const g = ents.find(e => e.id === entradaGatilhoId);
+    if (!g || g.situacao === "pendente") return false;
+    if (condicao === "qualquer") return true;
+    return condicao === g.situacao;
+  }
+  if (!ents.every(e => e.situacao !== "pendente")) return false;
+  const temGreen = ents.some(e => e.situacao === "green");
+  const temRed   = ents.some(e => e.situacao === "red");
+  if (condicao === "qualquer") return true;
+  if (condicao === "green")   return temGreen;
+  if (condicao === "red")     return temRed && !temGreen;
+  return false;
+}
+
 export function calcSaldoCasa(casa, data) {
   let saldo = casa.saldoInicial || 0;
 
@@ -88,6 +112,34 @@ export function calcSaldoCasa(casa, data) {
   (data.cassinos || [])
     .filter(c => c.casa === casa.id)
     .forEach(c => { saldo += lucroCassino(c); });
+
+  // Cashback: crédito em dinheiro real gerado por operações de "Proc. Freebet"
+  //   quando tipoBeneficio === "cashback" e a condição (gatilho/situação) foi atingida.
+  //
+  //   Suporta ambos os formatos de armazenamento:
+  //     - Legado:  op.geraFreebet  (objeto único)
+  //     - Novo:    op.geraFreebets (array; pode ter múltiplos cashbacks por operação)
+  //
+  //   Prioridade: se op.geraFreebets existe e tem itens → usa ele (formato novo).
+  //               Caso contrário → usa op.geraFreebet como array unitário (legado).
+  //   Isso garante que o mesmo cashback não seja contado duas vezes quando ambos
+  //   os campos coexistirem durante uma migração parcial.
+  (data.eventos || []).forEach(ev =>
+    (ev.operacoes || []).forEach(op => {
+      const ents  = op.entradas || [];
+      // Normaliza: novo formato tem prioridade sobre legado
+      const itens = op.geraFreebets?.length
+        ? op.geraFreebets
+        : op.geraFreebet ? [op.geraFreebet] : [];
+
+      itens.forEach(fb => {
+        if (fb.tipoBeneficio !== "cashback") return; // freebet/bônus: não afeta saldo em dinheiro
+        if (fb.casa !== casa.id)             return; // só a casa indicada recebe o crédito
+        if (!cashbackAtingido(fb, ents))     return; // condição ainda não foi atingida
+        saldo += parseFloat(fb.valor) || 0;
+      });
+    })
+  );
 
   return saldo;
 }
