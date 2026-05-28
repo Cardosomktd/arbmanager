@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { G } from "../../../constants/colors";
-import { fmtDate } from "../../../utils/format";
+import { fmtDate, normalizeSearch } from "../../../utils/format";
 import { statusEvento } from "../../../utils/status";
 import { Modal } from "../../../components/ui/Modal";
 import { Btn } from "../../../components/ui/Btn";
@@ -37,7 +37,7 @@ export function ModalSelecionarEvento({ open, onClose, eventos, onSelecionarEven
   const lista = filtroStatus === "pendentes" ? pendentes : concluidos;
 
   const filtrados = busca.trim()
-    ? lista.filter(ev => ev.nome.toLowerCase().includes(busca.trim().toLowerCase()))
+    ? lista.filter(ev => normalizeSearch(ev.nome).includes(normalizeSearch(busca.trim())))
     : lista;
 
   // Pendentes: mais próximos primeiro (asc). Concluídos: mais recentes primeiro (desc).

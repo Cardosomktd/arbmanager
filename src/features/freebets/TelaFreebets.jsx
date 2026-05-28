@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
-import { fmt, getCasaNome } from "../../utils/format";
+import { fmt, getCasaNome, normalizeSearch } from "../../utils/format";
 import { getFreebets } from "../../utils/freebets";
 import { Badge } from "../../components/ui/Badge";
 import { Btn } from "../../components/ui/Btn";
@@ -155,7 +155,7 @@ export function TelaFreebets({ data, setData }) {
   const vencidas = todas.filter(f => f.tipo !== "acumulada" && !f.usada && f.prazo && new Date(f.prazo) < hoje);
 
   const filtradas = ativas.filter(f =>
-    getCasaNome(data.casas || [], f.casaId).toLowerCase().includes(filtro.toLowerCase())
+    normalizeSearch(getCasaNome(data.casas || [], f.casaId)).includes(normalizeSearch(filtro))
   );
 
   // compat: itens antigos sem saldo assumem saldo = valor

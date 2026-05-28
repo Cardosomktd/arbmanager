@@ -53,6 +53,22 @@ export function getCasaNome(casas, id) {
   return casas.find(c => c.id === id)?.nome || id;
 }
 
+/**
+ * Normaliza string para busca accent-insensitive e case-insensitive.
+ * Remove diacríticos via NFD + regex, converte para minúsculas.
+ *
+ * Exemplos:
+ *   "Atlético"  → "atletico"
+ *   "São Paulo" → "sao paulo"
+ *   "Grêmio"    → "gremio"
+ */
+export function normalizeSearch(str = "") {
+  return String(str)
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
 // Retorna a data de hoje no formato YYYY-MM-DD sem deslocamento de timezone.
 // Usar para pré-preencher inputs type="date" — NÃO usar new Date().toISOString().
 export function hojeISODateLocal() {

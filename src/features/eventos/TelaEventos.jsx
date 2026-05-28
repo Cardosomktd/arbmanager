@@ -2,7 +2,7 @@ import { useState } from "react";
 import { G } from "../../constants/colors";
 import iconBingo   from "../../assets/icons/Bingo.svg";
 import iconCassino from "../../assets/icons/Cassino.svg";
-import { fmt, fmtDate, fmtOdd, getCasaNome, parseDateLocal } from "../../utils/format";
+import { fmt, fmtDate, fmtOdd, getCasaNome, parseDateLocal, normalizeSearch } from "../../utils/format";
 import { lucroAvulsa } from "../../utils/lucroAvulsa";
 import { statusEvento } from "../../utils/status";
 import { getFreebets } from "../../utils/freebets";
@@ -257,13 +257,13 @@ export function TelaEventos({ data, setData }) {
 
   // ── Filtro e busca ────────────────────────────────────────────────────────────
   const ativo = (st) => st === "vazio" || st === "pendente" || st === "andamento";
-  const buscaLC = busca.toLowerCase();
+  const buscaN = normalizeSearch(busca);
 
   const eventosFiltrados = [...(data.eventos || [])]
     .sort((a, b) => parseDateLocal(a.data) - parseDateLocal(b.data))
     .filter(ev => {
       const passaStatus = filtroStatus === "pendentes" ? ativo(statusEvento(ev)) : statusEvento(ev) === "finalizado";
-      const passaBusca  = !busca || ev.nome.toLowerCase().includes(buscaLC);
+      const passaBusca  = !busca || normalizeSearch(ev.nome).includes(buscaN);
       return passaStatus && passaBusca;
     });
 
@@ -271,13 +271,13 @@ export function TelaEventos({ data, setData }) {
     .sort((a, b) => parseDateLocal(a.data) - parseDateLocal(b.data))
     .filter(a => {
       const passaStatus = filtroStatus === "pendentes" ? a.situacao === "pendente" : a.situacao !== "pendente";
-      const passaBusca  = !busca || a.nome.toLowerCase().includes(buscaLC);
+      const passaBusca  = !busca || normalizeSearch(a.nome).includes(buscaN);
       return passaStatus && passaBusca;
     });
 
   // Cassinos: sempre aparecem nos concluídos (não têm estado pendente)
   const cassinosFiltrados = filtroStatus === "concluidos"
-    ? [...(data.cassinos || [])].filter(c => !busca || c.nome.toLowerCase().includes(buscaLC))
+    ? [...(data.cassinos || [])].filter(c => !busca || normalizeSearch(c.nome).includes(buscaN))
     : [];
 
   const lancamentos = [

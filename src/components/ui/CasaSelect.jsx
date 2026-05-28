@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { G } from "../../constants/colors";
+import { normalizeSearch } from "../../utils/format";
 
 /**
  * Seletor de casa com busca por digitação.
@@ -28,13 +29,13 @@ export function CasaSelect({ casas, value, onChange, required }) {
       : casaSelecionada.nome
     : "";
 
-  // Filtra por nome E titular
+  // Filtra por nome E titular (accent-insensitive)
   const filtradas = busca.trim()
     ? casas.filter(c => {
-        const q = busca.toLowerCase();
+        const q = normalizeSearch(busca);
         return (
-          c.nome.toLowerCase().includes(q) ||
-          (c.titular && c.titular.toLowerCase().includes(q))
+          normalizeSearch(c.nome).includes(q) ||
+          (c.titular && normalizeSearch(c.titular).includes(q))
         );
       })
     : casas;

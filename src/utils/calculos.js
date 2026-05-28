@@ -1,3 +1,5 @@
+import { normalizeSearch } from "./format";
+
 export function calcRetorno(e) {
   const odd    = parseFloat(String(e.odd || "").replace(",", ".")) || 0;
   const valor  = parseFloat(e.valor)    || 0;
@@ -48,6 +50,24 @@ function chaveResultado(e) {
     chave = chave.replace(/\s+lay$/, "").trim();
   }
   return chave;
+}
+
+// Chave de cenário: identifica unicamente o resultado coberto por uma entrada,
+// combinando resultado principal com o resultado secundário da múltipla (se houver).
+//
+//  entrada simples:     "flamengo"
+//  entrada múltipla:    "flamengo|ambas marcam"
+//
+// Diferente de chaveResultado, não trata exchange_lay de forma especial — é usada
+// apenas para detectar se todas as entradas apostam no mesmo cenário (sem arb real).
+//
+// Exemplos:
+//   "Flamengo" + "Flamengo"               → {"flamengo"}         → tamanho 1 → sem cobertura cruzada
+//   "Flamengo + Ambas" + "Flamengo + Over" → {"fl|ambas","fl|over"} → tamanho 2 → lógica normal
+function chaveCenario(e) {
+  const principal  = normalizeSearch(e.entradaDisplay || e.entrada  || "");
+  const secundario = normalizeSearch(e.multiplaDesc   || "");
+  return secundario ? `${principal}|${secundario}` : principal;
 }
 
 /**
@@ -139,6 +159,27 @@ export function calcLucroMinOp(op) {
     const totalNormal = ents
       .filter(e => e.tipo === "normal")
       .reduce((s, e) => s + (parseFloat(e.valor) || 0), 0);
+
+    // Verifica se todas as entradas cobrem exatamente o mesmo cenário.
+    // Quando size <= 1, não há cobertura cruzada de resultados distintos:
+    // o pior cenário é o resultado apostado não acontecer → retorno 0 → lucro = -totalNormal.
+    //
+    // Sem esse check, retornosPorResultado só enumeraria o único cenário coberto
+    // (retorno positivo) e ignoraria o cenário implícito "não acontece" (retorno 0),
+    // inflando o mínimo garantido incorretamente.
+    //
+    // Exemplos detectados como mesma chave (size = 1):
+    //   "Flamengo" + "Flamengo"
+    //   "Flamengo + Ambas marcam" + "Flamengo + Ambas marcam"
+    //
+    // Exemplos com chaves distintas (size > 1, lógica normal mantida):
+    //   "Flamengo" + "Empate"
+    //   "Flamengo + Ambas marcam" + "Flamengo + Over 2.5"
+    const chavesCenario = new Set(ents.map(chaveCenario));
+    if (chavesCenario.size <= 1) {
+      // Exposição única: pior caso = cenário apostado não acontece → perde tudo.
+      return -totalNormal + cashback;
+    }
 
     // Usa agrupamento unificado: simples por resultado principal,
     // múltiplas por (principal+secundário) — tomando o menor grupo por principal.

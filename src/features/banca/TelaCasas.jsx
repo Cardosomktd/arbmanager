@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
-import { fmt } from "../../utils/format";
+import { fmt, normalizeSearch } from "../../utils/format";
 import { calcRetorno } from "../../utils/calculos";
 import { calcSaldoCasa } from "../../utils/saldo";
 import { uid } from "../../storage";
@@ -140,7 +140,7 @@ export function TelaCasas({ data, setData }) {
   // "com pendentes" = saldo atual + capital comprometido (o que voltaria se tudo cancelado)
   const saldoComPendentes = saldoTotal + pendComprometido;
   const casasFiltradas = ativas
-    .filter(c => c.nome.toLowerCase().includes(filtro.toLowerCase()))
+    .filter(c => normalizeSearch(c.nome).includes(normalizeSearch(filtro)))
     .map(c => ({ c, saldo: calcSaldoCasa(c, data) }))
     .sort((a, b) => {
       const sa = a.saldo, sb = b.saldo;
