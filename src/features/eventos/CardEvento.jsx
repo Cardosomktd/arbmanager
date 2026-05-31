@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { G } from "../../constants/colors";
-import { fmt, fmtDate, fmtOdd, getCasaNome } from "../../utils/format";
+import { fmt, fmtDate, fmtOdd, getCasaNome, normalizeSearch } from "../../utils/format";
 import { lucroEfetivoOp, calcRetorno, retornosPorResultado } from "../../utils/calculos";
 import { lucroProtecao } from "../../utils/lucroProtecao";
 import { statusEvento, statusOp } from "../../utils/status";
@@ -112,7 +112,17 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
           {entradasPA.length > 0 && (() => {
             // Agrupamento unificado: simples somam por principal,
             // múltiplas agrupam por (principal+secundário) — menor grupo por principal.
+            // chaveResultado usa normalizeSearch, então o lookup também usa normalizeSearch.
             const mapaPA = retornosPorResultado(entradasPA);
+            // Lookup accent-insensitive: busca a chave no mapa que corresponde ao nome do time.
+            const lookupPA = (nome) => {
+              if (!nome) return 0;
+              const norm = normalizeSearch(nome);
+              for (const [k, v] of mapaPA) {
+                if (k === norm) return v;
+              }
+              return 0;
+            };
             return (
               <div style={{ background: "#22D3EE0a", border: "1px solid #22D3EE22", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
                 <div style={{ fontSize: 11, color: G.accent, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>PAGAMENTO ANTECIPADO</div>
@@ -120,7 +130,7 @@ export function CardEvento({ evento, casas, atrasado = false, onEditarEvento, on
                   {[{ label: evento.mandante, key: evento.mandante }, { label: evento.visitante, key: evento.visitante }]
                     .filter(t => t.key)
                     .map(({ label, key }) => {
-                      const retorno = mapaPA.get(key.trim().toLowerCase()) ?? 0;
+                      const retorno = lookupPA(key);
                       return (
                         <div key={key} style={{ fontSize: 13 }}>
                           <span style={{ color: G.textDim }}>{label}:</span>

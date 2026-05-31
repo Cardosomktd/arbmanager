@@ -40,12 +40,17 @@ function isAgrupavel(e) {
   );
 }
 
-// Chave de agrupamento: resultado normalizado (trim + lowercase).
-// Usa entradaDisplay quando disponível (pós-save); cai para entrada como fallback.
+// Chave de agrupamento: resultado normalizado (accent-insensitive + lowercase).
+// Usa entradaDisplay quando disponível (pós-save).
+// Fallback para dados legados sem entradaDisplay: se entrada="outro", usa entradaCustom.
 // Exchange Lay: remove o sufixo " lay" do final para que "Empate Lay" e "Empate"
 // gerem a mesma chave — garantindo que back e lay sejam agrupados no mesmo cenário.
 function chaveResultado(e) {
-  let chave = (e.entradaDisplay || e.entrada || "").trim().toLowerCase();
+  // entradaDisplay é sempre preenchido em operações novas (inclusive para tipo "outro").
+  // Para dados legados (entradaDisplay ausente), reconstrói a partir dos campos brutos.
+  const raw = e.entradaDisplay
+    || (e.entrada === "outro" ? (e.entradaCustom || "") : (e.entrada || ""));
+  let chave = normalizeSearch(raw);
   if (e.tipo === "exchange_lay") {
     chave = chave.replace(/\s+lay$/, "").trim();
   }
