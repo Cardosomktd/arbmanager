@@ -201,6 +201,25 @@ export function calcLucroMinOp(op) {
     return s + (parseFloat(e.valor) || 0);
   }, 0);
 
+  // ── Pré-computa múltiplas independentes ─────────────────────────────────────
+  // Precisa ocorrer ANTES dos cenários: quando o resultado principal X acontece,
+  // o lay perde E as múltiplas de X também resolvem simultaneamente.
+  // Agrupar por (principal|secundário), somar dentro de cada grupo,
+  // tomar o MENOR grupo por resultado principal (pior sub-cenário das múltiplas).
+  const gruposInd = new Map();
+  for (const e of independente) {
+    const pri = chaveResultado(e);
+    const sec = (e.multiplaDesc || "").trim().toLowerCase();
+    const k   = `${pri}|${sec}`;
+    gruposInd.set(k, (gruposInd.get(k) ?? 0) + calcRetorno(e));
+  }
+  const minGruposInd = new Map();
+  for (const [k, soma] of gruposInd) {
+    const pri = k.split("|")[0];
+    const cur = minGruposInd.get(pri);
+    minGruposInd.set(pri, cur === undefined ? soma : Math.min(cur, soma));
+  }
+
   // Enumera todos os cenários possíveis (um por chave de resultado agrupável)
   const chaves = [...new Set(agrupavel.map(chaveResultado).filter(Boolean))];
 
@@ -224,34 +243,28 @@ export function calcLucroMinOp(op) {
         if (chave === X) gain += calcRetorno(e);
       }
     }
-    return gain - custoVar;
+    // Quando X acontece, as múltiplas com mesmo resultado principal também resolvem.
+    // Soma o menor retorno garantido entre os grupos de X (pior sub-cenário das múltiplas).
+    // Ex: lay "Brasil" perde (−25,11) + mín(Brasil+2,5=200 ; Brasil−3=200,05) = 174,89
+    return gain - custoVar + (minGruposInd.get(X) ?? 0);
   });
 
   // Cenário "outros": resultado não coberto por nenhuma entrada back/normal
-  // → todos os lays agrupáveis vencem (necessário quando back+lay no mesmo resultado)
+  // → todos os lays agrupáveis vencem; múltiplas com principal em chaves falham (retorno 0)
   const laysAgrupavel = agrupavel.filter(e => e.tipo === "exchange_lay");
   if (laysAgrupavel.length > 0) {
     const gainOther = laysAgrupavel.reduce((s, e) => s + calcRetorno(e), 0);
     cenarios.push(gainOther);
   }
 
-  // Entradas independentes (múltiplas): agrupar por (principal|secundário),
-  // somar dentro de cada grupo e tomar o menor grupo por resultado principal —
-  // mesma lógica usada por retornosPorResultado no branch sem exchange.
-  const gruposInd = new Map();
-  for (const e of independente) {
-    const pri = chaveResultado(e);
-    const sec = (e.multiplaDesc || "").trim().toLowerCase();
-    const k   = `${pri}|${sec}`;
-    gruposInd.set(k, (gruposInd.get(k) ?? 0) + calcRetorno(e));
+  // Múltiplas cujo resultado principal NÃO foi coberto por nenhuma entrada agrupável
+  // são verdadeiramente independentes → geram cenários separados.
+  // (Múltiplas com principal já em chaves foram combinadas acima — não duplicar.)
+  const chavesSet = new Set(chaves);
+  const cenariosInd = [];
+  for (const [pri, minRetorno] of minGruposInd) {
+    if (!chavesSet.has(pri)) cenariosInd.push(minRetorno);
   }
-  const minGruposInd = new Map();
-  for (const [k, soma] of gruposInd) {
-    const pri = k.split("|")[0];
-    const cur = minGruposInd.get(pri);
-    minGruposInd.set(pri, cur === undefined ? soma : Math.min(cur, soma));
-  }
-  const cenariosInd = [...minGruposInd.values()];
 
   const todos = [...cenarios, ...cenariosInd];
   if (todos.length === 0) return cashback;
