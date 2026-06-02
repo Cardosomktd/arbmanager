@@ -62,16 +62,21 @@ function chaveResultado(e) {
 //
 //  entrada simples:     "flamengo"
 //  entrada múltipla:    "flamengo|ambas marcam"
+//  exchange_lay:        mesmo formato, sem sufixo " lay" (agrupa com backs do mesmo resultado)
 //
-// Diferente de chaveResultado, não trata exchange_lay de forma especial — é usada
-// apenas para detectar se todas as entradas apostam no mesmo cenário (sem arb real).
+// Fallback legado: entrada="outro" sem entradaDisplay → usa entradaCustom.
 //
 // Exemplos:
-//   "Flamengo" + "Flamengo"               → {"flamengo"}         → tamanho 1 → sem cobertura cruzada
-//   "Flamengo + Ambas" + "Flamengo + Over" → {"fl|ambas","fl|over"} → tamanho 2 → lógica normal
+//   "Flamengo" + "Flamengo"                 → {"flamengo"}           → tamanho 1 → exposição única
+//   "Flamengo + Ambas" + "Flamengo + Over"  → {"fl|ambas","fl|over"} → tamanho 2 → regra normal
+//   Back "Flamengo" + Lay "Flamengo"        → {"flamengo"}           → tamanho 1 → exposição única
 function chaveCenario(e) {
-  const principal  = normalizeSearch(e.entradaDisplay || e.entrada  || "");
-  const secundario = normalizeSearch(e.multiplaDesc   || "");
+  let raw = e.entradaDisplay
+    || (e.entrada === "outro" ? (e.entradaCustom || "") : (e.entrada || ""));
+  // Exchange Lay: remove sufixo " lay" para coincidir com backs do mesmo resultado.
+  if (e.tipo === "exchange_lay") raw = raw.replace(/\s+lay$/i, "").trim();
+  const principal  = normalizeSearch(raw);
+  const secundario = normalizeSearch(e.multiplaDesc || "");
   return secundario ? `${principal}|${secundario}` : principal;
 }
 
@@ -154,128 +159,52 @@ export function calcLucroMinOp(op) {
   if (op.tipoOp === "green_ou_anula") return 0;
 
   const ents = op.entradas || [];
-  const temExchange = ents.some(e => e.tipo === "exchange_back" || e.tipo === "exchange_lay");
 
   // Cashback garantido: soma o valor se a condição é "qualquer" (cenário mínimo sempre acontece)
   const cashback = (op.geraFreebet?.tipoBeneficio === "cashback" && op.geraFreebet?.condicao === "qualquer")
     ? (parseFloat(op.geraFreebet.valor) || 0) : 0;
 
-  if (!temExchange) {
-    const totalNormal = ents
-      .filter(e => e.tipo === "normal")
-      .reduce((s, e) => s + (parseFloat(e.valor) || 0), 0);
-
-    // Verifica se todas as entradas cobrem exatamente o mesmo cenário.
-    // Quando size <= 1, não há cobertura cruzada de resultados distintos:
-    // o pior cenário é o resultado apostado não acontecer → retorno 0 → lucro = -totalNormal.
-    //
-    // Sem esse check, retornosPorResultado só enumeraria o único cenário coberto
-    // (retorno positivo) e ignoraria o cenário implícito "não acontece" (retorno 0),
-    // inflando o mínimo garantido incorretamente.
-    //
-    // Exemplos detectados como mesma chave (size = 1):
-    //   "Flamengo" + "Flamengo"
-    //   "Flamengo + Ambas marcam" + "Flamengo + Ambas marcam"
-    //
-    // Exemplos com chaves distintas (size > 1, lógica normal mantida):
-    //   "Flamengo" + "Empate"
-    //   "Flamengo + Ambas marcam" + "Flamengo + Over 2.5"
-    const chavesCenario = new Set(ents.map(chaveCenario));
-    if (chavesCenario.size <= 1) {
-      // Exposição única: pior caso = cenário apostado não acontece → perde tudo.
-      return -totalNormal + cashback;
-    }
-
-    // Usa agrupamento unificado: simples por resultado principal,
-    // múltiplas por (principal+secundário) — tomando o menor grupo por principal.
-    const mapa    = retornosPorResultado(ents);
-    const retornos = [...mapa.values()];
-
-    const minRet = retornos.length ? Math.min(...retornos) : 0;
-    return minRet - totalNormal + cashback;
-  }
-
-  // ── Branch exchange ──────────────────────────────────────────────────────────
-  const agrupavel   = ents.filter(isAgrupavel);
-  const independente = ents.filter(e => !isAgrupavel(e));
-
-  // Custo fixo: normal e exchange_back sempre pagam a stake;
-  // freebet, bonus e exchange_lay não têm custo de saída imediato
-  const custoFixo = ents.reduce((s, e) => {
+  // Custo de saída imediato: normal e exchange_back pagam a stake;
+  // freebet, bonus e exchange_lay não têm custo de saída imediato.
+  const totalCusto = ents.reduce((s, e) => {
     if (e.tipo === "freebet" || e.tipo === "bonus" || e.tipo === "exchange_lay") return s;
     return s + (parseFloat(e.valor) || 0);
   }, 0);
 
-  // ── Pré-computa múltiplas independentes ─────────────────────────────────────
-  // Precisa ocorrer ANTES dos cenários: quando o resultado principal X acontece,
-  // o lay perde E as múltiplas de X também resolvem simultaneamente.
-  // Agrupar por (principal|secundário), somar dentro de cada grupo,
-  // tomar o MENOR grupo por resultado principal (pior sub-cenário das múltiplas).
-  const gruposInd = new Map();
-  for (const e of independente) {
-    const pri = chaveResultado(e);
-    const sec = (e.multiplaDesc || "").trim().toLowerCase();
-    const k   = `${pri}|${sec}`;
-    gruposInd.set(k, (gruposInd.get(k) ?? 0) + calcRetorno(e));
-  }
-  const minGruposInd = new Map();
-  for (const [k, soma] of gruposInd) {
-    const pri = k.split("|")[0];
-    const cur = minGruposInd.get(pri);
-    minGruposInd.set(pri, cur === undefined ? soma : Math.min(cur, soma));
-  }
+  // ── Agrupa por chaveCenario, soma calcRetorno por grupo ───────────────────
+  //
+  // chaveCenario = resultado principal + "|" + secundário da múltipla (se houver).
+  // Entradas com exatamente o mesmo cenário somam retorno no mesmo grupo.
+  // Exchange Lay: contribui calcRetorno (stake return) ao seu próprio cenário.
+  //
+  // Regra de cenários:
+  //   ≤ 1 chave → exposição única: apenas um resultado coberto (ou nenhum),
+  //               pior caso = cenário apostado não acontece → lucro = −totalCusto.
+  //   ≥ 2 chaves → assume que algum cenário vai acontecer;
+  //                mínimo garantido = menor retorno entre os grupos − totalCusto.
+  //
+  // Dessa forma:
+  //   A) Flamengo + Flamengo          → size 1 → −totalCusto
+  //   B) Flamengo+2,5 + Flamengo+2,5  → size 1 → −totalCusto  (múltiplas iguais somam)
+  //   C) Flamengo+2,5 + Flamengo−2,5  → size 2 → min(grupos) − totalCusto
+  //   D) Flamengo + Empate             → size 2 → min(grupos) − totalCusto
+  //   E) Lay Flamengo + Back Empate    → size 2 → min(grupos) − totalCusto
+  //      (sem cenário fantasma "tudo red")
 
-  // Enumera todos os cenários possíveis (um por chave de resultado agrupável)
-  const chaves = [...new Set(agrupavel.map(chaveResultado).filter(Boolean))];
-
-  const cenarios = chaves.map(X => {
-    let gain     = 0;
-    let custoVar = 0;
-    for (const e of agrupavel) {
-      const chave = chaveResultado(e);
-      if (e.tipo === "exchange_lay") {
-        if (chave === X) {
-          // Lay sobre X, X acontece → lay perde → paga responsabilidade
-          const odd   = parseFloat(String(e.odd || "").replace(",", ".")) || 0;
-          const valor = parseFloat(e.valor) || 0;
-          custoVar += valor * (odd - 1);
-        } else {
-          // Lay vence → recebe ganho líquido
-          gain += calcRetorno(e);
-        }
-      } else {
-        // Back/normal/freebet: só recebe retorno se o resultado for X
-        if (chave === X) gain += calcRetorno(e);
-      }
-    }
-    // Quando X acontece, as múltiplas com mesmo resultado principal também resolvem.
-    // Soma o menor retorno garantido entre os grupos de X (pior sub-cenário das múltiplas).
-    // Ex: lay "Brasil" perde (−25,11) + mín(Brasil+2,5=200 ; Brasil−3=200,05) = 174,89
-    return gain - custoVar + (minGruposInd.get(X) ?? 0);
-  });
-
-  // Cenário "outros": resultado não coberto por nenhuma entrada back/normal
-  // → todos os lays agrupáveis vencem; múltiplas com principal em chaves falham (retorno 0)
-  const laysAgrupavel = agrupavel.filter(e => e.tipo === "exchange_lay");
-  if (laysAgrupavel.length > 0) {
-    const gainOther = laysAgrupavel.reduce((s, e) => s + calcRetorno(e), 0);
-    cenarios.push(gainOther);
+  const mapaRet = new Map();
+  for (const e of ents) {
+    const k = chaveCenario(e);
+    mapaRet.set(k, (mapaRet.get(k) ?? 0) + calcRetorno(e));
   }
 
-  // Múltiplas cujo resultado principal NÃO foi coberto por nenhuma entrada agrupável
-  // são verdadeiramente independentes → geram cenários separados.
-  // (Múltiplas com principal já em chaves foram combinadas acima — não duplicar.)
-  const chavesSet = new Set(chaves);
-  const cenariosInd = [];
-  for (const [pri, minRetorno] of minGruposInd) {
-    if (!chavesSet.has(pri)) cenariosInd.push(minRetorno);
+  if (mapaRet.size <= 1) {
+    // Exposição única: pior caso = cenário apostado não acontece → perde tudo.
+    return -totalCusto + cashback;
   }
 
-  const todos = [...cenarios, ...cenariosInd];
-  if (todos.length === 0) return cashback;
-
-  const minNet = Math.min(...todos);
-  return minNet - custoFixo + cashback;
+  // Múltiplos cenários distintos: assume que algum vai acontecer.
+  const minRet = Math.min(...mapaRet.values());
+  return minRet - totalCusto + cashback;
 }
 
 export function calcLucroRealOp(op) {

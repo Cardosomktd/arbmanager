@@ -29,6 +29,21 @@ export function ModalConcluirOp({ open, onClose, op, casas, onConcluir }) {
 
   if (!op) return null;
 
+  // Valor exibido apenas para conferência visual — não afeta nenhum cálculo.
+  // Exchange Lay: mostra responsabilidade + lucro líquido (o que o lay cobre + o que ganha).
+  // Demais tipos: usa calcRetorno normalmente.
+  function retornoVisualConclusao(e) {
+    const odd   = parseFloat(String(e.odd   || "").replace(",", ".")) || 0;
+    const valor = parseFloat(e.valor)    || 0;
+    const comm  = parseFloat(e.comissao) / 100 || 0;
+    if (e.tipo === "exchange_lay") {
+      const responsabilidade = valor * (odd - 1);
+      const lucroLiquido     = valor * (1 - comm);
+      return responsabilidade + lucroLiquido;
+    }
+    return calcRetorno(e);
+  }
+
   return (
     <Modal open={open} onClose={onClose} title={isEditando ? "Editar Resultado" : "Concluir Operação"} width={480}>
       <div style={{ fontSize: 13, color: G.textDim, marginBottom: 16 }}>
@@ -39,7 +54,7 @@ export function ModalConcluirOp({ open, onClose, op, casas, onConcluir }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
         {(op.entradas || []).map(e => {
           const sel = greens.includes(e.id);
-          const retorno = calcRetorno(e);
+          const retorno = retornoVisualConclusao(e);
           return (
             <div key={e.id} onClick={() => toggleGreen(e.id)}
               style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: sel ? "#34D39911" : G.surface2, border: `1px solid ${sel ? G.green : G.border}`, borderRadius: 8, padding: "10px 14px", cursor: "pointer", transition: "all 0.15s" }}>
