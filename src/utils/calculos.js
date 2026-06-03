@@ -73,10 +73,19 @@ function chaveResultado(e) {
 function chaveCenario(e) {
   let raw = e.entradaDisplay
     || (e.entrada === "outro" ? (e.entradaCustom || "") : (e.entrada || ""));
-  // Exchange Lay: remove sufixo " lay" para coincidir com backs do mesmo resultado.
-  if (e.tipo === "exchange_lay") raw = raw.replace(/\s+lay$/i, "").trim();
-  const principal  = normalizeSearch(raw);
+  // Normaliza: strip de sufixo " lay" legado (dados antigos onde entradaDisplay
+  // podia conter "Flamengo Lay") antes de aplicar normalizeSearch.
+  const principal  = normalizeSearch(raw.replace(/\s+lay$/i, "").trim());
   const secundario = normalizeSearch(e.multiplaDesc || "");
+
+  if (e.tipo === "exchange_lay") {
+    // Lay é o cenário OPOSTO ao back: "SA Spurs não acontece" vs "SA Spurs acontece".
+    // Adiciona sufixo exclusivo para garantir chave distinta do back equivalente.
+    //   Back "SA Spurs" → "sa spurs"
+    //   Lay "SA Spurs"  → "sa spurs~lay"
+    // Assim mapaRet.size >= 2 e a regra de mínimo funciona corretamente.
+    return secundario ? `${principal}|${secundario}~lay` : `${principal}~lay`;
+  }
   return secundario ? `${principal}|${secundario}` : principal;
 }
 
