@@ -186,9 +186,11 @@ export function ModalOperacao({ open, onClose, onSalvar, casas, editOp, evento, 
         tipo:      fb.tipoBeneficio || "freebet",
       })));
     } else if (rascunhoCalc) {
-      // Vindo da calculadora: pré-preenche odd e stake; os demais campos ficam em branco
+      // Vindo da calculadora: pré-preenche odd, stake e tipoOp quando disponível.
+      // rascunhoCalc.tipoOp é enviado pela calculadora quando o modo mapeia 1:1 para um
+      // tipo de operação (ex: Ext. Freebet → "extracao_freebet").
       const n = rascunhoCalc.entradas.length;
-      setTipoOp(null);
+      setTipoOp(rascunhoCalc.tipoOp ?? null);
       setNumEntradas(n);
       setEntradas(rascunhoCalc.entradas.map(r => ({
         ...entradaVazia(),
