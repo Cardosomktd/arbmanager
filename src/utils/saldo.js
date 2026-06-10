@@ -96,10 +96,23 @@ export function calcSaldoCasa(casa, data) {
   );
 
   // Apostas avulsas
+  //
+  //  dinheiro_real → stake deducida no lançamento; green: retorno bruto (inclui stake)
+  //  freebet       → stake não é dinheiro real; green: lucro líquido (odd × valor − valor)
+  //  bonus         → stake não é dinheiro real; green: retorno bruto (odd × valor)
   (data.apostasAvulsas || []).filter(a => a.casa === casa.id).forEach(a => {
-    saldo -= parseFloat(a.valor) || 0;
-    if (a.situacao === "green")
-      saldo += (parseFloat(String(a.odd).replace(",", ".")) || 0) * (parseFloat(a.valor) || 0);
+    const tv    = a.tipoValor || (a.freebet ? "freebet" : "dinheiro_real");
+    const valor = parseFloat(a.valor) || 0;
+    const odd   = parseFloat(String(a.odd).replace(",", ".")) || 0;
+    if (tv === "dinheiro_real") {
+      saldo -= valor;
+      if (a.situacao === "green") saldo += odd * valor;
+    } else if (tv === "freebet") {
+      if (a.situacao === "green") saldo += odd * valor - valor;
+    } else {
+      // bonus
+      if (a.situacao === "green") saldo += odd * valor;
+    }
   });
 
   // Depósitos e saques

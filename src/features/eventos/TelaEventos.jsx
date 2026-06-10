@@ -226,7 +226,39 @@ export function TelaEventos({ data, setData }) {
 
   // ── Apostas avulsas ───────────────────────────────────────────────────────────
   function salvarAposta(aposta) {
-    setData(d => ({ ...d, apostasAvulsas: [...(d.apostasAvulsas || []), aposta] }));
+    setData(d => {
+      let freebets             = d.freebets || [];
+      const freebetsAutoUsadas = [...(d.freebetsAutoUsadas || [])];
+
+      // Baixa de freebet no bingo — mesmo padrão de salvarOp
+      if ((aposta.freebetIds || []).length > 0) {
+        const ids = aposta.freebetIds;
+        for (const fid of ids) {
+          if (String(fid).startsWith("auto_")) freebetsAutoUsadas.push(fid);
+        }
+        const manualIds = ids.filter(fid => !String(fid).startsWith("auto_"));
+        if (manualIds.length > 0) {
+          let restante = parseFloat(aposta.valor) || 0;
+          for (const fid of manualIds) {
+            freebets = freebets.map(f => {
+              if (f.id !== fid) return f;
+              const saldoAtual = f.saldo ?? f.valor ?? 0;
+              const usado      = Math.min(saldoAtual, restante);
+              restante        -= usado;
+              const novoSaldo  = saldoAtual - usado;
+              return { ...f, saldo: novoSaldo, usada: f.tipo === "acumulada" ? false : novoSaldo <= 0 };
+            });
+          }
+        }
+      }
+
+      return {
+        ...d,
+        apostasAvulsas:     [...(d.apostasAvulsas || []), aposta],
+        freebets,
+        freebetsAutoUsadas: [...new Set(freebetsAutoUsadas)],
+      };
+    });
   }
   function excluirAvulsa(id) {
     if (confirm("Excluir esta aposta?"))
@@ -394,11 +426,21 @@ export function TelaEventos({ data, setData }) {
           }
 
           // Aposta avulsa
-          const a = item;
-          const cor              = a.situacao === "green" ? G.green : a.situacao === "red" ? G.red : G.yellow;
-          const retornoPotencial = (parseFloat(String(a.odd).replace(",", ".")) || 0) * (parseFloat(a.valor) || 0);
-          const retorno          = a.situacao === "green" ? retornoPotencial
-                                 : a.situacao === "red"   ? -(parseFloat(a.valor) || 0) : 0;
+          const a           = item;
+          const cor         = a.situacao === "green" ? G.green : a.situacao === "red" ? G.red : G.yellow;
+          const tvAvulsa    = a.tipoValor || (a.freebet ? "freebet" : "dinheiro_real");
+          const oddAvulsa   = parseFloat(String(a.odd).replace(",", ".")) || 0;
+          const valorAvulsa = parseFloat(a.valor) || 0;
+          // Freebet: exibe lucro potencial (odd×valor−valor); demais: retorno bruto (odd×valor)
+          const retornoPotencial = tvAvulsa === "freebet"
+            ? Math.max(0, oddAvulsa * valorAvulsa - valorAvulsa)
+            : oddAvulsa * valorAvulsa;
+          // Resultado: freebet/bonus red = 0; dinheiro_real mantém comportamento anterior
+          const retorno = a.situacao === "green"
+            ? (tvAvulsa === "freebet" ? oddAvulsa * valorAvulsa - valorAvulsa : oddAvulsa * valorAvulsa)
+            : a.situacao === "red"
+            ? (tvAvulsa === "freebet" || tvAvulsa === "bonus" ? 0 : -valorAvulsa)
+            : 0;
 
           return (
             <Card key={a.id} style={{ border: "1px solid #8B5CF633" }}>
@@ -458,7 +500,17 @@ export function TelaEventos({ data, setData }) {
         })}
         bonusDisponiveis={(data.bonus || []).filter(b => !b.usada)}
       />
-      <ModalApostaAvulsa open={modalAvulsa}   onClose={() => setModalAvulsa(false)}   onSalvar={salvarAposta}  casas={data.casas || []} />
+      <ModalApostaAvulsa
+        open={modalAvulsa}
+        onClose={() => setModalAvulsa(false)}
+        onSalvar={salvarAposta}
+        casas={data.casas || []}
+        freebetsDisponiveis={getFreebets(data).filter(f => {
+          const s = f.saldo ?? f.valor ?? 0;
+          if (f.tipo === "acumulada") return s > 0;
+          return !f.usada && s > 0;
+        })}
+      />
       <ModalCassino      open={modalCassino}  onClose={() => setModalCassino(false)}  onSalvar={salvarCassino} casas={data.casas || []} />
       <ModalProtecao     open={modalProtecao} onClose={() => setModalProtecao(false)} onSalvar={salvarProtecao} casas={data.casas || []} evento={(data.eventos || []).find(e => e.id === eventoProtecaoId)} />
     </div>
