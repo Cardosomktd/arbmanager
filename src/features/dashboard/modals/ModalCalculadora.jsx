@@ -745,10 +745,12 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
       {/* ── "Usar na operação" ─────────────────────────────────────────────── */}
       {onUsarNaOp && temDados && (
         <button onClick={() => onUsarNaOp({
-          // tipoOp: enviado apenas quando o modo da calculadora mapeia 1:1 para um tipoOp.
-          // "freebet" (Ext. Freebet) → "extracao_freebet", permitindo que o ModalOperacao
-          // abra já com o tipo correto e exiba a seleção de freebets automaticamente.
-          ...(modo === "freebet" && { tipoOp: "extracao_freebet" }),
+          // tipoOp: enviado quando o modo da calculadora mapeia 1:1 para um tipoOp.
+          // "freebet"     (Ext. Freebet)    → "extracao_freebet"
+          // "freebet_red" (Freebet se Red)  → "procedimento_freebet"
+          // Outros modos (Arbitragem)       → null, usuário escolhe no modal
+          ...(modo === "freebet"               && { tipoOp: "extracao_freebet"     }),
+          ...(modoPrincipal === "freebet_red"  && { tipoOp: "procedimento_freebet" }),
           // BASE expandida em baseRepeatNum cópias; demais entradas enviadas normalmente.
           // Exchange funciona em qualquer modo e qualquer entrada.
           entradas: odds.flatMap((odd, i) => {
