@@ -18,6 +18,7 @@ import { ModalCalculadora }     from "./features/dashboard/modals/ModalCalculado
 import { ModalSelecionarEvento} from "./features/dashboard/modals/ModalSelecionarEvento";
 import { ModalEvento }          from "./features/eventos/modals/ModalEvento";
 import { ModalOperacao }        from "./features/eventos/modals/ModalOperacao";
+import { getFreebets }         from "./utils/freebets";
 
 // ── Navegação ─────────────────────────────────────────────────────────────────
 // Bottom nav (mobile — 4 abas principais)
@@ -284,6 +285,12 @@ function AppAutenticado({ aba, setAba, session, onLogout }) {
               casas={data.casas || []}
               evento={(data.eventos || []).find(ev => ev.id === eventoAlvoId) ?? null}
               rascunhoCalc={calcRascunho}
+              freebetsDisponiveis={getFreebets(data).filter(f => {
+                const s = f.saldo ?? f.valor ?? 0;
+                if (f.tipo === "acumulada") return s > 0;
+                return !f.usada && s > 0;
+              })}
+              bonusDisponiveis={(data.bonus || []).filter(b => !b.usada)}
             />
           )}
         </>
