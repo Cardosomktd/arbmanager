@@ -3,7 +3,6 @@ import { G } from "../../../constants/colors";
 import { fmt } from "../../../utils/format";
 import { Modal } from "../../../components/ui/Modal";
 
-// Stake com 2 casas decimais (ex: 95.238 → "95,24") — usado no modo leitura (total)
 function fmtStake(v) {
   return (Number(v) || 0).toFixed(2).replace(".", ",");
 }
@@ -16,13 +15,10 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   const [totalStr,    setTotalStr]    = useState("");
 
   // ── Entrada base ─────────────────────────────────────────────────────────────
-  // baseIndex: qual entrada serve de referência para o cálculo das outras stakes.
-  // Funciona em stake_base, freebet_red E freebet (AJUSTE 4).
-  const [baseIndex, setBaseIndex] = useState(0);
+  const [baseIndex,  setBaseIndex]  = useState(0);
+  // Repetir: quantas cópias da BASE ao usar na operação (afeta cálculos via stakeBaseEfetiva).
+  const [baseRepeat, setBaseRepeat] = useState(1);
 
-  // stakesManual: override manual por entrada não-base.
-  // "" = automático (calculado); não-vazio = valor que o usuário editou.
-  // Limpar o campo ou clicar ↺ volta para o automático.
   const [stakesManual, setStakesManual] = useState(["", ""]);
 
   // ── Modos ────────────────────────────────────────────────────────────────────
@@ -30,20 +26,17 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   const [modoArb,       setModoArb]       = useState("stake_base");
   const modo = modoPrincipal === "arbitragem" ? modoArb
              : modoPrincipal === "freebet_red" ? "stake_base"
-             : "freebet"; // modoPrincipal === "freebet"
+             : "freebet";
 
-  // Exchange
+  // Exchange — qualquer entrada pode ser marcada
   const [exchIdx,  setExchIdx]  = useState(null);
   const [exchTipo, setExchTipo] = useState("exchange_back");
   const [exchComm, setExchComm] = useState("");
 
-  // Diferença de retorno (freebet_red)
   const [diferencaStr, setDiferencaStr] = useState("0");
 
-  // ── effectiveBaseIndex ────────────────────────────────────────────────────────
-  // Calculado cedo para que os helpers possam referenciar sem TDZ.
-  // AJUSTE 4: em modo freebet a base também é selecionável (não mais fixada em 0).
   const effectiveBaseIndex = baseIndex < numEntradas ? baseIndex : 0;
+  const baseRepeatNum = Math.max(1, parseInt(baseRepeat) || 1);
 
   // ── Helpers de estado ────────────────────────────────────────────────────────
   function ajustarEntradas(n) {
@@ -64,15 +57,11 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
     if (exchIdx !== null && exchIdx >= n) setExchIdx(null);
   }
 
-  // AJUSTE 2 & 3: ao mudar odd da entrada base → recalcula TUDO;
-  // ao mudar odd de outra entrada → recalcula AQUELA entrada.
   function setOdd(i, v) {
     setOddsState(prev => prev.map((o, idx) => idx === i ? v : o));
     if (i === effectiveBaseIndex) {
-      // Odd da base mudou → invalida todos os overrides manuais
       setStakesManual(Array(numEntradas).fill(""));
     } else {
-      // Odd de entrada não-base → invalida só aquela stake
       setStakesManual(prev => prev.map((s, idx) => idx === i ? "" : s));
     }
   }
@@ -85,19 +74,16 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
     setStakesManual(prev => prev.map((s, idx) => idx === i ? v : s));
   }
 
-  // ↺ desfaz o override de uma entrada específica (AJUSTE 5)
   function clearManual(i) {
     setStakesManual(prev => prev.map((s, idx) => idx === i ? "" : s));
   }
 
-  // AJUSTE 2: ao mudar stake base → recalcula TUDO (invalida todos os overrides)
   function updateStakeBase(v) {
     setStakeBase(v);
     setStakesManual(Array(numEntradas).fill(""));
   }
 
-  // Trocar a entrada base: adota a stake calculada atual como novo stakeBase
-  // e recalcula tudo a partir do novo ponto de referência.
+  // Trocar base: adota a stake calculada como novo stakeBase; baseRepeat é transferido.
   function changeBase(newIdx, computedStake) {
     if (newIdx === baseIndex) return;
     setBaseIndex(newIdx);
@@ -111,7 +97,6 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
     setExchIdx(prev => prev === i ? null : i);
   }
 
-  // Ao trocar stake_base → total, pré-preenche o totalStr com o total calculado
   function ajustarModoArb(novoModoArb) {
     if (novoModoArb === "total" && modoArb === "stake_base") {
       const st = parseFloat(stakeBase) || 0;
@@ -122,9 +107,9 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
       });
       const oBase = oddsN[baseIndex] || oddsN[0];
       if (st > 0 && oBase > 0) {
-        const rb  = st * oBase;
+        const rb  = st * baseRepeatNum * oBase;
         const tot = oddsN.reduce((s, odd, i) => {
-          if (i === baseIndex) return s + st;
+          if (i === baseIndex) return s + st * baseRepeatNum;
           if (rb <= 0 || odd <= 0) return s;
           return s + Math.round((rb / odd) * 100) / 100;
         }, 0);
@@ -139,8 +124,10 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   const stakeNum = parseFloat(stakeBase) || 0;
   const totalNum = parseFloat(totalStr)  || 0;
 
-  // Odds ajustadas pelo booster por entrada.
-  // Fórmula: oddFinal = oddOriginal + (oddOriginal − 1) × percentual / 100
+  // Stake total da base: stakeNum × baseRepeat
+  // Usada em retornoBase, stakesEfetivas e todos os cálculos de lucro/investimento.
+  const stakeBaseEfetiva = stakeNum * baseRepeatNum;
+
   const oddsAjustadas = oddsNum.map((odd, i) => {
     const pct = parseFloat(aumentos[i]) || 0;
     if (pct <= 0 || odd <= 0) return odd;
@@ -160,51 +147,37 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   const hasExchLay  = exchIdx !== null && exchTipo === "exchange_lay";
   const hasExchBack = exchIdx !== null && exchTipo === "exchange_back";
 
-  // retornoBase: o quanto a entrada base devolve para a conta se for green.
-  // Freebet: stake não retorna, só o lucro (odd − 1).
-  const retornoBase = stakeNum > 0 && odd0 > 0
-    ? (modo === "freebet" ? stakeNum * (odd0 - 1) : stakeNum * odd0)
+  // retornoBase usa stakeBaseEfetiva (considera todas as cópias da base)
+  const retornoBase = stakeBaseEfetiva > 0 && odd0 > 0
+    ? (modo === "freebet" ? stakeBaseEfetiva * (odd0 - 1) : stakeBaseEfetiva * odd0)
     : 0;
 
   // ── Stakes calculadas por modo ───────────────────────────────────────────────
+  // stakesCalc[base] = stakeNum (stake individual por cópia — usado no input e no envio)
   const stakesCalc = oddsAjustadas.map((odd, i) => {
     if (modo === "stake_base" || modo === "freebet") {
-
-      // Entrada base — sempre usa stakeBase
       if (i === effectiveBaseIndex) return stakeNum > 0 ? stakeNum : null;
-
-      // Override manual: qualquer entrada não-base pode ser editada manualmente
-      // (AJUSTE 1 + 2: o override fica enquanto a base/odd não muda)
       if (stakesManual[i] !== "") {
         const m = parseFloat(stakesManual[i]);
         if (!isNaN(m) && m > 0) return m;
       }
-
       if (retornoBase <= 0 || odd <= 0) return null;
-
-      // Exchange Back:  stakeBack = retornoAlvo / [1 + (odd−1)×(1−comm)]
       if (i === exchIdx && exchTipo === "exchange_back") {
         const retAlvo = retornoBase - difNum;
         const denom   = 1 + (odd - 1) * (1 - comm);
         return (retAlvo > 0 && denom > 0) ? Math.round((retAlvo / denom) * 100) / 100 : null;
       }
-
-      // Exchange Lay:   stakeLay = retornoAlvo / (odd − comm)
       if (i === exchIdx && exchTipo === "exchange_lay") {
         const retAlvo = retornoBase - difNum;
         const divisor = odd - comm;
         return (retAlvo > 0 && divisor > 0) ? Math.round((retAlvo / divisor) * 100) / 100 : null;
       }
-
-      // Normal
       const retornoAlvo = difNum > 0 ? retornoBase - difNum : retornoBase;
       if (retornoAlvo <= 0) return null;
       return Math.round((retornoAlvo / odd) * 100) / 100;
-
     } else {
       // ── Total base ────────────────────────────────────────────────────────
       if (!todasPreenchidas || totalNum <= 0 || odd <= 0) return null;
-
       if (hasExchLay) {
         const o1    = oddsNum[0];
         const oe    = oddsNum[exchIdx];
@@ -216,7 +189,6 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
         if (somatorio <= 0) return null;
         return Math.round((totalNum / (odd * somatorio)) * 100) / 100;
       }
-
       if (hasExchBack) {
         const o1         = oddsNum[0];
         const ob         = oddsNum[exchIdx];
@@ -229,21 +201,26 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
         if (somatorio <= 0) return null;
         return Math.round((totalNum / (odd * somatorio)) * 100) / 100;
       }
-
       if (somatorio <= 0) return null;
       return Math.round((totalNum / (odd * somatorio)) * 100) / 100;
     }
   });
 
+  // stakesEfetivas: como stakesCalc, mas a base usa stakeBaseEfetiva (total × repeat).
+  // Usado em todos os cálculos de lucro, retorno e investimento.
+  const stakesEfetivas = stakesCalc.map((s, i) =>
+    i === effectiveBaseIndex ? (stakeNum > 0 ? stakeBaseEfetiva : null) : s
+  );
+
   // ── Capital imobilizado e total investido ───────────────────────────────────
-  const layStakeCalc = hasExchLay ? (stakesCalc[exchIdx] ?? null) : null;
+  const layStakeCalc = hasExchLay ? (stakesEfetivas[exchIdx] ?? null) : null;
   const layOddNum    = hasExchLay ? oddsAjustadas[exchIdx] : 0;
 
   const responsabilidade = layStakeCalc !== null && layOddNum > 0
     ? layStakeCalc * (layOddNum - 1)
     : 0;
 
-  const somaStakesNormais = stakesCalc.reduce(
+  const somaStakesNormais = stakesEfetivas.reduce(
     (sum, s, i) => sum + (hasExchLay && i === exchIdx ? 0 : (s ?? 0)), 0
   );
 
@@ -252,27 +229,23 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
         ? responsabilidade
         : somaStakesNormais + responsabilidade)
     : modo === "freebet"
-      // Exclui a entrada FB (effectiveBaseIndex) do capital investido
-      ? stakesCalc.reduce((s, v, idx) => idx === effectiveBaseIndex ? s : s + (v ?? 0), 0)
-      : stakesCalc.reduce((s, v) => s + (v ?? 0), 0);
+      ? stakesEfetivas.reduce((s, v, idx) => idx === effectiveBaseIndex ? s : s + (v ?? 0), 0)
+      : stakesEfetivas.reduce((s, v) => s + (v ?? 0), 0);
 
   // ── Retorno bruto por entrada ────────────────────────────────────────────────
-  // O que volta para a conta se aquela entrada for green (inclui devolução de stake).
   const retornos = oddsAjustadas.map((odd, i) => {
-    const s = stakesCalc[i];
+    const s = stakesEfetivas[i];
     if (s === null || s <= 0 || odd <= 0) return null;
     if (hasExchLay  && i === exchIdx) return s * (odd - 1) + s * (1 - comm);
     if (hasExchBack && i === exchIdx) return s + s * (odd - 1) * (1 - comm);
-    // AJUSTE 4: freebet base agora usa effectiveBaseIndex
     if (modo === "freebet" && i === effectiveBaseIndex) return s * (odd - 1);
     return s * odd;
   });
 
   // ── Lucros por cenário ───────────────────────────────────────────────────────
   const lucros = oddsAjustadas.map((odd, i) => {
-    const s = stakesCalc[i];
+    const s = stakesEfetivas[i];
     if (s === null || odd <= 0) return null;
-
     if (hasExchLay && i === exchIdx) {
       if (layStakeCalc === null) return null;
       const custoSaida = modo === "freebet" ? 0 : somaStakesNormais;
@@ -281,11 +254,9 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
     if (hasExchBack && i === exchIdx) {
       return s + s * (odd - 1) * (1 - comm) - totalInvestido;
     }
-    // AJUSTE 4: freebet base usa effectiveBaseIndex
     if (modo === "freebet" && i === effectiveBaseIndex) {
       return s * (odd - 1) - totalInvestido;
     }
-    // Âncora freebet_red + lay: ancora o lucro1 em lucroLay + d para eliminar erro de arredondamento
     if (modoPrincipal === "freebet_red" && hasExchLay && i === 0 && layStakeCalc !== null) {
       const lucroLay = layStakeCalc * (1 - comm) - somaStakesNormais;
       return lucroLay + difNum;
@@ -302,8 +273,8 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   // ── Arb% ─────────────────────────────────────────────────────────────────────
   const arbPct = !todasPreenchidas
     ? null
-    : (modo === "freebet" && stakeNum > 0 && lucroMin !== null)
-      ? lucroMin / stakeNum * 100
+    : (modo === "freebet" && stakeBaseEfetiva > 0 && lucroMin !== null)
+      ? lucroMin / stakeBaseEfetiva * 100
       : (exchIdx !== null && totalInvestido > 0 && lucroMin !== null)
         ? lucroMin / totalInvestido * 100
         : (1 - somatorio) * 100;
@@ -364,7 +335,6 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
           })}
         </div>
 
-        {/* Sub-seletor Stake base | Total base — apenas em Arbitragem */}
         {modoPrincipal === "arbitragem" && (
           <div style={{ display: "flex", gap: 2, background: G.surface2, borderRadius: 5, padding: 2, width: "fit-content", marginTop: 6 }}>
             {[
@@ -400,9 +370,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
           <input
             value={diferencaStr}
             onChange={e => setDiferencaStr(e.target.value)}
-            type="number"
-            inputMode="decimal"
-            placeholder="0"
+            type="number" inputMode="decimal" placeholder="0"
             style={{
               background: G.surface, border: `1px solid ${difNum > 0 ? G.accent : G.border}`,
               borderRadius: 6, padding: "5px 10px",
@@ -418,7 +386,6 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
         {odds.map((odd, i) => {
           const isBase        = i === effectiveBaseIndex;
-          // AJUSTE 4: entrada FB é a base selecionada no modo freebet (não sempre i=0)
           const isFbEntry     = modo === "freebet" && i === effectiveBaseIndex;
           const isExch        = exchIdx === i;
           const isBack        = isExch && exchTipo === "exchange_back";
@@ -429,7 +396,6 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
           const stakeOk       = stake !== null && stake > 0;
           const lucroOk       = todasPreenchidas && lucro !== null;
           const lucroPositivo = lucroOk && lucro >= 0;
-          // isManual: o usuário editou esta stake e o override ainda está ativo
           const isManual      = (modo === "stake_base" || modo === "freebet") && !isBase && stakesManual[i] !== "";
 
           const corBorda = isExch
@@ -440,10 +406,6 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
 
           const labelColuna2 = isFbEntry ? "FREEBET" : "STAKE";
 
-          // AJUSTE 1: valor exibido no input das entradas não-base.
-          // Auto: preenche com o valor calculado (não usa placeholder/sombra).
-          // Manual: exibe o que o usuário digitou.
-          // Limpar o campo (ev.target.value = "") → volta para auto automaticamente.
           const stakeInputValue = !isBase && (modo === "stake_base" || modo === "freebet")
             ? (stakesManual[i] !== "" ? stakesManual[i] : (stakeOk ? stake.toFixed(2) : ""))
             : "";
@@ -462,7 +424,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                 columnGap: 10, rowGap: 6,
                 alignItems: "center",
               }}>
-                {/* Número + badges — ocupa as duas linhas */}
+                {/* Número + badges */}
                 <div style={{
                   gridColumn: 1, gridRow: "1 / 3",
                   display: "flex", flexDirection: "column",
@@ -476,12 +438,17 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                   }}>
                     {i + 1}
                   </span>
-                  {isFbEntry && <span style={{ fontSize: 9, fontWeight: 700, color: G.green, background: `${G.green}22`, borderRadius: 3, padding: "1px 4px" }}>FB</span>}
+                  {isFbEntry && <span style={{ fontSize: 9, fontWeight: 700, color: G.green,    background: `${G.green}22`,  borderRadius: 3, padding: "1px 4px" }}>FB</span>}
                   {isBack    && <span style={{ fontSize: 9, fontWeight: 700, color: "#3b82f6", background: "#3b82f622", borderRadius: 3, padding: "1px 4px" }}>BACK</span>}
                   {isLay     && <span style={{ fontSize: 9, fontWeight: 700, color: "#ec4899", background: "#ec489922", borderRadius: 3, padding: "1px 4px" }}>LAY</span>}
+                  {isBase && baseRepeatNum > 1 && (
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "#F59E0B", background: "#F59E0B22", borderRadius: 3, padding: "1px 4px" }}>
+                      ×{baseRepeatNum}
+                    </span>
+                  )}
                 </div>
 
-                {/* Labels — linha 1 */}
+                {/* Labels */}
                 {["ODD", labelColuna2, "LUCRO"].map((h, col) => (
                   <div key={h} style={{
                     gridColumn: col + 2, gridRow: 1,
@@ -492,12 +459,11 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                   </div>
                 ))}
 
-                {/* ODD input — linha 2, col 2 */}
+                {/* ODD input */}
                 <input
                   value={odd}
                   onChange={ev => setOdd(i, ev.target.value)}
-                  placeholder="0,00"
-                  inputMode="decimal"
+                  placeholder="0,00" inputMode="decimal"
                   style={{
                     gridColumn: 2, gridRow: 2,
                     background: G.surface, border: `1px solid ${G.accent}`,
@@ -507,20 +473,12 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                   }}
                 />
 
-                {/* STAKE / FREEBET — linha 2, col 3
-                    Três casos:
-                    A) Entrada base (stake_base ou freebet): input editável → stakeBase
-                    B) Entrada não-base em stake_base ou freebet: input preenchido com valor
-                       automático ou manual, com botão ↺ para resetar o override
-                    C) Modo total: somente-leitura                             */}
+                {/* STAKE / FREEBET */}
                 {isBase && (modo === "stake_base" || modo === "freebet") ? (
-                  /* ── A: entrada base ── */
                   <input
                     value={stakeBase}
                     onChange={ev => updateStakeBase(ev.target.value)}
-                    placeholder="0,00"
-                    type="number"
-                    inputMode="decimal"
+                    placeholder="0,00" type="number" inputMode="decimal"
                     style={{
                       gridColumn: 3, gridRow: 2,
                       background: G.surface, border: `1px solid ${G.accent}`,
@@ -530,30 +488,22 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                     }}
                   />
                 ) : (modo === "stake_base" || modo === "freebet") ? (
-                  /* ── B: entrada não-base, stake preenchida automaticamente ── */
                   <div style={{ gridColumn: 3, gridRow: 2, display: "flex", alignItems: "center", gap: 3 }}>
                     <input
                       value={stakeInputValue}
                       onChange={ev => setManual(i, ev.target.value)}
-                      placeholder="—"
-                      type="number"
-                      inputMode="decimal"
+                      placeholder="—" type="number" inputMode="decimal"
                       style={{
                         flex: 1, minWidth: 0,
                         background: G.surface,
-                        // Borda âmbar quando há override manual ativo
                         border: `1px solid ${isManual ? "#F59E0B55" : G.border}`,
                         borderRadius: 6, padding: "7px 8px",
-                        color: G.text,
-                        fontSize: 13, fontWeight: 600,
+                        color: G.text, fontSize: 13, fontWeight: 600,
                         outline: "none", boxSizing: "border-box",
                       }}
                     />
-                    {/* AJUSTE 5: ↺ desfaz o override e volta para o automático atual */}
                     {isManual && (
-                      <button
-                        onClick={() => clearManual(i)}
-                        title="Voltar para cálculo automático"
+                      <button onClick={() => clearManual(i)} title="Voltar para cálculo automático"
                         style={{
                           background: "none", border: "none",
                           color: G.textDim, cursor: "pointer",
@@ -563,7 +513,6 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                     )}
                   </div>
                 ) : (
-                  /* ── C: modo total — somente-leitura ── */
                   <div style={{
                     gridColumn: 3, gridRow: 2,
                     background: G.surface, border: `1px solid ${G.border}`,
@@ -576,7 +525,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                   </div>
                 )}
 
-                {/* LUCRO — linha 2, col 4 */}
+                {/* LUCRO */}
                 <div style={{
                   gridColumn: 4, gridRow: 2,
                   background: G.surface, border: `1px solid ${G.border}`,
@@ -589,11 +538,9 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                 </div>
               </div>
 
-              {/* ── Linha de controles: BASE | AUMENTO | RETORNO ─────────── */}
+              {/* ── Linha de controles: BASE | REPETIR | AUMENTO | RETORNO ── */}
               <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
 
-                {/* Botão BASE — disponível em stake_base E freebet (AJUSTE 4).
-                    Label diferenciado por modo: BASE / FB BASE               */}
                 {(modo === "stake_base" || modo === "freebet") && (
                   <>
                     <button
@@ -613,11 +560,42 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                         ? (modo === "freebet" ? "📌 FB BASE" : "📌 BASE")
                         : (modo === "freebet" ? "FB BASE"   : "BASE")}
                     </button>
+
+                    {/* Repetir — apenas na BASE */}
+                    {isBase && (
+                      <>
+                        <div style={{ width: 1, height: 12, background: G.border, flexShrink: 0 }} />
+                        <span style={{ fontSize: 10, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
+                          Repetir:
+                        </span>
+                        <input
+                          value={baseRepeat}
+                          onChange={ev => {
+                            const v = Math.max(1, Math.min(10, parseInt(ev.target.value) || 1));
+                            setBaseRepeat(v);
+                          }}
+                          type="number" min="1" max="10" inputMode="numeric"
+                          style={{
+                            background: G.surface,
+                            border: `1px solid ${baseRepeatNum > 1 ? "#F59E0B66" : G.border}`,
+                            borderRadius: 6, padding: "3px 7px",
+                            color: baseRepeatNum > 1 ? G.text : G.textMuted,
+                            fontSize: 12, outline: "none", width: 44,
+                          }}
+                        />
+                        {baseRepeatNum > 1 && (
+                          <span style={{ fontSize: 11, color: "#F59E0B", fontWeight: 700, whiteSpace: "nowrap" }}>
+                            ×{baseRepeatNum} = {fmt(stakeBaseEfetiva)}
+                          </span>
+                        )}
+                      </>
+                    )}
+
                     <div style={{ width: 1, height: 12, background: G.border, flexShrink: 0 }} />
                   </>
                 )}
 
-                {/* Aumento de odd (booster) */}
+                {/* Aumento de odd */}
                 <span style={{
                   fontSize: 10, color: G.textDim, fontWeight: 600,
                   letterSpacing: 0.5, textTransform: "uppercase", whiteSpace: "nowrap",
@@ -627,9 +605,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                 <input
                   value={aumentos[i]}
                   onChange={ev => setAumento(i, ev.target.value)}
-                  placeholder="0"
-                  type="number"
-                  inputMode="decimal"
+                  placeholder="0" type="number" inputMode="decimal"
                   style={{
                     background: G.surface,
                     border: `1px solid ${(parseFloat(aumentos[i]) || 0) > 0 ? "#F59E0B66" : G.border}`,
@@ -644,7 +620,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                   </span>
                 )}
 
-                {/* Retorno bruto por entrada */}
+                {/* Retorno bruto */}
                 {retorno !== null && (
                   <span style={{ marginLeft: "auto", fontSize: 11, whiteSpace: "nowrap", color: G.textDim }}>
                     retorno <span style={{ color: G.text, fontWeight: 700 }}>{fmt(retorno)}</span>
@@ -652,65 +628,61 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                 )}
               </div>
 
-              {/* ── Controles de Exchange — apenas na entrada 2 (i === 1) ─── */}
-              {i === 1 && (
-                <div style={{
-                  marginTop: 8, paddingTop: 8,
-                  borderTop: `1px solid ${G.border}`,
-                  display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+              {/* ── Controles de Exchange — disponível em QUALQUER entrada ── */}
+              <div style={{
+                marginTop: 8, paddingTop: 8,
+                borderTop: `1px solid ${G.border}`,
+                display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+              }}>
+                <label style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  cursor: "pointer", fontSize: 12,
+                  color: isExch ? "#f97316" : G.textDim,
                 }}>
-                  <label style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    cursor: "pointer", fontSize: 12,
-                    color: isExch ? "#f97316" : G.textDim,
-                  }}>
+                  <input
+                    type="checkbox"
+                    checked={isExch}
+                    onChange={() => toggleExch(i)}
+                    style={{ accentColor: "#f97316", width: 13, height: 13 }}
+                  />
+                  <span style={{ fontWeight: 600 }}>Exchange</span>
+                </label>
+
+                {isExch && (
+                  <div style={{ display: "flex", gap: 2, background: G.surface, borderRadius: 6, padding: 2 }}>
+                    <button onClick={() => setExchTipo("exchange_back")} style={{
+                      padding: "2px 12px", borderRadius: 5, border: "none", cursor: "pointer",
+                      background: isBack ? "#3b82f622" : "transparent",
+                      color: isBack ? "#3b82f6" : G.textDim,
+                      fontSize: 11, fontWeight: 700, transition: "all 0.15s",
+                    }}>Back</button>
+                    <button onClick={() => setExchTipo("exchange_lay")} style={{
+                      padding: "2px 12px", borderRadius: 5, border: "none", cursor: "pointer",
+                      background: isLay ? "#ec489922" : "transparent",
+                      color: isLay ? "#ec4899" : G.textDim,
+                      fontSize: 11, fontWeight: 700, transition: "all 0.15s",
+                    }}>Lay</button>
+                  </div>
+                )}
+
+                {isExch && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <span style={{ fontSize: 11, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
+                      Comissão (%):
+                    </span>
                     <input
-                      type="checkbox"
-                      checked={isExch}
-                      onChange={() => toggleExch(i)}
-                      style={{ accentColor: "#f97316", width: 13, height: 13 }}
+                      value={exchComm}
+                      onChange={e => setExchComm(e.target.value)}
+                      placeholder="5" type="number" inputMode="decimal"
+                      style={{
+                        background: G.surface2, border: `1px solid #f9731644`,
+                        borderRadius: 6, padding: "3px 7px",
+                        color: G.text, fontSize: 12, outline: "none", width: 52,
+                      }}
                     />
-                    <span style={{ fontWeight: 600 }}>Exchange</span>
-                  </label>
-
-                  {isExch && (
-                    <div style={{ display: "flex", gap: 2, background: G.surface, borderRadius: 6, padding: 2 }}>
-                      <button onClick={() => setExchTipo("exchange_back")} style={{
-                        padding: "2px 12px", borderRadius: 5, border: "none", cursor: "pointer",
-                        background: isBack ? "#3b82f622" : "transparent",
-                        color: isBack ? "#3b82f6" : G.textDim,
-                        fontSize: 11, fontWeight: 700, transition: "all 0.15s",
-                      }}>Back</button>
-                      <button onClick={() => setExchTipo("exchange_lay")} style={{
-                        padding: "2px 12px", borderRadius: 5, border: "none", cursor: "pointer",
-                        background: isLay ? "#ec489922" : "transparent",
-                        color: isLay ? "#ec4899" : G.textDim,
-                        fontSize: 11, fontWeight: 700, transition: "all 0.15s",
-                      }}>Lay</button>
-                    </div>
-                  )}
-
-                  {isExch && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                      <span style={{ fontSize: 11, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
-                        Comissão (%):
-                      </span>
-                      <input
-                        value={exchComm}
-                        onChange={e => setExchComm(e.target.value)}
-                        placeholder="5"
-                        type="number"
-                        inputMode="decimal"
-                        style={{
-                          background: G.surface2, border: `1px solid #f9731644`,
-                          borderRadius: 6, padding: "3px 7px",
-                          color: G.text, fontSize: 12, outline: "none", width: 52,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
 
             </div>
           );
@@ -734,9 +706,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
             <input
               value={totalStr}
               onChange={e => setTotalStr(e.target.value)}
-              placeholder="0,00"
-              type="number"
-              inputMode="decimal"
+              placeholder="0,00" type="number" inputMode="decimal"
               style={{
                 background: G.surface, border: `1px solid ${G.accent}`,
                 borderRadius: 6, padding: "6px 10px",
@@ -772,17 +742,25 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
         </div>
       </div>
 
-      {/* ── "Usar na operação" — envia odds ajustadas e stakes finais ──────── */}
+      {/* ── "Usar na operação" ─────────────────────────────────────────────── */}
       {onUsarNaOp && temDados && (
         <button onClick={() => onUsarNaOp({
-          entradas: odds.map((odd, i) => ({
-            odd:   oddsAjustadas[i] > 0 ? String(oddsAjustadas[i]) : odd,
-            // stakesCalc já reflete overrides manuais + auto
-            valor: stakesCalc[i] !== null ? String(stakesCalc[i]) : "",
-            // AJUSTE 4: freebet marca a entrada base selecionada (não sempre i=0)
-            ...(modo === "freebet" && i === effectiveBaseIndex && { tipo: "freebet" }),
-            ...(modo === "stake_base" && i === exchIdx && { tipo: exchTipo, comissao: exchComm || "" }),
-          })),
+          // BASE expandida em baseRepeatNum cópias; demais entradas enviadas normalmente.
+          // Exchange funciona em qualquer modo e qualquer entrada.
+          entradas: odds.flatMap((odd, i) => {
+            const oddFinal   = oddsAjustadas[i] > 0 ? String(oddsAjustadas[i]) : odd;
+            const valorFinal = stakesCalc[i] !== null ? String(stakesCalc[i]) : "";
+            const props = {
+              ...(modo === "freebet" && i === effectiveBaseIndex && { tipo: "freebet" }),
+              ...(exchIdx !== null && i === exchIdx && { tipo: exchTipo, comissao: exchComm || "" }),
+            };
+            if (i === effectiveBaseIndex && baseRepeatNum > 1) {
+              return Array.from({ length: baseRepeatNum }, () => ({
+                odd: oddFinal, valor: valorFinal, ...props,
+              }));
+            }
+            return [{ odd: oddFinal, valor: valorFinal, ...props }];
+          }),
         })} style={{
           display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           width: "100%", marginTop: 12,
