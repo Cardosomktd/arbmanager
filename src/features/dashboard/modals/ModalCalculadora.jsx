@@ -665,23 +665,52 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                   </div>
                 )}
 
-                {isExch && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <span style={{ fontSize: 11, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
-                      Comissão (%):
-                    </span>
-                    <input
-                      value={exchComm}
-                      onChange={e => setExchComm(e.target.value)}
-                      placeholder="5" type="number" inputMode="decimal"
-                      style={{
-                        background: G.surface2, border: `1px solid #f9731644`,
-                        borderRadius: 6, padding: "3px 7px",
-                        color: G.text, fontSize: 12, outline: "none", width: 52,
-                      }}
-                    />
-                  </div>
-                )}
+                {isExch && (() => {
+                  const commN = (parseFloat(exchComm) || 0) / 100;
+                  const oddN  = oddsAjustadas[i];
+                  let eLabel  = null;
+                  let eVal    = null;
+                  if (isBack && oddN > 0) {
+                    // Odd real Back = 1 + (odd − 1) × (1 − comm)
+                    eLabel = "Odd real:";
+                    eVal   = parseFloat((1 + (oddN - 1) * (1 - commN)).toFixed(6)).toString();
+                  } else if (isLay && oddN > 1) {
+                    // Odd equiv. Lay = 1 + (1 − comm) / (odd − 1)
+                    eLabel = "Odd equiv.:";
+                    eVal   = parseFloat((1 + (1 - commN) / (oddN - 1)).toFixed(6)).toString();
+                  }
+                  return (
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
+                        Comissão (%):
+                      </span>
+                      <input
+                        value={exchComm}
+                        onChange={e => setExchComm(e.target.value)}
+                        placeholder="5" type="number" inputMode="decimal"
+                        style={{
+                          background: G.surface2, border: `1px solid #f9731644`,
+                          borderRadius: 6, padding: "3px 7px",
+                          color: G.text, fontSize: 12, outline: "none", width: 52,
+                        }}
+                      />
+                      {eLabel && eVal && (
+                        <>
+                          <span style={{ fontSize: 10, color: G.border, margin: "0 2px" }}>|</span>
+                          <span style={{ fontSize: 11, color: G.textDim, fontWeight: 600, whiteSpace: "nowrap" }}>
+                            {eLabel}
+                          </span>
+                          <span style={{
+                            fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+                            color: isBack ? "#3b82f6" : "#ec4899",
+                          }}>
+                            {eVal}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
             </div>
