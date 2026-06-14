@@ -17,7 +17,7 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
   // ── Entrada base ─────────────────────────────────────────────────────────────
   const [baseIndex,  setBaseIndex]  = useState(0);
   // Repetir: quantas cópias da BASE ao usar na operação (afeta cálculos via stakeBaseEfetiva).
-  const [baseRepeat, setBaseRepeat] = useState(1);
+  const [baseRepeat, setBaseRepeat] = useState("");
 
   const [stakesManual, setStakesManual] = useState(["", ""]);
 
@@ -571,9 +571,12 @@ export function ModalCalculadora({ open, onClose, onUsarNaOp }) {
                         <input
                           value={baseRepeat}
                           onChange={ev => {
-                            const v = Math.max(1, Math.min(10, parseInt(ev.target.value) || 1));
-                            setBaseRepeat(v);
+                            const raw = ev.target.value;
+                            if (raw === "") { setBaseRepeat(""); return; }
+                            const v = Math.max(1, Math.min(10, parseInt(raw) || 1));
+                            setBaseRepeat(String(v));
                           }}
+                          placeholder="1"
                           type="number" min="1" max="10" inputMode="numeric"
                           style={{
                             background: G.surface,
